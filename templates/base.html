@@ -11,32 +11,13 @@
     <!-- SEO: Canonical URL -->
     <link rel="canonical" href="https://futbol-predicciones.xyz{{ request.path }}">
 
-    <!-- Preload fuentes para eliminar cadena de dependencias -->
+    <!-- Preload fuentes para evitar FOIT -->
     <link rel="preload" href="{{ url_for('static', filename='fonts/bootstrap-icons.woff2') }}" as="font" type="font/woff2" crossorigin>
     
-    <!-- CSS Crítico Inlineado (navbar + layout básico) -->
-    <style>
-        :root{--bs-body-bg:#121212;--bs-body-color:#fff}
-        *,::after,::before{box-sizing:border-box}
-        body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bs-body-bg);color:var(--bs-body-color)}
-        .navbar-promiedos{background:#1a1a2e;padding:.5rem 1rem;position:sticky;top:0;z-index:1030}
-        .navbar-brand{color:#fff;text-decoration:none;font-weight:700;font-size:1.5rem}
-        .container,.container-fluid{width:100%;padding-right:.75rem;padding-left:.75rem;margin:auto}
-        .d-none{display:none!important}@media(min-width:768px){.d-md-flex{display:flex!important}}
-        .nav-link-top{color:rgba(255,255,255,.7);text-decoration:none;padding:.5rem 1rem}
-        .content-area{min-height:80vh;padding:1rem}
-    </style>
-
-    <!-- CSS No Bloqueante: Carga asíncrona con fallback -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" media="print" onload="this.media='all'">
-    <!-- Fallback para navegadores sin JS -->
-    <noscript>
-        <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
-        <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}">
-        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    </noscript>
+    <!-- CSS: Carga síncrona para evitar CLS en mobile -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
     <!-- JS con defer para no bloquear renderizado -->
     <script defer src="{{ url_for('static', filename='htmx.min.js') }}"></script>
