@@ -30,6 +30,10 @@ from flask_caching import Cache
 from dotenv import load_dotenv
 import pandas as pd
 
+# ========== CONFIGURACIÓN DE CACHÉ PARA ESTÁTICOS ==========
+# 30 días = 2592000 segundos (mejora puntuación PageSpeed)
+SEND_FILE_MAX_AGE_DEFAULT = 2592000
+
 # ========== IMPORTS LOCALES ==========
 from timba_core import (
     LIGAS, URLS_FIXTURE,
@@ -58,6 +62,9 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_super_secreta_timba_2026')
+
+# Caché de archivos estáticos: 30 días (mejora PageSpeed)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = SEND_FILE_MAX_AGE_DEFAULT
 
 # ============================================================
 # CONFIGURACIÓN DE FLASK-CACHING (OPTIMIZADO PARA RASPBERRY PI)
