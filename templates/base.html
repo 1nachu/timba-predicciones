@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>{% block title %}Timba Predictor{% endblock %}</title>
+    <link rel="preload" href="{{ url_for('static', filename='fonts/bootstrap-icons.woff2') }}" as="font" type="font/woff2" crossorigin>
     
     <!-- CSS Crítico: Bootstrap + Icons (Local) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
