@@ -29,7 +29,7 @@ Usage:
         official_name="Manchester United FC",
         country="England",
         league="Premier League",
-        league_code="E0",  # NUEVO: Código de liga para filtrado
+        league_code="E0",  # Código de liga para filtrado
         source="footballdata",
         external_id="12345"
     )

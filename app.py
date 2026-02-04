@@ -13,8 +13,8 @@ Autor: Timba Team
 # ========== IMPORTS ESTÁNDAR ==========
 import os
 import sys
-import sqlite3  # <--- NUEVO: Para leer la DB local
-import json     # <--- NUEVO: Para procesar datos de la DB
+import sqlite3
+import json
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 

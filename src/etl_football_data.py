@@ -5,7 +5,7 @@ ETL SCRIPT - Football Historical Data Pipeline
 Extrae datos históricos de Football-Data.co.uk, transforma y carga en base de datos.
 
 Características:
-- Descarga 11 temporadas de 5 ligas principales (PL, La Liga, Bundesliga, Serie A, Ligue 1)
+- Descarga 11 temporadas de 7 ligas europeas + Liga Argentina
 - Normaliza fechas a ISO 8601
 - Mantiene columnas críticas: FTR, HS/AS, HST/AST, cuotas B365
 - Soporta SQLite y PostgreSQL
@@ -79,7 +79,7 @@ logger = logging.getLogger(__name__)
 
 
 # ========== CONFIGURACIÓN DE LIGAS Y TEMPORADAS ==========
-# Solo 5 ligas principales con datos confiables de football-data.co.uk
+# 7 ligas europeas + Argentina con datos de football-data.co.uk
 
 LIGAS_CONFIG = {
     'E0': {

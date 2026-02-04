@@ -112,7 +112,7 @@ except ImportError:
         return pd.read_csv(io.StringIO(response.text), usecols=usecols)
 
 # ========== DICCIONARIO DE LIGAS ==========
-# Solo ligas con fuentes de datos confiables (football-data.co.uk)
+# 7 ligas europeas + Argentina (datos de football-data.co.uk)
 LIGAS = {
     1: {
         'nombre': 'Premier League (Inglaterra) - Temporada 25/26',

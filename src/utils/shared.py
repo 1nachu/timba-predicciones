@@ -4,7 +4,7 @@ Utilidades compartidas para Timba Predictor v2
 
 Módulo centralizado con:
 - Constantes de rutas y configuración
-- Diccionario de alias de equipos (5 ligas europeas)
+- Diccionario de alias de equipos (7 ligas europeas + Liga Argentina)
 - Funciones de normalización CSV y descarga segura
 - Utilidades de fuzzy matching para nombres de equipos
 
@@ -73,7 +73,7 @@ FOOTBALL_API_BASE_URL = "https://api.football-data.org/v4"
 CURRENT_SEASON = "2526"  # 2025-26
 
 # ========== DICCIONARIO DE ALIAS DE EQUIPOS ==========
-# Solo ligas con fuentes de datos confiables (5 ligas europeas principales)
+# Ligas con fuentes de datos confiables (7 europeas + Argentina)
 ALIAS_TEAMS = {
     # --- PREMIER LEAGUE (E0) ---
     "Manchester United": "Man United", "Man Utd": "Man United",
