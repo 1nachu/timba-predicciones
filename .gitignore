@@ -59,6 +59,9 @@ logs/*.log
 .DS_Store
 Thumbs.db
 
+# === Archivos temporales/notas ===
+http timba.txt
+
 # === Cython Build ===
 src/*.c
 src/*.html
