@@ -29,12 +29,12 @@
 
     <!-- CSS No Bloqueante: Carga asíncrona con fallback -->
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons.css') }}" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" media="print" onload="this.media='all'">
     <!-- Fallback para navegadores sin JS -->
     <noscript>
         <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
-        <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </noscript>
     

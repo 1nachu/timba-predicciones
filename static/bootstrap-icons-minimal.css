@@ -1,0 +1,61 @@
+/*!
+ * Bootstrap Icons - Minimal (solo iconos usados en Timba)
+ * Generado: Febrero 2026
+ */
+
+@font-face {
+  font-display: swap;
+  font-family: "bootstrap-icons";
+  src: url("fonts/bootstrap-icons.woff2?2820a3852bdb9a5832199cc61cec4e65") format("woff2"),
+       url("fonts/bootstrap-icons.woff?2820a3852bdb9a5832199cc61cec4e65") format("woff");
+}
+
+.bi::before,
+[class^="bi-"]::before,
+[class*=" bi-"]::before {
+  display: inline-block;
+  font-family: bootstrap-icons !important;
+  font-style: normal;
+  font-weight: normal !important;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: -.125em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.bi-airplane-fill::before { content: "\f7cc"; }
+.bi-arrow-clockwise::before { content: "\f116"; }
+.bi-arrow-repeat::before { content: "\f130"; }
+.bi-bar-chart::before { content: "\f17e"; }
+.bi-bar-chart-fill::before { content: "\f17a"; }
+.bi-broadcast::before { content: "\f1d6"; }
+.bi-bullseye::before { content: "\f1de"; }
+.bi-calendar3::before { content: "\f214"; }
+.bi-calendar-event::before { content: "\f1e8"; }
+.bi-calendar-x::before { content: "\f1f5"; }
+.bi-card-heading::before { content: "\f225"; }
+.bi-check2-all::before { content: "\f26f"; }
+.bi-clipboard-data::before { content: "\f28c"; }
+.bi-clock::before { content: "\f293"; }
+.bi-dash::before { content: "\f2ea"; }
+.bi-dash-lg::before { content: "\f63b"; }
+.bi-database-x::before { content: "\f8c3"; }
+.bi-exclamation-triangle::before { content: "\f33b"; }
+.bi-flag::before { content: "\f3cc"; }
+.bi-graph-up::before { content: "\f3f2"; }
+.bi-house-fill::before { content: "\f424"; }
+.bi-info-circle::before { content: "\f431"; }
+.bi-lightbulb::before { content: "\f46b"; }
+.bi-lightbulb-fill::before { content: "\f468"; }
+.bi-lightning-charge::before { content: "\f46d"; }
+.bi-lightning-fill::before { content: "\f46e"; }
+.bi-list-ol::before { content: "\f475"; }
+.bi-magic::before { content: "\f675"; }
+.bi-play-circle::before { content: "\f4f3"; }
+.bi-question-circle::before { content: "\f505"; }
+.bi-question-circle-fill::before { content: "\f504"; }
+.bi-star-fill::before { content: "\f586"; }
+.bi-table::before { content: "\f5aa"; }
+.bi-trophy::before { content: "\f5e7"; }
+.bi-trophy-fill::before { content: "\f5e6"; }
