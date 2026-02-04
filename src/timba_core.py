@@ -641,10 +641,14 @@ def _scrape_promiedos(url: str) -> list:
                 liga_target = league
                 break
         
-        # Si no encontramos por ID exacto, buscar por nombre
+        # Si no encontramos por ID exacto, buscar por nombre (solo Liga Profesional, NO Copa Argentina)
         if not liga_target:
             for league in leagues:
-                if 'argentina' in league.get('name', '').lower() or 'profesional' in league.get('name', '').lower():
+                league_name = league.get('name', '').lower()
+                # IMPORTANTE: Excluir Copa Argentina y otras copas
+                if 'copa' in league_name:
+                    continue
+                if 'liga profesional' in league_name or league_name == 'liga profesional':
                     liga_target = league
                     break
         
