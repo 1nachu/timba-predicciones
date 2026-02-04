@@ -25,7 +25,7 @@ from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
 # ========== IMPORTS DE TERCEROS ==========
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
 from flask_caching import Cache
 from dotenv import load_dotenv
 import pandas as pd
@@ -1432,6 +1432,20 @@ def page_not_found(e):
 @app.errorhandler(500)
 def internal_error(e):
     return render_template('base.html', error="Error interno del servidor"), 500
+
+
+# ============================================================
+# SEO: ARCHIVOS ESTÁTICOS EN RAÍZ
+# ============================================================
+@app.route('/robots.txt')
+def robots():
+    """Servir robots.txt desde la raíz del dominio."""
+    return send_from_directory('static', 'robots.txt')
+
+@app.route('/sitemap.xml')
+def sitemap():
+    """Servir sitemap.xml desde la raíz del dominio."""
+    return send_from_directory('static', 'sitemap.xml')
 
 
 # ============================================================

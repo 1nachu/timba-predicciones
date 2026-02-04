@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Bloquear acceso a archivos internos (opcional pero recomendado)
+Disallow: /logs/
+Disallow: /data/
+
+# Mapa del sitio (si tienes uno, si no borra esta linea)
+Sitemap: https://futbol-predicciones.xyz/sitemap.xml
