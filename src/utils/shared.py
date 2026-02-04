@@ -188,7 +188,7 @@ ALIAS_TEAMS = {
     "Deportivo Riestra": "Dep. Riestra", "Riestra": "Dep. Riestra",
     "Estudiantes de La Plata": "Estudiantes L.P.", "Estudiantes LP": "Estudiantes L.P.", "Estudiantes": "Estudiantes L.P.",
     "Gimnasia La Plata": "Gimnasia L.P.", "Gimnasia LP": "Gimnasia L.P.", "Gimnasia y Esgrima LP": "Gimnasia L.P.",
-    "Gimnasia de Mendoza": "Gimnasia L.P.",  # Nota: Gimnasia Mendoza ≠ Gimnasia LP, pero no está en DB histórica
+    "Gimnasia de Mendoza": "Gimnasia Mendoza", "Gimnasia y Esgrima de Mendoza": "Gimnasia Mendoza",
     "Huracán": "Huracan",
     "Independiente Rivadavia": "Ind. Rivadavia",
     "Lanús": "Lanus",
