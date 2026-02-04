@@ -36,5 +36,5 @@ gunicorn>=21.0.0
 
 # === Cython Optimizations (opcional, para RPi/Celeron) ===
 # Descomenta para compilar el módulo timba_fast.pyx
-# Cython>=3.0.0
-# setuptools>=65.0.0
+Cython>=3.0.0
+setuptools>=65.0.0
