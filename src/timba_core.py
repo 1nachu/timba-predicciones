@@ -12,7 +12,7 @@ Características:
 - Normalización de nombres de equipos vía utils.shared
 
 Autor: Timba Team
-Última actualización: Enero 2026
+Última actualización: Febrero 2026
 """
 
 # ========== IMPORTS ESTÁNDAR ==========

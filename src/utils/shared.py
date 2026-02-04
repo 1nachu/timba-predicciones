@@ -9,7 +9,7 @@ Módulo centralizado con:
 - Utilidades de fuzzy matching para nombres de equipos
 
 Autor: Timba Team
-Última actualización: Enero 2026
+Última actualización: Febrero 2026
 """
 
 import os
