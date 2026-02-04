@@ -1,0 +1,72 @@
+# ================================================
+# Timba Predictor - .gitignore
+# ================================================
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# === Virtual Environments ===
+.venv/
+venv/
+ENV/
+env/
+
+# === Environment Variables ===
+.env
+.env.local
+.env.*.local
+
+# === IDEs ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Databases (generadas localmente) ===
+data/databases/*.db
+*.db
+
+# === Cache ===
+data/live_scores_cache/
+data/dashboard_cache.json
+.cache/
+
+# === Logs ===
+logs/*.log
+*.log
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+
+# === Cython Build ===
+src/*.c
+src/*.html
+
+# === Jupyter (si se usa) ===
+.ipynb_checkpoints/
+
+# === Pytest ===
+.pytest_cache/
+.coverage
+htmlcov/

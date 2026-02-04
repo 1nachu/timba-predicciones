@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Partidos de Hoy - Timba Predictor{% endblock %}
+
+{% block content %}
+<!-- Header: PARTIDOS DE HOY -->
+<div class="partidos-header">
+    <div class="partidos-title">
+        <i class="bi bi-calendar-event"></i>
+        PARTIDOS DE HOY
+        <span class="badge bg-success ms-2">{{ stats.total_partidos_hoy }}</span>
+    </div>
+</div>
+
+<!-- Tabs: TODOS / VIVO -->
+<div class="partidos-tabs">
+    <button class="tab-btn active">TODOS</button>
+    <a href="/live" class="tab-btn">EN VIVO <i class="bi bi-broadcast text-danger"></i></a>
+</div>
+
+<!-- Descripción -->
+<p class="text-muted small mb-3">Partidos programados para hoy con predicciones Timba</p>
+
+{% if stats.partidos_hoy %}
+    <!-- Ligas con partidos de hoy -->
+    {% for liga_id, liga_data in stats.partidos_hoy.items() %}
+    <div class="liga-bloque mb-3">
+        <!-- Header de Liga -->
+        <div class="liga-header">
+            <span class="flag">
+                {% if 'Argentina' in liga_data.nombre %}🇦🇷
+                {% elif 'Premier' in liga_data.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
+                {% elif 'La Liga' in liga_data.nombre %}🇪🇸
+                {% elif 'Serie' in liga_data.nombre %}🇮🇹
+                {% elif 'Bundesliga' in liga_data.nombre %}🇩🇪
+                {% elif 'Ligue' in liga_data.nombre %}🇫🇷
+                {% elif 'Primeira' in liga_data.nombre %}🇵🇹
+                {% elif 'Eredivisie' in liga_data.nombre %}🇳🇱
+                {% else %}⚽{% endif %}
+            </span>
+            <span class="liga-name">{{ liga_data.nombre }}</span>
+            <div class="liga-actions">
+                <a href="/fixtures?liga_id={{ liga_id }}" title="Ver fixture completo"><i class="bi bi-calendar3"></i></a>
+            </div>
+        </div>
+        
+        <!-- Partidos de esta liga -->
+        {% for partido in liga_data.partidos %}
+        <a href="/predict?liga_id={{ liga_id }}&local={{ partido.local|urlencode }}&visitante={{ partido.visitante|urlencode }}" 
+           class="partido-card-link">
+            <div class="partido-card">
+                <div class="partido-row">
+                    <div class="partido-hora">
+                        <span class="hora">{{ partido.hora }}</span>
+                    </div>
+                    <div class="partido-equipos">
+                        <div class="partido-equipo local">
+                            <span class="nombre">{{ partido.local }}</span>
+                        </div>
+                        <span class="partido-vs">vs</span>
+                        <div class="partido-equipo visitante">
+                            <span class="nombre">{{ partido.visitante }}</span>
+                        </div>
+                    </div>
+                    {% if partido.recomendacion and partido.recomendacion != '—' %}
+                    <div class="partido-apuesta">
+                        <span class="badge bg-success">{{ partido.recomendacion }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Predicción inline -->
+                {% if partido.prediccion %}
+                <div class="partido-prediccion">
+                    <div class="pred-probs">
+                        <span class="pred-item local">1: {{ partido.prediccion.local|int }}%</span>
+                        <span class="pred-item empate">X: {{ partido.prediccion.empate|int }}%</span>
+                        <span class="pred-item visitante">2: {{ partido.prediccion.visitante|int }}%</span>
+                    </div>
+                    <div class="pred-bar">
+                        <div class="pred-bar-local" style="width: {{ partido.prediccion.local }}%"></div>
+                        <div class="pred-bar-empate" style="width: {{ partido.prediccion.empate }}%"></div>
+                        <div class="pred-bar-visitante" style="width: {{ partido.prediccion.visitante }}%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="partido-prediccion">
+                    <span class="text-muted small">Sin datos históricos</span>
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endfor %}
+{% else %}
+    <!-- No hay partidos hoy -->
+    <div class="alert alert-secondary text-center py-4">
+        <i class="bi bi-calendar-x display-4 d-block mb-3"></i>
+        <h5>No hay partidos programados para hoy</h5>
+        <p class="text-muted mb-3">Consultá el fixture de cada liga para ver próximos encuentros</p>
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+            {% for id, liga in stats.ligas.items() %}
+            <a href="/fixtures?liga_id={{ id }}" class="btn btn-sm btn-outline-light">
+                {% if 'Argentina' in liga.nombre %}🇦🇷
+                {% elif 'Premier' in liga.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
+                {% elif 'La Liga' in liga.nombre %}🇪🇸
+                {% elif 'Serie' in liga.nombre %}🇮🇹
+                {% elif 'Bundesliga' in liga.nombre %}🇩🇪
+                {% elif 'Ligue' in liga.nombre %}🇫🇷
+                {% elif 'Primeira' in liga.nombre %}🇵🇹
+                {% elif 'Eredivisie' in liga.nombre %}🇳🇱
+                {% else %}⚽{% endif %}
+                {{ liga.nombre.split('(')[0] }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row g-3 mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-broadcast display-4 text-danger mb-2"></i>
+                <h5>Partidos en Vivo</h5>
+                <p class="text-muted small mb-3">Seguimiento en tiempo real</p>
+                <a href="/live" class="btn btn-outline-danger">
+                    <i class="bi bi-play-circle"></i> Ver en Vivo
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-graph-up display-4 text-success mb-2"></i>
+                <h5>Historial</h5>
+                <p class="text-muted small mb-3">Análisis de predicciones pasadas</p>
+                <a href="/history" class="btn btn-outline-success">
+                    <i class="bi bi-bar-chart"></i> Ver Historial
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

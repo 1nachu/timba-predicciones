@@ -1,0 +1,1518 @@
+/* ========================================
+   TIMBA PREDICTOR - Estilo Promiedos Dark
+   Inspirado en promiedos.com.ar
+   ======================================== */
+
+:root {
+    /* Fondo oscuro estilo Promiedos */
+    --bg-body: #121212;
+    --bg-card: #1a1a1a;
+    --bg-header: #0d0d0d;
+    --bg-row-hover: #252525;
+    --bg-row-alt: #1e1e1e;
+    
+    /* Texto */
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --text-muted: #707070;
+    
+    /* Acentos Promiedos */
+    --accent-green: #00c853;
+    --accent-pink: #e91e63;
+    --accent-yellow: #ffc107;
+    --accent-blue: #2196f3;
+    --accent-red: #f44336;
+    
+    /* Bordes */
+    --border-color: #2a2a2a;
+    --border-light: #333333;
+    
+    /* Elementos especiales */
+    --score-bg: #000000;
+    --live-color: #00e676;
+    --finished-color: #9e9e9e;
+}
+
+/* ===== RESET & GLOBALS ===== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0;
+}
+
+a {
+    color: var(--accent-green);
+    text-decoration: none;
+}
+
+a:hover {
+    color: #00e676;
+    text-decoration: underline;
+}
+
+/* ===== NAVBAR - Estilo Promiedos ===== */
+.navbar {
+    background: var(--bg-header) !important;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--accent-green) !important;
+    font-size: 1.3rem;
+    letter-spacing: -0.5px;
+}
+
+.nav-link {
+    color: var(--text-secondary) !important;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0.6rem 1rem !important;
+    transition: color 0.15s;
+    border-radius: 0;
+}
+
+.nav-link:hover {
+    color: var(--text-primary) !important;
+    background: transparent;
+}
+
+.nav-link.active {
+    color: var(--accent-green) !important;
+    background: transparent;
+}
+
+/* ===== CONTAINERS ===== */
+.container, .container-fluid {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* ===== CARDS - Estilo Promiedos ===== */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.card-header {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-radius: 3px 3px 0 0 !important;
+}
+
+.card-header.bg-dark {
+    background: var(--bg-header) !important;
+}
+
+.card-body {
+    padding: 14px;
+}
+
+/* Cards anidadas */
+.card .card {
+    background: var(--bg-row-alt);
+    border-color: var(--border-color);
+}
+
+.card .card.bg-dark {
+    background: var(--bg-row-alt) !important;
+}
+
+/* ===== ALERTAS ===== */
+.alert {
+    border-radius: 4px;
+    border: none;
+}
+
+.alert-dark {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    border-left: 3px solid var(--accent-green);
+}
+
+.alert-warning {
+    background: rgba(255, 193, 7, 0.15);
+    color: var(--accent-yellow);
+    border-left: 3px solid var(--accent-yellow);
+}
+
+.alert-info {
+    background: rgba(33, 150, 243, 0.15);
+    color: var(--accent-blue);
+    border-left: 3px solid var(--accent-blue);
+}
+
+.alert-danger {
+    background: rgba(244, 67, 54, 0.15);
+    color: var(--accent-red);
+    border-left: 3px solid var(--accent-red);
+}
+
+/* ===== BOTONES ===== */
+.btn {
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 8px 16px;
+    transition: all 0.15s;
+}
+
+.btn-primary {
+    background: var(--accent-green);
+    border: none;
+    color: #000;
+}
+
+.btn-primary:hover {
+    background: #00e676;
+    color: #000;
+}
+
+.btn-success {
+    background: var(--accent-green);
+    border: none;
+    color: #000;
+}
+
+.btn-danger {
+    background: var(--accent-red);
+    border: none;
+}
+
+.btn-outline-primary {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--accent-green);
+    color: #000;
+}
+
+.btn-outline-success {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+    background: transparent;
+}
+
+.btn-outline-success:hover {
+    background: var(--accent-green);
+    color: #000;
+}
+
+.btn-outline-danger {
+    color: var(--accent-pink);
+    border-color: var(--accent-pink);
+    background: transparent;
+}
+
+.btn-outline-danger:hover {
+    background: var(--accent-pink);
+    color: #fff;
+}
+
+.btn-outline-secondary, .btn-outline-light {
+    color: var(--text-secondary);
+    border-color: var(--border-light);
+    background: transparent;
+}
+
+.btn-outline-secondary:hover, .btn-outline-light:hover {
+    background: var(--bg-row-hover);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 15px;
+}
+
+/* ===== FORMS ===== */
+.form-control, .form-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    border-radius: 4px;
+    padding: 10px 12px;
+}
+
+.form-control:focus, .form-select:focus {
+    background: var(--bg-card);
+    border-color: var(--accent-green);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.2);
+}
+
+.form-select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.form-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+/* ===== BADGES ===== */
+.badge {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.badge.bg-primary, .badge.bg-success {
+    background: var(--accent-green) !important;
+    color: #000 !important;
+}
+
+.badge.bg-danger {
+    background: var(--accent-pink) !important;
+}
+
+.badge.bg-warning {
+    background: var(--accent-yellow) !important;
+    color: #000 !important;
+}
+
+.badge.bg-secondary {
+    background: var(--bg-row-hover) !important;
+    color: var(--text-secondary) !important;
+}
+
+.badge.bg-dark {
+    background: var(--bg-header) !important;
+    color: var(--text-primary) !important;
+}
+
+.badge.bg-info {
+    background: var(--accent-blue) !important;
+}
+
+/* ===== TABLAS ===== */
+table {
+    color: var(--text-primary) !important;
+}
+
+.table {
+    background: var(--bg-card);
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: var(--bg-header);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 12px;
+}
+
+.table td {
+    border-color: var(--border-color);
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: var(--bg-row-alt);
+    color: var(--text-primary);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > * {
+    background-color: var(--bg-card);
+}
+
+.table-hover > tbody > tr:hover > * {
+    background-color: var(--bg-row-hover) !important;
+    color: var(--text-primary);
+}
+
+/* ===== PROGRESS BARS ===== */
+.progress {
+    height: 8px;
+    background-color: var(--bg-row-alt);
+    border-radius: 4px;
+}
+
+.progress-bar {
+    background: var(--accent-green);
+}
+
+.progress-bar.bg-primary {
+    background: var(--accent-blue) !important;
+}
+
+.progress-bar.bg-danger {
+    background: var(--accent-red) !important;
+}
+
+.progress-bar.bg-secondary {
+    background: var(--text-muted) !important;
+}
+
+.progress-bar.bg-success {
+    background: var(--accent-green) !important;
+}
+
+/* ===== TEXT UTILITIES ===== */
+.text-primary {
+    color: var(--accent-blue) !important;
+}
+
+.text-success {
+    color: var(--accent-green) !important;
+}
+
+.text-danger {
+    color: var(--accent-pink) !important;
+}
+
+.text-warning {
+    color: var(--accent-yellow) !important;
+}
+
+.text-info {
+    color: var(--accent-blue) !important;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.text-white {
+    color: var(--text-primary) !important;
+}
+
+.lead.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* KPI Numbers */
+.display-1, .display-2, .display-3, .display-4, .display-5 {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.display-3.text-primary {
+    color: var(--accent-blue) !important;
+}
+
+.display-3.text-success {
+    color: var(--accent-green) !important;
+}
+
+.display-3.text-info {
+    color: var(--accent-blue) !important;
+}
+
+/* ========================================
+   SECCIÓN LIVE - ESTILO PROMIEDOS
+   ======================================== */
+
+.live-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.live-page-header {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    border-radius: 4px 4px 0 0;
+    border-bottom: 2px solid var(--accent-green);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.live-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--live-color);
+    border-radius: 50%;
+    animation: live-pulse 1s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--live-color);
+}
+
+@keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.update-indicator {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.demo-banner {
+    background: rgba(255, 193, 7, 0.15);
+    color: var(--accent-yellow);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 12px;
+    text-align: center;
+    text-transform: uppercase;
+    border-left: 3px solid var(--accent-yellow);
+}
+
+/* League sections - Estilo Promiedos */
+.league-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.league-header {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid var(--accent-green);
+}
+
+.league-header i {
+    color: var(--accent-yellow);
+    font-size: 14px;
+}
+
+.league-name {
+    flex: 1;
+}
+
+.league-country {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-muted);
+    text-transform: none;
+}
+
+/* Matches table - Estilo Promiedos */
+.matches-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.matches-table tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.matches-table tr:last-child {
+    border-bottom: none;
+}
+
+.match-row {
+    transition: background 0.1s;
+}
+
+.match-row:hover {
+    background: var(--bg-row-hover);
+}
+
+.match-row.match-live {
+    background: rgba(0, 230, 118, 0.08);
+}
+
+.match-row.match-finished {
+    opacity: 0.6;
+}
+
+/* Table cells */
+.match-status-cell {
+    width: 50px;
+    text-align: center;
+    padding: 12px 8px;
+    vertical-align: middle;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.team-cell {
+    padding: 12px 10px;
+    vertical-align: middle;
+}
+
+.team-home {
+    text-align: right;
+    width: 38%;
+}
+
+.team-away {
+    text-align: left;
+    width: 38%;
+}
+
+.team-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.score-cell {
+    width: 60px;
+    text-align: center;
+    padding: 10px 4px;
+    vertical-align: middle;
+}
+
+.stats-cell {
+    width: 50px;
+    text-align: center;
+    padding: 10px 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Score box - Estilo Promiedos */
+.score-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--score-bg);
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: 3px;
+    min-width: 50px;
+    gap: 6px;
+}
+
+.score-box.score-live {
+    color: var(--live-color);
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
+.score-box.score-final {
+    color: var(--text-muted);
+}
+
+.score-separator {
+    opacity: 0.4;
+}
+
+/* Status badges */
+.status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+.status-live {
+    background: var(--accent-green);
+    color: #000;
+    animation: live-pulse 1s ease-in-out infinite;
+}
+
+.status-live .minute-text {
+    font-weight: 800;
+}
+
+.status-finished {
+    background: var(--text-muted);
+    color: #fff;
+}
+
+.status-scheduled {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+}
+
+/* Prediction badges */
+.pred-badge {
+    font-size: 10px;
+    margin: 0 4px;
+    vertical-align: middle;
+}
+
+.pred-fav {
+    color: var(--accent-yellow);
+}
+
+/* Prediction row */
+.pred-row td {
+    background: var(--bg-row-alt);
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pred-inline {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.pred-item b {
+    color: var(--text-secondary);
+}
+
+.pred-divider {
+    color: var(--border-light);
+}
+
+.mini-stat {
+    background: var(--bg-row-alt);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+
+/* Refresh info */
+.refresh-info {
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 12px;
+    text-align: center;
+}
+
+.refresh-info .spin {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+/* No matches */
+.no-matches {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.no-matches-icon {
+    font-size: 48px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.no-matches h3 {
+    color: var(--text-primary);
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.no-matches p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.no-matches-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-promiedos {
+    background: var(--accent-green);
+    color: #000;
+    border: none;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 4px;
+    padding: 10px 20px;
+}
+
+.btn-promiedos:hover {
+    background: #00e676;
+    color: #000;
+}
+
+.btn-refresh {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+.btn-refresh:hover {
+    background: var(--bg-row-hover);
+    color: var(--text-primary);
+}
+
+/* ========================================
+   OTROS COMPONENTES
+   ======================================== */
+
+.prob-card {
+    text-align: center;
+    padding: 20px;
+    border-radius: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+.prob-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    display: block;
+    color: var(--accent-green);
+}
+
+.traffic-light {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.traffic-green { 
+    background-color: var(--accent-green); 
+    box-shadow: 0 0 8px var(--accent-green); 
+}
+.traffic-yellow { 
+    background-color: var(--accent-yellow); 
+    box-shadow: 0 0 8px var(--accent-yellow); 
+}
+.traffic-red { 
+    background-color: var(--accent-red); 
+    box-shadow: 0 0 8px var(--accent-red); 
+}
+
+/* Progress bar cell styling */
+.pred-cell {
+    width: 200px;
+}
+
+.pred-progress {
+    height: 20px;
+    font-size: 0.75rem;
+}
+
+/* Pulse animation */
+.animate-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Score board styling */
+.score-board {
+    background: var(--bg-header) !important;
+    border: 1px solid var(--border-color);
+    min-width: 80px;
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+/* Border cards for predictions */
+.card.border-primary {
+    border-color: var(--accent-blue) !important;
+    border-width: 2px;
+}
+
+.card.border-danger {
+    border-color: var(--accent-pink) !important;
+    border-width: 2px;
+}
+
+/* Backgrounds */
+.bg-dark {
+    background-color: var(--bg-header) !important;
+}
+
+.bg-light {
+    background-color: var(--bg-row-alt) !important;
+    color: var(--text-primary) !important;
+}
+
+.bg-secondary {
+    background-color: var(--bg-row-hover) !important;
+}
+
+/* Borders */
+.border-0 {
+    border: none !important;
+}
+
+.border-secondary {
+    border-color: var(--border-color) !important;
+}
+
+/* Shadow override for dark theme */
+.shadow-sm {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+
+.shadow {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+}
+
+/* Footer text */
+footer, .footer {
+    color: var(--text-muted);
+}
+
+/* ========================================
+   LAYOUT PROMIEDOS - Navbar + Sidebar
+   ======================================== */
+
+/* Navbar Promiedos */
+.navbar-promiedos {
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+}
+
+.navbar-promiedos .container-fluid {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0;
+}
+
+.navbar-promiedos .navbar-brand {
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    border-right: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.navbar-promiedos .brand-text {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--accent-green);
+    letter-spacing: -1px;
+}
+
+.navbar-nav-center {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: 0;
+    margin-left: 10px;
+}
+
+.nav-link-top {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0 16px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+}
+
+.nav-link-top:hover {
+    color: var(--text-primary);
+    text-decoration: none;
+    background: var(--bg-row-hover);
+}
+
+.nav-link-top.active {
+    color: var(--accent-green);
+    border-bottom-color: var(--accent-green);
+}
+
+.nav-link-top i {
+    font-size: 14px;
+}
+
+.navbar-actions {
+    margin-left: auto;
+    padding-right: 16px;
+}
+
+.btn-cuotas {
+    background: var(--accent-pink);
+    color: white;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: none;
+    text-transform: uppercase;
+}
+
+.btn-cuotas:hover {
+    background: #f50057;
+    color: white;
+}
+
+/* Mobile Nav */
+.mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-header);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    z-index: 1000;
+}
+
+.mobile-nav-item {
+    color: var(--text-muted);
+    font-size: 20px;
+    padding: 8px 16px;
+    transition: color 0.15s;
+}
+
+.mobile-nav-item.active {
+    color: var(--accent-green);
+}
+
+.mobile-nav-item:hover {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+/* Main Layout */
+.main-layout {
+    display: flex;
+    min-height: calc(100vh - 50px);
+    margin-top: 50px; /* Espacio para el navbar fijo */
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: var(--bg-header);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.sidebar-section {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header {
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.sidebar-header:hover {
+    background: var(--bg-row-hover);
+}
+
+.sidebar-header i {
+    color: var(--accent-yellow);
+}
+
+.sidebar-header .flag {
+    font-size: 14px;
+}
+
+.sidebar-item {
+    display: block;
+    padding: 10px 16px 10px 32px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-item:hover {
+    background: var(--bg-row-hover);
+    color: var(--text-primary);
+    text-decoration: none;
+    border-left-color: var(--accent-green);
+}
+
+.sidebar-item.active {
+    background: var(--bg-row-hover);
+    color: var(--accent-green);
+    border-left-color: var(--accent-green);
+}
+
+.sidebar-section.collapsed .sidebar-item {
+    display: none;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    max-width: 100%;
+}
+
+/* ========================================
+   PARTIDOS DEL DÍA - Estilo Promiedos
+   ======================================== */
+
+.partidos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 12px;
+}
+
+.partidos-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.partidos-nav {
+    display: flex;
+    gap: 4px;
+}
+
+.partidos-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.partidos-nav-btn:hover {
+    color: var(--text-primary);
+}
+
+/* Tabs TODOS / VIVO */
+.partidos-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-green);
+}
+
+.tab-btn .badge {
+    margin-left: 4px;
+    font-size: 10px;
+}
+
+/* Liga Header */
+.liga-header {
+    background: var(--bg-header);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 4px 4px 0 0;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+}
+
+.liga-header .flag {
+    font-size: 16px;
+}
+
+.liga-header .liga-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    flex: 1;
+}
+
+.liga-header .liga-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.liga-header .liga-actions a,
+.liga-header .liga-actions button {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.liga-header .liga-actions a:hover,
+.liga-header .liga-actions button:hover {
+    color: var(--accent-green);
+    background: rgba(0, 200, 83, 0.1);
+}
+
+/* Partido Row - Estilo Promiedos */
+.partido-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    transition: background 0.1s;
+}
+
+.partido-row:last-child {
+    border-radius: 0 0 4px 4px;
+}
+
+.partido-row:hover {
+    background: var(--bg-row-hover);
+}
+
+.partido-hora {
+    width: 50px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.partido-hora .hora {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.partido-hora .escudo {
+    width: 20px;
+    height: 20px;
+    margin-top: 4px;
+}
+
+.partido-equipos {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.partido-equipo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.partido-equipo.local {
+    justify-content: flex-end;
+    text-align: right;
+}
+
+.partido-equipo.visitante {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.partido-equipo .nombre {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.partido-equipo .escudo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.partido-vs {
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 0 8px;
+}
+
+.partido-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 50px;
+}
+
+.partido-score .gol {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    width: 20px;
+    text-align: center;
+}
+
+.partido-score .separador {
+    color: var(--text-muted);
+}
+
+.partido-score.en-vivo .gol {
+    color: var(--live-color);
+}
+
+/* Predicción mini - Badge de apuesta */
+.partido-apuesta {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.partido-apuesta .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    font-weight: 600;
+}
+
+/* Partido Card con predicción */
+.partido-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.partido-card-link:hover .partido-card {
+    background: var(--bg-row-hover);
+}
+
+.partido-card-link:hover {
+    text-decoration: none;
+    color: inherit;
+}
+
+.partido-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.partido-card:last-child {
+    border-radius: 0 0 4px 4px;
+}
+
+.partido-card .partido-row {
+    border: none;
+    border-radius: 0;
+}
+
+/* Predicción inline debajo del partido */
+.partido-prediccion {
+    padding: 8px 14px 12px;
+    background: var(--bg-row-alt);
+    border-top: 1px solid var(--border-color);
+}
+
+.pred-probs {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.pred-item.local {
+    color: var(--accent-blue);
+}
+
+.pred-item.empate {
+    color: var(--text-secondary);
+}
+
+.pred-item.visitante {
+    color: var(--accent-red);
+}
+
+/* Barra de predicción */
+.pred-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--bg-header);
+}
+
+.pred-bar-local {
+    background: var(--accent-blue);
+}
+
+.pred-bar-empate {
+    background: var(--text-secondary);
+}
+
+.pred-bar-visitante {
+    background: var(--accent-red);
+}
+
+/* Sin partidos */
+.sin-partidos {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+}
+
+.sin-partidos i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .sidebar {
+        display: none;
+    }
+    
+    .main-content {
+        padding-bottom: 80px; /* Space for mobile nav */
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-promiedos .brand-text {
+        font-size: 1.2rem;
+    }
+    
+    .partido-equipo .nombre {
+        font-size: 11px;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .partido-hora {
+        width: 40px;
+    }
+    
+    .partido-hora .hora {
+        font-size: 11px;
+    }
+    
+    .partido-vs {
+        font-size: 10px;
+        padding: 0 4px;
+    }
+    
+    /* Predicción en móvil */
+    .pred-probs {
+        font-size: 10px;
+    }
+    
+    .partido-prediccion {
+        padding: 6px 10px 10px;
+    }
+    
+    .partido-apuesta .badge {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+    
+    .live-page-header {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .team-cell {
+        padding: 10px 6px;
+    }
+    
+    .team-name {
+        font-size: 12px;
+    }
+    
+    .score-box {
+        font-size: 13px;
+        padding: 5px 8px;
+        min-width: 44px;
+    }
+}

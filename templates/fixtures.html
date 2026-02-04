@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Próximos Partidos - Timba Predictor{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5 fw-bold">
+            <i class="bi bi-calendar3 text-success"></i> Próximos Partidos
+        </h1>
+        <p class="lead text-muted">Análisis automático de la fecha venidera</p>
+    </div>
+    <div class="col-md-4">
+        <!-- Selector de Liga -->
+        <label class="form-label">Seleccionar Liga</label>
+        <select class="form-select" onchange="window.location.href='/fixtures?liga_id='+this.value">
+            {% for id, liga in todas_las_ligas.items() %}
+            <option value="{{ id }}" {% if id == liga_id %}selected{% endif %}>
+                {{ liga.nombre }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Liga Actual -->
+<div class="alert alert-dark d-flex justify-content-between align-items-center mb-4">
+    <span>
+        <i class="bi bi-trophy"></i>
+        <strong>{{ liga_actual.nombre }}</strong>
+    </span>
+    <span class="badge bg-primary">{{ partidos|length }} partidos</span>
+</div>
+
+<!-- ============================================================ -->
+<!-- VISTA MÓVIL: Cards (visible solo en pantallas pequeñas) -->
+<!-- ============================================================ -->
+<div class="d-block d-md-none">
+    {% if partidos %}
+        {% for partido in partidos %}
+        <div class="card mb-3 border-0 shadow-sm">
+            <div class="card-header bg-dark py-2 d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    {% if partido.fecha_utc %}
+                        <span class="utc-time" data-utc="{{ partido.fecha_utc }}" data-display="datetime">{{ partido.fecha }}</span>
+                    {% else %}
+                        {{ partido.fecha }}
+                    {% endif %}
+                </small>
+                {% if partido.recomendacion %}
+                    <span class="badge bg-success">{{ partido.recomendacion }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <!-- Equipos -->
+                <div class="row text-center mb-3">
+                    <div class="col-5">
+                        <span class="fw-bold">{{ partido.local }}</span>
+                    </div>
+                    <div class="col-2">
+                        <span class="text-muted">vs</span>
+                    </div>
+                    <div class="col-5">
+                        <span class="fw-bold">{{ partido.visitante }}</span>
+                    </div>
+                </div>
+                
+                <!-- Barra de predicción móvil -->
+                {% if partido.prediccion %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1 small">
+                        <span class="text-primary fw-bold">1: {{ partido.prediccion.local|int }}%</span>
+                        <span class="text-secondary">X: {{ partido.prediccion.empate|int }}%</span>
+                        <span class="text-danger fw-bold">2: {{ partido.prediccion.visitante|int }}%</span>
+                    </div>
+                    <div class="progress" style="height: 12px;">
+                        <div class="progress-bar bg-primary" style="width: {{ partido.prediccion.local }}%"></div>
+                        <div class="progress-bar bg-secondary" style="width: {{ partido.prediccion.empate }}%"></div>
+                        <div class="progress-bar bg-danger" style="width: {{ partido.prediccion.visitante }}%"></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center mb-3">
+                    <span class="badge bg-dark text-muted">Sin datos de predicción</span>
+                </div>
+                {% endif %}
+                
+                <!-- Botón analizar -->
+                <div class="d-grid">
+                    <a href="{{ url_for('predict', local=partido.local, visitante=partido.visitante, liga_id=liga_id) }}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-magic"></i> Analizar partido
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-x display-1 text-muted mb-3 d-block"></i>
+                <h5>No hay partidos próximos</h5>
+                <p class="text-muted">Intenta seleccionar otra liga o vuelve más tarde</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ============================================================ -->
+<!-- VISTA DESKTOP: Tabla (oculta en móviles) -->
+<!-- ============================================================ -->
+<div class="card d-none d-md-block">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-dark">
+                    <tr>
+                        <th class="py-3 ps-4" style="width: 100px;">Fecha</th>
+                        <th class="py-3 text-end" style="width: 20%;">Local</th>
+                        <th class="py-3 text-center" style="width: 180px;">Predicción</th>
+                        <th class="py-3" style="width: 20%;">Visitante</th>
+                        <th class="py-3 text-center" style="width: 80px;">Tip</th>
+                        <th class="py-3 text-center" style="width: 140px;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if partidos %}
+                        {% for partido in partidos %}
+                        <tr>
+                            <td class="ps-4 text-muted small">
+                                {% if partido.fecha_utc %}
+                                    <span class="utc-time" data-utc="{{ partido.fecha_utc }}" data-display="datetime">{{ partido.fecha }}</span>
+                                {% else %}
+                                    {{ partido.fecha }}
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold">
+                                {{ partido.local }}
+                            </td>
+                            <td class="text-center">
+                                {% if partido.prediccion %}
+                                <div class="progress" style="height: 28px;">
+                                    <div class="progress-bar bg-primary" 
+                                         style="width: {{ partido.prediccion.local }}%"
+                                         data-bs-toggle="tooltip" 
+                                         title="Local: {{ partido.prediccion.local }}%">
+                                        {% if partido.prediccion.local >= 15 %}{{ partido.prediccion.local|int }}%{% endif %}
+                                    </div>
+                                    <div class="progress-bar bg-secondary" 
+                                         style="width: {{ partido.prediccion.empate }}%"
+                                         data-bs-toggle="tooltip" 
+                                         title="Empate: {{ partido.prediccion.empate }}%">
+                                        {% if partido.prediccion.empate >= 15 %}{{ partido.prediccion.empate|int }}%{% endif %}
+                                    </div>
+                                    <div class="progress-bar bg-danger" 
+                                         style="width: {{ partido.prediccion.visitante }}%"
+                                         data-bs-toggle="tooltip" 
+                                         title="Visitante: {{ partido.prediccion.visitante }}%">
+                                        {% if partido.prediccion.visitante >= 15 %}{{ partido.prediccion.visitante|int }}%{% endif %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="badge bg-dark text-muted">Sin datos</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">
+                                {{ partido.visitante }}
+                            </td>
+                            <td class="text-center">
+                                {% if partido.recomendacion %}
+                                <span class="badge bg-success">{{ partido.recomendacion }}</span>
+                                {% elif partido.error %}
+                                <span class="badge bg-warning text-dark" 
+                                      data-bs-toggle="tooltip" 
+                                      title="{{ partido.error }}">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('predict', local=partido.local, visitante=partido.visitante, liga_id=liga_id) }}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="bi bi-magic"></i> Analizar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="bi bi-calendar-x display-1 text-muted mb-3 d-block"></i>
+                                <h5>No hay partidos próximos</h5>
+                                <p class="text-muted">Intenta seleccionar otra liga o vuelve más tarde</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Leyenda -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-dark">
+            <div class="card-body py-2">
+                <!-- Leyenda Desktop -->
+                <div class="d-none d-md-block">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Leyenda:</strong>
+                        <span class="badge bg-primary ms-2">Local</span>
+                        <span class="badge bg-secondary ms-1">Empate</span>
+                        <span class="badge bg-danger ms-1">Visitante</span>
+                        <span class="ms-3">|</span>
+                        <span class="ms-2"><strong>1</strong> = Victoria Local</span>
+                        <span class="ms-2"><strong>2</strong> = Victoria Visitante</span>
+                        <span class="ms-2"><strong>1X</strong> = Local o Empate</span>
+                        <span class="ms-2"><strong>X2</strong> = Empate o Visitante</span>
+                    </small>
+                </div>
+                <!-- Leyenda Móvil (simplificada) -->
+                <div class="d-block d-md-none text-center">
+                    <small class="text-muted">
+                        <span class="badge bg-primary">1</span> Local
+                        <span class="badge bg-secondary ms-2">X</span> Empate
+                        <span class="badge bg-danger ms-2">2</span> Visitante
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Auditoría de Predicciones - Timba Predictor{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    
+    <!-- ========== HEADER ========== -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 fw-bold mb-1">
+                <i class="bi bi-clipboard-data text-primary"></i> Auditoría de Predicciones
+            </h1>
+            <p class="text-muted mb-0">
+                {{ liga_actual.bandera }} {{ liga_actual.nombre }}
+                {% if es_demo %}
+                <span class="badge bg-warning text-dark ms-2">DEMO</span>
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <span class="badge bg-secondary fs-6">
+                <i class="bi bi-calendar3"></i> Últimos {{ days_back }} días
+            </span>
+        </div>
+    </div>
+    
+    <!-- ========== FILTRO DE LIGAS (Botones) ========== -->
+    <div class="card mb-4 border-0 bg-transparent">
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            {% for code, info in ligas.items() %}
+            <a href="{{ url_for('history', league_code=code, days=days_back) }}" 
+               class="btn {% if code == league_code %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                {{ info.bandera }} {{ info.nombre }}
+            </a>
+            {% endfor %}
+        </div>
+        <!-- Selector de período -->
+        <div class="d-flex justify-content-center gap-2 mt-3">
+            <small class="text-muted align-self-center me-2">Período:</small>
+            {% for d in [7, 14, 30] %}
+            <a href="{{ url_for('history', league_code=league_code, days=d) }}" 
+               class="btn btn-sm {% if days_back == d %}btn-info{% else %}btn-outline-info{% endif %}">
+                {{ d }} días
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- ========== CARDS DE RESUMEN ========== -->
+    <div class="row g-4 mb-4">
+        <!-- Card Aciertos -->
+        <div class="col-md-4">
+            <div class="card border-0 h-100" style="background: linear-gradient(135deg, #198754 0%, #20c997 100%);">
+                <div class="card-body text-center text-white py-4">
+                    <div class="display-1 fw-bold mb-2">
+                        🎯 {{ estadisticas.aciertos }}
+                    </div>
+                    <h5 class="mb-0 text-uppercase opacity-75">Aciertos</h5>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card Fallos -->
+        <div class="col-md-4">
+            <div class="card border-0 h-100" style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);">
+                <div class="card-body text-center text-white py-4">
+                    <div class="display-1 fw-bold mb-2">
+                        ❌ {{ estadisticas.fallos }}
+                    </div>
+                    <h5 class="mb-0 text-uppercase opacity-75">Fallos</h5>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card Precisión -->
+        <div class="col-md-4">
+            <div class="card border-0 h-100" style="background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);">
+                <div class="card-body text-center text-white py-4">
+                    <div class="display-1 fw-bold mb-2">
+                        📊 {{ estadisticas.precision }}%
+                    </div>
+                    <h5 class="mb-0 text-uppercase opacity-75">Precisión</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Barra de Precisión Visual -->
+    {% if estadisticas.evaluados > 0 %}
+    <div class="card mb-4">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-semibold">
+                    <i class="bi bi-bar-chart-fill text-primary"></i> Rendimiento Global
+                </span>
+                <span class="text-muted small">
+                    {{ estadisticas.evaluados }} partidos evaluados
+                    {% if estadisticas.sin_prediccion > 0 %}
+                    · {{ estadisticas.sin_prediccion }} sin datos
+                    {% endif %}
+                </span>
+            </div>
+            <div class="progress" style="height: 28px; border-radius: 8px;">
+                <div class="progress-bar bg-success" 
+                     role="progressbar"
+                     style="width: {{ (estadisticas.aciertos / estadisticas.evaluados * 100)|round(1) }}%">
+                    <span class="fw-bold">{{ estadisticas.aciertos }} ✓</span>
+                </div>
+                <div class="progress-bar bg-danger" 
+                     role="progressbar"
+                     style="width: {{ (estadisticas.fallos / estadisticas.evaluados * 100)|round(1) }}%">
+                    <span class="fw-bold">{{ estadisticas.fallos }} ✗</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- ========== TABLA DE RESULTADOS ========== -->
+    {% if resultados %}
+    <div class="card">
+        <div class="card-header bg-dark border-bottom border-secondary">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-table"></i> Detalle de Partidos
+                </h5>
+                <span class="badge bg-primary">{{ resultados|length }} partidos</span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center" style="width: 100px;">Fecha</th>
+                        <th>Local</th>
+                        <th>Visitante</th>
+                        <th class="text-center" style="width: 100px;">Resultado</th>
+                        <th class="text-center" style="width: 180px;">Predicción IA</th>
+                        <th class="text-center" style="width: 120px;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in resultados %}
+                    <tr>
+                        <!-- Fecha -->
+                        <td class="text-center text-muted">
+                            <small>{{ r.fecha }}</small>
+                        </td>
+                        
+                        <!-- Local -->
+                        <td>
+                            <span class="fw-semibold">{{ r.local }}</span>
+                            {% if r.resultado_real == 'HOME_WIN' %}
+                            <i class="bi bi-trophy-fill text-warning ms-1" title="Ganador"></i>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Visitante -->
+                        <td>
+                            <span>{{ r.visitante }}</span>
+                            {% if r.resultado_real == 'AWAY_WIN' %}
+                            <i class="bi bi-trophy-fill text-warning ms-1" title="Ganador"></i>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Resultado Real -->
+                        <td class="text-center">
+                            <span class="badge bg-dark fs-6 px-3 py-2">
+                                {{ r.goles_local }} - {{ r.goles_visitante }}
+                            </span>
+                        </td>
+                        
+                        <!-- Predicción IA -->
+                        <td class="text-center">
+                            {% if r.prediccion_ia %}
+                                {% if r.prediccion_ia == 'HOME_WIN' %}
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-house-fill"></i> Local {{ r.prediccion_prob or r.prob_local }}%
+                                </span>
+                                {% elif r.prediccion_ia == 'AWAY_WIN' %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-airplane-fill"></i> Visitante {{ r.prediccion_prob or r.prob_visitante }}%
+                                </span>
+                                {% elif r.prediccion_ia == '1X' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check2-all"></i> 1X {{ r.prediccion_prob }}%
+                                </span>
+                                {% elif r.prediccion_ia == 'X2' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-check2-all"></i> X2 {{ r.prediccion_prob }}%
+                                </span>
+                                {% elif r.prediccion_ia == '12' %}
+                                <span class="badge bg-purple" style="background-color: #a855f7 !important;">
+                                    <i class="bi bi-lightning-fill"></i> 12 {{ r.prediccion_prob }}%
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-dash-lg"></i> Empate {{ r.prob_empate }}%
+                                </span>
+                                {% endif %}
+                            {% else %}
+                            <span class="badge bg-secondary bg-opacity-50">
+                                <i class="bi bi-question-circle"></i> Sin Datos
+                            </span>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- Estado -->
+                        <td class="text-center">
+                            {% if r.acierto == true %}
+                            <span class="badge bg-success px-3 py-2 fs-6">
+                                ✅ ACIERTO
+                            </span>
+                            {% elif r.acierto == false %}
+                            <span class="badge bg-danger px-3 py-2 fs-6">
+                                ❌ FALLO
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary bg-opacity-50 px-3 py-2">
+                                <i class="bi bi-dash"></i> N/A
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Footer de la tabla -->
+        <div class="card-footer bg-dark border-top border-secondary text-center text-muted small">
+            <i class="bi bi-info-circle"></i>
+            La IA predice el resultado con mayor probabilidad. 
+            Precisión esperada: 35-50% (33% = aleatorio)
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Sin resultados -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-calendar-x display-1 text-muted"></i>
+            <h4 class="mt-3">No hay partidos en este período</h4>
+            <p class="text-muted">
+                Selecciona otra liga o aumenta el rango de días.
+            </p>
+            <a href="{{ url_for('history', league_code=league_code, days=30) }}" class="btn btn-outline-primary">
+                Ver últimos 30 días
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- ========== LEYENDA ========== -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 bg-dark bg-opacity-50">
+                <div class="card-body small">
+                    <h6 class="mb-3"><i class="bi bi-question-circle-fill text-info"></i> ¿Cómo funciona?</h6>
+                    <ul class="mb-0 ps-3">
+                        <li>La IA analiza datos históricos con modelo Poisson</li>
+                        <li>Predice: Local (1), Empate (X) o Visitante (2)</li>
+                        <li><strong>Acierto:</strong> Predicción = Resultado real</li>
+                        <li><strong>Fallo:</strong> Predicción ≠ Resultado real</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 bg-dark bg-opacity-50">
+                <div class="card-body small">
+                    <h6 class="mb-3"><i class="bi bi-lightbulb-fill text-warning"></i> Interpretación</h6>
+                    <ul class="mb-0 ps-3">
+                        <li><span class="text-success fw-bold">&gt;50%</span> = Excelente rendimiento</li>
+                        <li><span class="text-warning fw-bold">35-50%</span> = Rendimiento aceptable</li>
+                        <li><span class="text-danger fw-bold">&lt;35%</span> = Por debajo del azar</li>
+                        <li class="text-muted">33% es el baseline aleatorio (3 resultados)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+{% endblock %}

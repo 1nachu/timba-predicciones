@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Timba Predictor{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- Custom CSS - Estilo Promiedos -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body hx-boost="true">
+
+    <!-- Navbar Superior - Estilo Promiedos -->
+    <nav class="navbar navbar-promiedos">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand" href="/">
+                <span class="brand-text">TIMBA</span>
+            </a>
+            <div class="navbar-nav-center d-none d-md-flex">
+                <a href="/" class="nav-link-top {% if request.endpoint == 'index' %}active{% endif %}">
+                    <i class="bi bi-house-fill"></i> INICIO
+                </a>
+                <a href="/fixtures" class="nav-link-top {% if request.endpoint == 'fixtures' %}active{% endif %}">
+                    <i class="bi bi-calendar3"></i> FIXTURE
+                </a>
+                <a href="/live" class="nav-link-top {% if request.endpoint == 'live' %}active{% endif %}">
+                    <i class="bi bi-broadcast"></i> EN VIVO
+                </a>
+                <a href="/predict" class="nav-link-top {% if request.endpoint == 'predict' %}active{% endif %}">
+                    <i class="bi bi-magic"></i> PREDICCIÓN
+                </a>
+                <a href="/history" class="nav-link-top {% if request.endpoint == 'history' %}active{% endif %}">
+                    <i class="bi bi-graph-up"></i> HISTORIAL
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Nav -->
+    <div class="mobile-nav d-md-none">
+        <a href="/" class="mobile-nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+            <i class="bi bi-house-fill"></i>
+        </a>
+        <a href="/fixtures" class="mobile-nav-item {% if request.endpoint == 'fixtures' %}active{% endif %}">
+            <i class="bi bi-calendar3"></i>
+        </a>
+        <a href="/live" class="mobile-nav-item {% if request.endpoint == 'live' %}active{% endif %}">
+            <i class="bi bi-broadcast"></i>
+        </a>
+        <a href="/predict" class="mobile-nav-item {% if request.endpoint == 'predict' %}active{% endif %}">
+            <i class="bi bi-magic"></i>
+        </a>
+        <a href="/history" class="mobile-nav-item {% if request.endpoint == 'history' %}active{% endif %}">
+            <i class="bi bi-graph-up"></i>
+        </a>
+    </div>
+
+    <!-- Layout Principal: Sidebar + Content -->
+    <div class="main-layout">
+        
+        <!-- Sidebar Izquierdo - Ligas -->
+        <aside class="sidebar d-none d-lg-block">
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <i class="bi bi-star-fill"></i> DESTACADO
+                </div>
+                <a href="/fixtures?liga_id=10" class="sidebar-item">
+                    <span class="flag">🇦🇷</span> Liga Profesional
+                </a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🇦🇷</span> ARGENTINA
+                </div>
+                <a href="/fixtures?liga_id=10" class="sidebar-item">Liga Profesional</a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span> INGLATERRA
+                </div>
+                <a href="/fixtures?liga_id=1" class="sidebar-item">Premier League</a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🇪🇸</span> ESPAÑA
+                </div>
+                <a href="/fixtures?liga_id=2" class="sidebar-item">La Liga</a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🇮🇹</span> ITALIA
+                </div>
+                <a href="/fixtures?liga_id=3" class="sidebar-item">Serie A</a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🇩🇪</span> ALEMANIA
+                </div>
+                <a href="/fixtures?liga_id=4" class="sidebar-item">Bundesliga</a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🇫🇷</span> FRANCIA
+                </div>
+                <a href="/fixtures?liga_id=5" class="sidebar-item">Ligue 1</a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🇵🇹</span> PORTUGAL
+                </div>
+                <a href="/fixtures?liga_id=6" class="sidebar-item">Primeira Liga</a>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <span class="flag">🇳🇱</span> PAÍSES BAJOS
+                </div>
+                <a href="/fixtures?liga_id=7" class="sidebar-item">Eredivisie</a>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show mb-2" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% if error %}
+            <div class="alert alert-danger text-center py-4">
+                <h4><i class="bi bi-exclamation-triangle"></i> {{ error }}</h4>
+                <a href="/" class="btn btn-primary mt-2">Volver al Inicio</a>
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Aplicar width desde data-width a progress bars
+            document.querySelectorAll('.progress-bar[data-width]').forEach(function(el) {
+                const width = parseFloat(el.getAttribute('data-width'));
+                if (!isNaN(width)) el.style.width = width + '%';
+            });
+            
+            // Conversión UTC a hora local
+            document.querySelectorAll('.utc-time').forEach(function(el) {
+                const utcString = el.getAttribute('data-utc') || el.textContent.trim();
+                if (!utcString) return;
+                try {
+                    const utcDate = new Date(utcString);
+                    if (isNaN(utcDate.getTime())) return;
+                    const displayType = el.getAttribute('data-display') || 'time';
+                    let options = { hour: '2-digit', minute: '2-digit' };
+                    if (displayType === 'datetime') {
+                        options = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+                    }
+                    el.textContent = new Intl.DateTimeFormat('es-AR', options).format(utcDate);
+                    el.classList.add('utc-converted');
+                } catch (e) { }
+            });
+            
+            // Toggle sidebar en móvil
+            document.querySelectorAll('.sidebar-header').forEach(function(header) {
+                header.addEventListener('click', function() {
+                    this.parentElement.classList.toggle('collapsed');
+                });
+            });
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

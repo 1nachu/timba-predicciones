@@ -1,0 +1,40 @@
+# ================================================
+# Timba Predictor v2 - Dependencias
+# ================================================
+# Última actualización: 3 de Febrero 2026
+# Python requerido: 3.10+
+# ================================================
+
+# === Core Web ===
+Flask>=3.0.0
+Flask-Caching>=2.1.0
+python-dotenv>=1.0.0
+
+# === Data Processing ===
+pandas>=2.0.0
+numpy>=1.24.0
+
+# === HTTP Requests ===
+requests>=2.31.0
+urllib3>=2.0.0
+
+# === Web Scraping (Promiedos Argentina) ===
+beautifulsoup4>=4.12.0
+
+# === Statistical Model ===
+scipy>=1.10.0
+
+# === Database (ETL) ===
+SQLAlchemy>=2.0.0
+
+# === Fuzzy Matching (Normalización de equipos) ===
+thefuzz>=0.22.0
+python-Levenshtein>=0.25.0
+
+# === Production Server (opcional) ===
+gunicorn>=21.0.0
+
+# === Cython Optimizations (opcional, para RPi/Celeron) ===
+# Descomenta para compilar el módulo timba_fast.pyx
+# Cython>=3.0.0
+# setuptools>=65.0.0
