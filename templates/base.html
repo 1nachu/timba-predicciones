@@ -52,21 +52,21 @@
     </nav>
 
     <!-- Mobile Nav -->
-    <div class="mobile-nav d-md-none">
-        <a href="/" class="mobile-nav-item {% if request.endpoint == 'index' %}active{% endif %}">
-            <i class="bi bi-house-fill"></i>
+    <div class="mobile-nav d-md-none" role="navigation" aria-label="Navegación móvil">
+        <a href="/" class="mobile-nav-item {% if request.endpoint == 'index' %}active{% endif %}" aria-label="Inicio">
+            <i class="bi bi-house-fill" aria-hidden="true"></i>
         </a>
-        <a href="/fixtures" class="mobile-nav-item {% if request.endpoint == 'fixtures' %}active{% endif %}">
-            <i class="bi bi-calendar3"></i>
+        <a href="/fixtures" class="mobile-nav-item {% if request.endpoint == 'fixtures' %}active{% endif %}" aria-label="Fixture">
+            <i class="bi bi-calendar3" aria-hidden="true"></i>
         </a>
-        <a href="/live" class="mobile-nav-item {% if request.endpoint == 'live' %}active{% endif %}">
-            <i class="bi bi-broadcast"></i>
+        <a href="/live" class="mobile-nav-item {% if request.endpoint == 'live' %}active{% endif %}" aria-label="En Vivo">
+            <i class="bi bi-broadcast" aria-hidden="true"></i>
         </a>
-        <a href="/predict" class="mobile-nav-item {% if request.endpoint == 'predict' %}active{% endif %}">
-            <i class="bi bi-magic"></i>
+        <a href="/predict" class="mobile-nav-item {% if request.endpoint == 'predict' %}active{% endif %}" aria-label="Predicción">
+            <i class="bi bi-magic" aria-hidden="true"></i>
         </a>
-        <a href="/history" class="mobile-nav-item {% if request.endpoint == 'history' %}active{% endif %}">
-            <i class="bi bi-graph-up"></i>
+        <a href="/history" class="mobile-nav-item {% if request.endpoint == 'history' %}active{% endif %}" aria-label="Historial">
+            <i class="bi bi-graph-up" aria-hidden="true"></i>
         </a>
     </div>
 
