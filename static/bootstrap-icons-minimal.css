@@ -35,6 +35,7 @@
 .bi-calendar-event::before { content: "\f1e8"; }
 .bi-calendar-x::before { content: "\f1f5"; }
 .bi-card-heading::before { content: "\f225"; }
+.bi-cash-coin::before { content: "\f632"; }
 .bi-check2-all::before { content: "\f26f"; }
 .bi-clipboard-data::before { content: "\f28c"; }
 .bi-clock::before { content: "\f293"; }
@@ -61,4 +62,3 @@
 .bi-table::before { content: "\f5aa"; }
 .bi-trophy::before { content: "\f5e7"; }
 .bi-trophy-fill::before { content: "\f5e6"; }
-.bi-cash-coin::before { content: "\f632"; }
