@@ -61,3 +61,4 @@
 .bi-table::before { content: "\f5aa"; }
 .bi-trophy::before { content: "\f5e7"; }
 .bi-trophy-fill::before { content: "\f5e6"; }
+.bi-cash-coin::before { content: "\f632"; }
