@@ -38,6 +38,7 @@
 .bi-check2-all::before { content: "\f26f"; }
 .bi-clipboard-data::before { content: "\f28c"; }
 .bi-clock::before { content: "\f293"; }
+.bi-coin::before { content: "\f634"; }
 .bi-cup-hot::before { content: "\f7eb"; }
 .bi-dash::before { content: "\f2ea"; }
 .bi-dash-lg::before { content: "\f63b"; }
