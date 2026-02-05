@@ -53,10 +53,10 @@
             </div>
             <div class="navbar-actions d-none d-md-flex">
                 <div class="dropdown">
-                    <button class="nav-link-top dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a href="#" class="nav-link-top dropdown-toggle" id="donateDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-cup-hot"></i> DONAR
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="donateDropdown">
                         <li>
                             <a class="dropdown-item" href="https://cafecito.app/timba_arg" target="_blank" rel="noopener">
                                 🇦🇷 Cafecito App
@@ -69,9 +69,9 @@
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#bitcoinModal">
+                            <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#bitcoinModal">
                                 ₿ Bitcoin / Crypto
-                            </button>
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -96,9 +96,9 @@
         <a href="/history" class="mobile-nav-item {% if request.endpoint == 'history' %}active{% endif %}" aria-label="Historial">
             <i class="bi bi-graph-up" aria-hidden="true"></i>
         </a>
-        <button class="mobile-nav-item mobile-donate-btn" type="button" data-bs-toggle="modal" data-bs-target="#mobiledonateModal" aria-label="Donar">
+        <a href="#" class="mobile-nav-item" data-bs-toggle="modal" data-bs-target="#mobiledonateModal" aria-label="Donar">
             <i class="bi bi-cup-hot" aria-hidden="true"></i>
-        </button>
+        </a>
     </div>
 
     <!-- Layout Principal: Sidebar + Content -->
