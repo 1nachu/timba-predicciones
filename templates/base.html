@@ -52,17 +52,17 @@
             </div>
             <div class="d-none d-md-flex align-items-center ms-auto">
                 <div class="dropdown">
-                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        ☕ Apoyar el Proyecto
+                    <button class="nav-link-top dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="margin-left: auto;">
+                        <i class="bi bi-cup-hot"></i> DONAR
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
-                            <a class="dropdown-item" href="REEMPLAZAR_URL_CAFECITO" target="_blank" rel="noopener">
+                            <a class="dropdown-item" href="https://cafecito.app/timba_arg" target="_blank" rel="noopener">
                                 🇦🇷 Cafecito App
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="REEMPLAZAR_URL_BUYMEACOFFEE" target="_blank" rel="noopener">
+                            <a class="dropdown-item" href="https://buymeacoffee.com/timba_global" target="_blank" rel="noopener">
                                 🌍 Buy Me a Coffee
                             </a>
                         </li>
@@ -95,6 +95,9 @@
         <a href="/history" class="mobile-nav-item {% if request.endpoint == 'history' %}active{% endif %}" aria-label="Historial">
             <i class="bi bi-graph-up" aria-hidden="true"></i>
         </a>
+        <button class="mobile-nav-item mobile-donate-btn" type="button" data-bs-toggle="modal" data-bs-target="#mobiledonateModal" aria-label="Donar">
+            <i class="bi bi-cup-hot" aria-hidden="true"></i>
+        </button>
     </div>
 
     <!-- Layout Principal: Sidebar + Content -->
@@ -207,10 +210,40 @@
                 </div>
                 <div class="modal-body text-center">
                     <img src="{{ url_for('static', filename='btc_qr.png') }}" alt="QR Bitcoin" width="200" class="img-fluid">
-                    <p class="mt-3 mb-0"><code>REEMPLAZAR_DIRECCION_BTC_EJ: bc1qexamplelongaddressxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></p>
+                    <div class="mt-3 d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                        <code id="btcAddress" style="word-break: break-all; flex: 1; min-width: 200px;">Bc1phgvsg3mgrvp3jtukj7uh8aadsm8xa520u4gdk3lrdjkk5pzxnjest3439j</code>
+                        <button type="button" class="btn btn-copy" id="copyBtcBtn" title="Copiar dirección">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Donaciones Móvil -->
+    <div class="modal fade" id="mobiledonateModal" tabindex="-1" aria-labelledby="mobiledonateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mobiledonateModalLabel">Apoyar el Proyecto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-grid gap-2">
+                        <a href="https://cafecito.app/timba_arg" target="_blank" rel="noopener" class="btn btn-outline-success btn-sm">
+                            🇦🇷 Cafecito App
+                        </a>
+                        <a href="https://buymeacoffee.com/timba_global" target="_blank" rel="noopener" class="btn btn-outline-success btn-sm">
+                            🌍 Buy Me a Coffee
+                        </a>
+                        <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#bitcoinModal" data-bs-dismiss="modal">
+                            ₿ Bitcoin / Crypto
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -247,6 +280,28 @@
                     this.parentElement.classList.toggle('collapsed');
                 });
             });
+            
+            // Copiar dirección de Bitcoin al portapapeles
+            const copyBtcBtn = document.getElementById('copyBtcBtn');
+            if (copyBtcBtn) {
+                copyBtcBtn.addEventListener('click', function() {
+                    const btcAddress = document.getElementById('btcAddress').textContent;
+                    navigator.clipboard.writeText(btcAddress).then(function() {
+                        // Cambiar icono temporalmente
+                        const icon = copyBtcBtn.querySelector('i');
+                        const originalClass = icon.className;
+                        icon.className = 'bi bi-check-lg';
+                        copyBtcBtn.classList.add('copied');
+                        
+                        setTimeout(function() {
+                            icon.className = originalClass;
+                            copyBtcBtn.classList.remove('copied');
+                        }, 2000);
+                    }).catch(function(err) {
+                        console.error('Error al copiar:', err);
+                    });
+                });
+            }
         });
     </script>
     
