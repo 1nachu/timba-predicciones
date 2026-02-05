@@ -8,6 +8,8 @@
 
     <meta name="description" content="Predicciones matemáticas de fútbol gratis. Análisis estadístico y probabilidades para la Liga Argentina, Premier League, La Liga y más. Proyecto Timba.">
 
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+
     <!-- SEO: Canonical URL -->
     <link rel="canonical" href="https://futbol-predicciones.xyz{{ request.path }}">
 
@@ -47,6 +49,31 @@
                 <a href="/history" class="nav-link-top {% if request.endpoint == 'history' %}active{% endif %}">
                     <i class="bi bi-graph-up"></i> HISTORIAL
                 </a>
+            </div>
+            <div class="d-none d-md-flex align-items-center ms-auto">
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        ☕ Apoyar el Proyecto
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="REEMPLAZAR_URL_CAFECITO" target="_blank" rel="noopener">
+                                🇦🇷 Cafecito App
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="REEMPLAZAR_URL_BUYMEACOFFEE" target="_blank" rel="noopener">
+                                🌍 Buy Me a Coffee
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#bitcoinModal">
+                                ₿ Bitcoin / Crypto
+                            </button>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
@@ -170,6 +197,24 @@
     <footer class="text-center py-3 text-muted small border-top border-secondary mt-4">
         Desarrollado por <strong>Timba Team</strong> &copy; 2026
     </footer>
+
+    <div class="modal fade" id="bitcoinModal" tabindex="-1" aria-labelledby="bitcoinModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bitcoinModalLabel">Donar con Bitcoin (BTC)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="{{ url_for('static', filename='btc_qr.png') }}" alt="QR Bitcoin" width="200" class="img-fluid">
+                    <p class="mt-3 mb-0"><code>REEMPLAZAR_DIRECCION_BTC_EJ: bc1qexamplelongaddressxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
