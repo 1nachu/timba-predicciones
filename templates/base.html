@@ -50,6 +50,8 @@
                 <a href="/history" class="nav-link-top {% if request.endpoint == 'history' %}active{% endif %}">
                     <i class="bi bi-graph-up"></i> HISTORIAL
                 </a>
+            </div>
+            <div class="navbar-actions d-none d-md-flex">
                 <div class="dropdown">
                     <button class="nav-link-top dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-cup-hot"></i> DONAR
@@ -212,7 +214,7 @@
                     <div class="mt-3 d-flex align-items-center justify-content-center gap-2 flex-wrap">
                         <code id="btcAddress" style="word-break: break-all; flex: 1; min-width: 200px;">Bc1phgvsg3mgrvp3jtukj7uh8aadsm8xa520u4gdk3lrdjkk5pzxnjest3439j</code>
                         <button type="button" class="btn btn-copy" id="copyBtcBtn" title="Copiar dirección">
-                            <i class="bi bi-clipboard"></i>
+                            <i class="bi bi-clipboard-data"></i>
                         </button>
                     </div>
                 </div>
@@ -289,7 +291,7 @@
                         // Cambiar icono temporalmente
                         const icon = copyBtcBtn.querySelector('i');
                         const originalClass = icon.className;
-                        icon.className = 'bi bi-check-lg';
+                        icon.className = 'bi bi-check2-all';
                         copyBtcBtn.classList.add('copied');
                         
                         setTimeout(function() {

@@ -965,6 +965,9 @@ footer, .footer {
     gap: 6px;
     border-bottom: 2px solid transparent;
     transition: all 0.15s;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .nav-link-top:hover {
@@ -985,6 +988,7 @@ footer, .footer {
 /* Dropdown en Navbar */
 .dropdown .nav-link-top.dropdown-toggle {
     padding: 0 16px;
+    border-bottom: 2px solid transparent;
 }
 
 .dropdown .nav-link-top.dropdown-toggle::after {
@@ -1028,6 +1032,9 @@ footer, .footer {
 .navbar-actions {
     margin-left: auto;
     padding-right: 16px;
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
 
 /* Copy button style */
