@@ -953,6 +953,7 @@ footer, .footer {
     margin-left: 10px;
 }
 
+
 .nav-link-top {
     color: var(--text-secondary);
     font-size: 12px;
@@ -965,7 +966,7 @@ footer, .footer {
     gap: 6px;
     border-bottom: 2px solid transparent;
     transition: all 0.15s;
-    background: none;
+    background: var(--bg-header);
     border: none;
     cursor: pointer;
 }
@@ -1024,9 +1025,21 @@ footer, .footer {
 /* Mobile donate button */
 .mobile-donate-btn {
     cursor: pointer;
-    background: none;
+    background: var(--bg-header);
     border: none;
-    padding: 0;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    font-size: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.mobile-donate-btn:focus, .mobile-donate-btn:hover {
+    color: var(--accent-green);
+    background: var(--bg-row-hover);
 }
 
 .navbar-actions {
