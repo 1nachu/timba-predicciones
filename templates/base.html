@@ -8,7 +8,8 @@
 
     <meta name="description" content="Predicciones matemáticas de fútbol gratis. Análisis estadístico y probabilidades para la Liga Argentina, Premier League, La Liga y más. Proyecto Timba.">
 
-    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.png') }}">
 
     <!-- SEO: Canonical URL -->
     <link rel="canonical" href="https://futbol-predicciones.xyz{{ request.path }}">
@@ -49,10 +50,8 @@
                 <a href="/history" class="nav-link-top {% if request.endpoint == 'history' %}active{% endif %}">
                     <i class="bi bi-graph-up"></i> HISTORIAL
                 </a>
-            </div>
-            <div class="d-none d-md-flex align-items-center ms-auto">
                 <div class="dropdown">
-                    <button class="nav-link-top dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="margin-left: auto;">
+                    <button class="nav-link-top dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-cup-hot"></i> DONAR
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
