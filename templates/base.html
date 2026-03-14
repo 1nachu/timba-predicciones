@@ -14,13 +14,30 @@
     <!-- SEO: Canonical URL -->
     <link rel="canonical" href="https://futbol-predicciones.xyz{{ request.path }}">
 
+    <!-- Open Graph / WhatsApp / Twitter -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://futbol-predicciones.xyz{{ request.path }}">
+    <meta property="og:site_name" content="Timba Predictor">
+    <meta property="og:title" content="{% block og_title %}Timba Predictor — Predicciones de Fútbol{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Probabilidades 1X2, goles y doble oportunidad calculadas con distribución de Poisson. Premier League, La Liga, Serie A, Liga Argentina y más.{% endblock %}">
+    <meta property="og:image" content="https://futbol-predicciones.xyz{{ url_for('static', filename='og_image.png') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="es_AR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Timba Predictor — Predicciones de Fútbol{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Probabilidades calculadas con Poisson para 8 ligas. Gratis y sin registro.{% endblock %}">
+    <meta name="twitter:image" content="https://futbol-predicciones.xyz{{ url_for('static', filename='og_image.png') }}">
+    
     <!-- Preload fuentes para evitar FOIT -->
     <link rel="preload" href="{{ url_for('static', filename='fonts/bootstrap-icons.woff2') }}" as="font" type="font/woff2" crossorigin>
     
     <!-- CSS: Carga síncrona para evitar CLS en mobile -->
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}">
     
     <!-- JS con defer para no bloquear renderizado -->
     <script defer src="{{ url_for('static', filename='htmx.min.js') }}"></script>
