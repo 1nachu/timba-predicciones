@@ -102,6 +102,7 @@ class MatchSnapshot:
     minute: Optional[int] = None
     second_half: Optional[bool] = None
     home_possession: Optional[float] = None
+    utcDate: Optional[str] = None 
     
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -393,6 +394,7 @@ class LiveScoresManager:
             competition=match_data.get('competition', {}).get('code', 'UNKNOWN'),
             minute=match_data.get('minute'),
             second_half=match_data.get('score', {}).get('halfTime') is not None
+            utcDate=match_data.get('utcDate')
         )
         
         # Obtener snapshot anterior
