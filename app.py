@@ -418,21 +418,52 @@ def obtener_partidos_locales():
         
         # OPTIMIZADO: Filtrar solo partidos del día actual + LIMIT 50
         # Ordenar por timestamp DESC para obtener los más recientes primero
+        
+        # ANTES
+        # cursor.execute("""
+        #   SELECT data FROM match_snapshots 
+        #    WHERE timestamp >= ? 
+        #   ORDER BY 
+        #       CASE status 
+        #           WHEN 'LIVE' THEN 1 
+        #           WHEN 'IN_PLAY' THEN 1
+        #           WHEN 'PAUSED' THEN 2 
+        #           WHEN 'SCHEDULED' THEN 3 
+        #           WHEN 'FINISHED' THEN 4 
+        #           ELSE 5 
+        #       END,
+        #       timestamp DESC
+        #   LIMIT 50
+        #""", (inicio_dia,))
+
+        # DESPUÉS - filtra por status relevante y ventana horaria de 2 horas
+        ahora_ts = ahora.timestamp()
+        dos_horas_ts = (ahora + timedelta(hours=2)).timestamp()
+
         cursor.execute("""
             SELECT data FROM match_snapshots 
-            WHERE timestamp >= ? 
+            WHERE timestamp >= ?
+            AND (
+                status IN ('LIVE', 'IN_PLAY', 'PAUSED', 'HALFTIME')
+                OR (
+                    status IN ('TIMED', 'SCHEDULED')
+                    AND timestamp <= ?
+                )
+            )
             ORDER BY 
                 CASE status 
                     WHEN 'LIVE' THEN 1 
                     WHEN 'IN_PLAY' THEN 1
-                    WHEN 'PAUSED' THEN 2 
-                    WHEN 'SCHEDULED' THEN 3 
+                    WHEN 'PAUSED' THEN 2
+                    WHEN 'HALFTIME' THEN 2
+                    WHEN 'TIMED' THEN 3
+                    WHEN 'SCHEDULED' THEN 3
                     WHEN 'FINISHED' THEN 4 
                     ELSE 5 
                 END,
-                timestamp DESC
+                timestamp ASC
             LIMIT 50
-        """, (inicio_dia,))
+        """, (inicio_dia, dos_horas_ts,))
         
         rows = cursor.fetchall()
         
@@ -454,8 +485,9 @@ def obtener_partidos_locales():
                     # Datos extra necesarios para la lógica de predicción
                     'homeTeam': {'name': snap['home_team']},
                     'awayTeam': {'name': snap['away_team']},
-                    'utcDate': datetime.fromtimestamp(snap.get('timestamp', ahora.timestamp())).isoformat(),
+                    'utcDate': snap.get('utcDate', datetime.fromtimestamp(snap.get('timestamp', ahora.timestamp())).isoformat()),
                     '_timestamp': snap.get('timestamp', 0)  # Para filtrado JS
+
                 }
                 partidos.append(partido)
             except Exception as e:
