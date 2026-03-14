@@ -381,7 +381,7 @@ class LiveScoresManager:
             Lista de eventos detectados
         """
         match_id = match_data['id']
-        
+        print(f"DEBUG utcDate: {match_data.get('utcDate', 'NO EXISTE')}")
         # Crear snapshot actual
         current = MatchSnapshot(
             match_id=match_id,
@@ -393,7 +393,7 @@ class LiveScoresManager:
             timestamp=time.time(),
             competition=match_data.get('competition', {}).get('code', 'UNKNOWN'),
             minute=match_data.get('minute'),
-            second_half=match_data.get('score', {}).get('halfTime') is not None
+            second_half=match_data.get('score', {}).get('halfTime') is not None,
             utcDate=match_data.get('utcDate')
         )
         
