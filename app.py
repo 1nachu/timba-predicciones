@@ -409,67 +409,39 @@ def obtener_partidos_locales():
     try:
         # Conectar en modo solo lectura (URI mode) para no bloquear escrituras del servicio
         conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)
-        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
         # Calcular timestamp del inicio del día actual (00:00:00)
         ahora = datetime.now()
-        inicio_dia = datetime(ahora.year, ahora.month, ahora.day, 0, 0, 0).timestamp()
-        
-        # OPTIMIZADO: Filtrar solo partidos del día actual + LIMIT 50
-        # Ordenar por timestamp DESC para obtener los más recientes primero
-        
-        # ANTES
-        # cursor.execute("""
-        #   SELECT data FROM match_snapshots 
-        #    WHERE timestamp >= ? 
-        #   ORDER BY 
-        #       CASE status 
-        #           WHEN 'LIVE' THEN 1 
-        #           WHEN 'IN_PLAY' THEN 1
-        #           WHEN 'PAUSED' THEN 2 
-        #           WHEN 'SCHEDULED' THEN 3 
-        #           WHEN 'FINISHED' THEN 4 
-        #           ELSE 5 
-        #       END,
-        #       timestamp DESC
-        #   LIMIT 50
-        #""", (inicio_dia,))
+        inicio_dia = datetime(ahora.year, ahora.month, ahora.day, 0, 0, 0).timestamp()            
+        fin_dia = datetime(ahora.year, ahora.month, ahora.day, 23, 59, 59).timestamp()
 
-        # DESPUÉS - filtra por status relevante y ventana horaria de 2 horas
-        ahora_ts = ahora.timestamp()
-        dos_horas_ts = (ahora + timedelta(hours=2)).timestamp()
-
+        # Query 1: partidos en vivo ahora
         cursor.execute("""
-            SELECT data FROM match_snapshots 
-            WHERE timestamp >= ?
-            AND (
-                status IN ('LIVE', 'IN_PLAY', 'PAUSED', 'HALFTIME')
-                OR (
-                    status IN ('TIMED', 'SCHEDULED')
-                    AND timestamp <= ?
-                )
-            )
-            ORDER BY 
-                CASE status 
-                    WHEN 'LIVE' THEN 1 
-                    WHEN 'IN_PLAY' THEN 1
-                    WHEN 'PAUSED' THEN 2
-                    WHEN 'HALFTIME' THEN 2
-                    WHEN 'TIMED' THEN 3
-                    WHEN 'SCHEDULED' THEN 3
-                    WHEN 'FINISHED' THEN 4 
-                    ELSE 5 
-                END,
-                timestamp ASC
-            LIMIT 50
-        """, (inicio_dia, dos_horas_ts,))
-        
-        rows = cursor.fetchall()
+            SELECT data, 'live' as seccion FROM match_snapshots 
+            WHERE status IN ('LIVE', 'IN_PLAY', 'PAUSED', 'HALFTIME')
+            ORDER BY timestamp ASC
+            LIMIT 20
+        """)
+        rows_live = cursor.fetchall()
+
+        # Query 2: partidos programados para hoy
+        cursor.execute("""
+            SELECT data, 'proximos' as seccion FROM match_snapshots 
+            WHERE status IN ('TIMED', 'SCHEDULED')
+            AND timestamp >= ?
+            AND timestamp <= ?
+            ORDER BY timestamp ASC
+            LIMIT 30
+        """, (ahora.timestamp(), fin_dia,))
+        rows_proximos = cursor.fetchall()
+
+        rows = rows_live + rows_proximos
         
         for row in rows:
             try:
-                snap = json.loads(row['data'])
+                snap = json.loads(row[0])
+                seccion = row[1]
                 
                 # Traducir formato DB -> Formato Web (compatible con tu template)
                 partido = {
@@ -486,8 +458,8 @@ def obtener_partidos_locales():
                     'homeTeam': {'name': snap['home_team']},
                     'awayTeam': {'name': snap['away_team']},
                     'utcDate': snap.get('utcDate', datetime.fromtimestamp(snap.get('timestamp', ahora.timestamp())).isoformat()),
-                    '_timestamp': snap.get('timestamp', 0)  # Para filtrado JS
-
+                    '_timestamp': snap.get('timestamp', 0), # Para filtrado JS
+                    'seccion': seccion
                 }
                 partidos.append(partido)
             except Exception as e:
@@ -495,7 +467,7 @@ def obtener_partidos_locales():
                 continue
                 
         conn.close()
-        print(f"✅ Live: {len(partidos)} partidos del día cargados")
+        print(f"✅ Live: {len(rows_live)} en vivo, {len(rows_proximos)} próximos")
     except Exception as e:
         print(f"⚠️ Error leyendo DB local: {e}")
         
