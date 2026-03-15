@@ -430,7 +430,6 @@ def obtener_partidos_locales():
             SELECT data, 'proximos' as seccion FROM match_snapshots 
             WHERE status IN ('TIMED', 'SCHEDULED')
             AND timestamp >= ?
-            AND timestamp <= ?
             ORDER BY timestamp ASC
             LIMIT 30
         """, (inicio_dia,))
