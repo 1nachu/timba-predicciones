@@ -433,7 +433,7 @@ def obtener_partidos_locales():
             AND timestamp <= ?
             ORDER BY timestamp ASC
             LIMIT 30
-        """, (ahora.timestamp(), fin_dia,))
+        """, (inicio_dia,))
         rows_proximos = cursor.fetchall()
 
         rows = rows_live + rows_proximos
