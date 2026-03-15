@@ -28,174 +28,198 @@
     {% endif %}
 
     {% if partidos %}
-        {# Agrupar partidos por competición #}
-        {% set current_league = namespace(name='') %}
-        
-        {% for partido in partidos %}
-            {# Detectar nombre de liga #}
-            {% set league_name = partido.competition.name if partido.competition else (partido.league if partido.league else 'Liga') %}
-            
-            {# Si cambia la liga, cerrar tabla anterior y abrir nueva sección #}
-            {% if league_name != current_league.name %}
-                {% if current_league.name != '' %}
-                    </tbody></table></div>
+
+        {# Separar partidos en dos grupos #}
+        {% set partidos_live = partidos | selectattr('seccion', 'equalto', 'live') | list %}
+        {% set partidos_proximos = partidos | selectattr('seccion', 'equalto', 'proximos') | list %}
+
+        {# ============================================================ #}
+        {# MACRO para renderizar tabla de partidos por liga             #}
+        {# ============================================================ #}
+        {% macro render_partidos(lista, mostrar_prediccion_inline) %}
+            {% set current_league = namespace(name='') %}
+            {% for partido in lista %}
+
+                {% set league_name = partido.competition.name if partido.competition else (partido.league if partido.league else 'Liga') %}
+
+                {% if league_name != current_league.name %}
+                    {% if current_league.name != '' %}
+                        </tbody></table></div>
+                    {% endif %}
+                    {% set current_league.name = league_name %}
+                    <div class="league-section mb-2">
+                        <div class="league-header">
+                            <i class="bi bi-trophy-fill"></i>
+                            <span class="league-name">{{ league_name|upper }}</span>
+                            <span class="league-country">
+                                {% if partido.competition and partido.competition.area %}
+                                    {{ partido.competition.area.name }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <table class="matches-table">
+                            <tbody>
                 {% endif %}
-                
-                {% set current_league.name = league_name %}
-                
-                <!-- Header de Liga -->
-                <div class="league-section mb-2">
-                    <div class="league-header">
-                        <i class="bi bi-trophy-fill"></i>
-                        <span class="league-name">{{ league_name|upper }}</span>
-                        <span class="league-country">
-                            {% if partido.competition and partido.competition.area %}
-                                {{ partido.competition.area.name }}
+
+                {% set is_live = partido.status in ['IN_PLAY', 'LIVE', 'EN VIVO', 'PAUSED'] %}
+                {% set is_finished = partido.status == 'FINISHED' %}
+                {% set is_halftime = partido.status == 'PAUSED' %}
+                {% set match_minute = partido.minute if partido.minute is number else 0 %}
+
+                {% if partido.score and partido.score.fullTime %}
+                    {% set home_score = partido.score.fullTime.home if partido.score.fullTime.home is not none else 0 %}
+                    {% set away_score = partido.score.fullTime.away if partido.score.fullTime.away is not none else 0 %}
+                {% elif partido.score is string and '-' in partido.score %}
+                    {% set home_score = partido.score.replace(' ', '')[0]|default(0) %}
+                    {% set away_score = partido.score.replace(' ', '')[2]|default(0) %}
+                {% else %}
+                    {% set home_score = partido.home_score|default(0) %}
+                    {% set away_score = partido.away_score|default(0) %}
+                {% endif %}
+
+                {% set home_team = partido.homeTeam.name if partido.homeTeam else partido.home|default('Local') %}
+                {% set away_team = partido.awayTeam.name if partido.awayTeam else partido.away|default('Visitante') %}
+                {% set match_timestamp = partido._timestamp|default(0) %}
+
+                <tr class="match-row {% if is_live %}match-live{% elif is_finished %}match-finished{% endif %}" data-timestamp="{{ match_timestamp }}">
+
+                    <!-- Estado/Minuto -->
+                    <td class="match-status-cell">
+                        {% if is_live %}
+                            <div class="status-badge status-live">
+                                {% if is_halftime %}
+                                    <span>ET</span>
+                                {% elif match_minute > 0 %}
+                                    <span class="minute-text">{{ match_minute }}'</span>
+                                {% else %}
+                                    <span>LIVE</span>
+                                {% endif %}
+                            </div>
+                        {% elif is_finished %}
+                            <div class="status-badge status-finished">FIN</div>
+                        {% else %}
+                            <div class="status-badge status-scheduled">
+                                {% if partido.utcDate %}
+                                    <span class="utc-time" data-utc="{{ partido.utcDate }}" data-display="datetime">--:--</span>
+                                {% else %}
+                                    PROG
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </td>
+
+                    <!-- Equipo Local -->
+                    <td class="team-cell team-home">
+                        <span class="team-name">{{ home_team }}</span>
+                        {% if partido.prediccion_timba and partido.prediccion_timba.prob_local|default(0) > 55 %}
+                            <span class="pred-badge pred-fav" title="Favorito {{ partido.prediccion_timba.prob_local|int }}%">★</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Marcador -->
+                    <td class="score-cell">
+                        <div class="score-box {% if is_live %}score-live{% elif is_finished %}score-final{% endif %}">
+                            <span class="score-home">{{ home_score }}</span>
+                            <span class="score-separator">-</span>
+                            <span class="score-away">{{ away_score }}</span>
+                        </div>
+                    </td>
+
+                    <!-- Equipo Visitante -->
+                    <td class="team-cell team-away">
+                        {% if partido.prediccion_timba and partido.prediccion_timba.prob_visitante|default(0) > 55 %}
+                            <span class="pred-badge pred-fav" title="Favorito {{ partido.prediccion_timba.prob_visitante|int }}%">★</span>
+                        {% endif %}
+                        <span class="team-name">{{ away_team }}</span>
+                    </td>
+
+                    <!-- Mini Stats -->
+                    <td class="stats-cell d-none d-md-table-cell">
+                        {% if partido.prediccion_timba and partido.prediccion_timba.over_25 is defined %}
+                            <span class="mini-stat" title="Over 2.5: {{ partido.prediccion_timba.over_25|int }}%">
+                                O{{ partido.prediccion_timba.over_25|int }}
+                            </span>
+                        {% elif partido.prediccion_timba %}
+                            <span class="mini-stat" title="Prob Local">
+                                {{ partido.prediccion_timba.prob_local|int }}%
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {# Predicción detallada solo para partidos en vivo #}
+                {% if partido.prediccion_timba and mostrar_prediccion_inline and is_live %}
+                <tr class="pred-row">
+                    <td colspan="5">
+                        <div class="pred-inline">
+                            <span class="pred-item">
+                                <b>1:</b> {{ partido.prediccion_timba.prob_local|default(0)|int }}%
+                            </span>
+                            <span class="pred-item">
+                                <b>X:</b> {{ partido.prediccion_timba.prob_empate|default(0)|int }}%
+                            </span>
+                            <span class="pred-item">
+                                <b>2:</b> {{ partido.prediccion_timba.prob_visitante|default(0)|int }}%
+                            </span>
+                            {% if partido.prediccion_timba.over_25 is defined %}
+                            <span class="pred-divider">|</span>
+                            <span class="pred-item">
+                                <b>O2.5:</b> {{ partido.prediccion_timba.over_25|int }}%
+                            </span>
                             {% endif %}
-                        </span>
-                    </div>
-                    <table class="matches-table">
-                        <tbody>
-            {% endif %}
-            
-            {# Determinar estado del partido #}
-            {% set is_live = partido.status in ['IN_PLAY', 'LIVE', 'EN VIVO', 'PAUSED'] %}
-            {% set is_finished = partido.status == 'FINISHED' %}
-            {% set is_halftime = partido.status == 'PAUSED' %}
-            
-            {# Obtener minuto #}
-            {% set match_minute = partido.minute if partido.minute is number else 0 %}
-            
-            {# Obtener score #}
-            {% if partido.score and partido.score.fullTime %}
-                {% set home_score = partido.score.fullTime.home if partido.score.fullTime.home is not none else 0 %}
-                {% set away_score = partido.score.fullTime.away if partido.score.fullTime.away is not none else 0 %}
-            {% elif partido.score is string and '-' in partido.score %}
-                {# Formato simple "X - Y" del modo demo #}
-                {% set home_score = partido.score.replace(' ', '')[0]|default(0) %}
-                {% set away_score = partido.score.replace(' ', '')[2]|default(0) %}
-            {% else %}
-                {% set home_score = partido.home_score|default(0) %}
-                {% set away_score = partido.away_score|default(0) %}
-            {% endif %}
-            
-            {# Obtener equipos #}
-            {% set home_team = partido.homeTeam.name if partido.homeTeam else partido.home|default('Local') %}
-            {% set away_team = partido.awayTeam.name if partido.awayTeam else partido.away|default('Visitante') %}
-            
-            {# Obtener timestamp para filtrado JS #}
-            {% set match_timestamp = partido._timestamp|default(0) %}
-            
-            <!-- Fila de Partido -->
-            <tr class="match-row {% if is_live %}match-live{% elif is_finished %}match-finished{% endif %}" data-timestamp="{{ match_timestamp }}">
-                
-                <!-- Columna Estado/Minuto -->
-                <td class="match-status-cell">
-                    {% if is_live %}
-                        <div class="status-badge status-live">
-                            {% if is_halftime %}
-                                <span>ET</span>
-                            {% elif match_minute > 0 %}
-                                <span class="minute-text">{{ match_minute }}'</span>
-                            {% else %}
-                                <span>LIVE</span>
+                            {% if partido.prediccion_timba.xg_local is defined %}
+                            <span class="pred-item">
+                                <b>xG:</b> {{ partido.prediccion_timba.xg_local }}-{{ partido.prediccion_timba.xg_visitante }}
+                            </span>
                             {% endif %}
                         </div>
-                    {% elif is_finished %}
-                        <div class="status-badge status-finished">FIN</div>
-                    {% else %}
-                        <div class="status-badge status-scheduled">
-                            {% if partido.utcDate %}
-                                <span class="utc-time" data-utc="{{ partido.utcDate }}" data-display="datetime">--:--</span>
-                            {% else %}
-                                PROG
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </td>
-                
-                <!-- Equipo Local -->
-                <td class="team-cell team-home">
-                    <span class="team-name">{{ home_team }}</span>
-                    {% if partido.prediccion_timba and partido.prediccion_timba.prob_local|default(0) > 55 %}
-                        <span class="pred-badge pred-fav" title="Favorito {{ partido.prediccion_timba.prob_local|int }}%">★</span>
-                    {% endif %}
-                </td>
-                
-                <!-- Marcador -->
-                <td class="score-cell">
-                    <div class="score-box {% if is_live %}score-live{% elif is_finished %}score-final{% endif %}">
-                        <span class="score-home">{{ home_score }}</span>
-                        <span class="score-separator">-</span>
-                        <span class="score-away">{{ away_score }}</span>
-                    </div>
-                </td>
-                
-                <!-- Equipo Visitante -->
-                <td class="team-cell team-away">
-                    {% if partido.prediccion_timba and partido.prediccion_timba.prob_visitante|default(0) > 55 %}
-                        <span class="pred-badge pred-fav" title="Favorito {{ partido.prediccion_timba.prob_visitante|int }}%">★</span>
-                    {% endif %}
-                    <span class="team-name">{{ away_team }}</span>
-                </td>
-                
-                <!-- Mini Stats (opcional) -->
-                <td class="stats-cell d-none d-md-table-cell">
-                    {% if partido.prediccion_timba and partido.prediccion_timba.over_25 is defined %}
-                        <span class="mini-stat" title="Over 2.5: {{ partido.prediccion_timba.over_25|int }}%">
-                            O{{ partido.prediccion_timba.over_25|int }}
-                        </span>
-                    {% elif partido.prediccion_timba %}
-                        <span class="mini-stat" title="Prob Local">
-                            {{ partido.prediccion_timba.prob_local|int }}%
-                        </span>
-                    {% endif %}
-                </td>
-            </tr>
-            
-            {# Fila extra con predicción detallada (colapsable) #}
-            {% if partido.prediccion_timba and is_live %}
-            <tr class="pred-row">
-                <td colspan="5">
-                    <div class="pred-inline">
-                        <span class="pred-item">
-                            <b>1:</b> {{ partido.prediccion_timba.prob_local|default(0)|int }}%
-                        </span>
-                        <span class="pred-item">
-                            <b>X:</b> {{ partido.prediccion_timba.prob_empate|default(0)|int }}%
-                        </span>
-                        <span class="pred-item">
-                            <b>2:</b> {{ partido.prediccion_timba.prob_visitante|default(0)|int }}%
-                        </span>
-                        {% if partido.prediccion_timba.over_25 is defined %}
-                        <span class="pred-divider">|</span>
-                        <span class="pred-item">
-                            <b>O2.5:</b> {{ partido.prediccion_timba.over_25|int }}%
-                        </span>
-                        {% endif %}
-                        {% if partido.prediccion_timba.xg_local is defined %}
-                        <span class="pred-item">
-                            <b>xG:</b> {{ partido.prediccion_timba.xg_local }}-{{ partido.prediccion_timba.xg_visitante }}
-                        </span>
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
+                    </td>
+                </tr>
+                {% endif %}
+
+            {% endfor %}
+            {# Cerrar última tabla #}
+            {% if lista | length > 0 %}
+                </tbody></table></div>
             {% endif %}
-            
-        {% endfor %}
-        
-        {# Cerrar última tabla #}
-        </tbody></table></div>
-        
-        <!-- Footer con auto-refresh info -->
+        {% endmacro %}
+
+        {# ============================================================ #}
+        {# SECCIÓN 1: EN VIVO AHORA                                     #}
+        {# ============================================================ #}
+        {% if partidos_live %}
+            <div class="seccion-header d-flex align-items-center gap-2 mb-2">
+                <span class="live-dot"></span>
+                <span class="text-white fw-bold">EN VIVO AHORA</span>
+                <span class="badge bg-danger">{{ partidos_live|length }}</span>
+            </div>
+            {{ render_partidos(partidos_live, true) }}
+        {% else %}
+            <div class="alert alert-secondary text-center py-3 mb-3">
+                <i class="bi bi-broadcast me-2"></i>No hay partidos en vivo en este momento
+            </div>
+        {% endif %}
+
+        {# ============================================================ #}
+        {# SECCIÓN 2: PRÓXIMOS HOY                                      #}
+        {# ============================================================ #}
+        {% if partidos_proximos %}
+            <div class="seccion-header d-flex align-items-center gap-2 mt-4 mb-2">
+                <i class="bi bi-clock text-warning"></i>
+                <span class="text-white fw-bold">PRÓXIMOS HOY</span>
+                <span class="badge bg-secondary">{{ partidos_proximos|length }}</span>
+            </div>
+            {{ render_partidos(partidos_proximos, false) }}
+        {% endif %}
+
+        <!-- Footer con auto-refresh -->
         <div class="refresh-info text-center mt-3">
             <small>
-                <i class="bi bi-arrow-repeat spin"></i> 
+                <i class="bi bi-arrow-repeat spin"></i>
                 Actualización automática cada <span id="countdown">30</span>s
             </small>
         </div>
-        
+
     {% else %}
         <!-- Sin partidos -->
         <div class="no-matches">
@@ -220,37 +244,15 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ========== FILTRADO DE PARTIDOS VIEJOS (SEGURIDAD FRONTEND) ==========
-    // Oculta partidos que no sean del día actual (por si el backend envía datos viejos)
-    function filtrarPartidosDelDia() {
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const timestampHoy = hoy.getTime() / 1000;
-        
-        document.querySelectorAll('.match-row').forEach(function(row) {
-            const timestampAttr = row.dataset.timestamp;
-            if (timestampAttr) {
-                const matchTimestamp = parseFloat(timestampAttr);
-                // Si el partido es de antes de hoy, ocultarlo
-                if (matchTimestamp < timestampHoy) {
-                    row.style.display = 'none';
-                    console.log('⏭️ Partido viejo ocultado:', row);
-                }
-            }
-        });
-    }
-    
-    // Ejecutar filtrado al cargar
-    filtrarPartidosDelDia();
-    
+
     // Mostrar hora actual
     function updateClock() {
         const now = new Date();
-        document.getElementById('updateTime').textContent = 
+        document.getElementById('updateTime').textContent =
             now.toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'});
     }
     updateClock();
-    
+
     // Convertir horas UTC a local
     document.querySelectorAll('.utc-time').forEach(function(el) {
         const utc = el.dataset.utc;
@@ -266,16 +268,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     {% if partidos %}
     // Countdown y auto-refresh cada 30 segundos
     let seconds = 30;
     const countdownEl = document.getElementById('countdown');
-    
+
     const interval = setInterval(function() {
         seconds--;
         if (countdownEl) countdownEl.textContent = seconds;
-        
         if (seconds <= 0) {
             clearInterval(interval);
             location.reload();
