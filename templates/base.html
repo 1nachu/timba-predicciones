@@ -283,9 +283,9 @@
                     const utcDate = new Date(utcString);
                     if (isNaN(utcDate.getTime())) return;
                     const displayType = el.getAttribute('data-display') || 'time';
-                    let options = { hour: '2-digit', minute: '2-digit' };
+                    let options = { hour: '2-digit', minute: '2-digit', hour12: false };
                     if (displayType === 'datetime') {
-                        options = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+                        options = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false };
                     }
                     el.textContent = new Intl.DateTimeFormat('es-AR', options).format(utcDate);
                     el.classList.add('utc-converted');
