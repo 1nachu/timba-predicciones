@@ -191,19 +191,27 @@ def procesar_partidos_hoy(cache_fuerzas: dict) -> list:
                     if fecha_partido != hoy:
                         continue
                     
-                    # Convertir hora UTC a Argentina
-                    hora_local = '--:--'
+                    # Calcular fecha_utc_real corregida para mostrar hora local en el frontend
+                    fecha_utc_real = None
                     if fecha_utc:
                         try:
-                            dt_utc = datetime.fromisoformat(fecha_utc.replace('Z', '+00:00'))
-                            dt_arg = dt_utc.astimezone(TZ_ARGENTINA)
-                            hora_local = dt_arg.strftime('%H:%M')
+                            if liga_id == 10:
+                                # Promiedos devuelve hora argentina con Z (incorrecto)
+                                # Corregimos sumando 3 horas para obtener UTC real
+                                dt_arg = datetime.fromisoformat(fecha_utc.replace('Z', ''))
+                                dt_utc_real = dt_arg + timedelta(hours=3)
+                                fecha_utc_real = dt_utc_real.strftime('%Y-%m-%dT%H:%M:%SZ')
+                            else:
+                                # Otras ligas ya vienen con el UTC correcto
+                                fecha_utc_real = fecha_utc
                         except:
-                            partes = fecha_str.split()
-                            hora_local = partes[1] if len(partes) > 1 else '--:--'
-                    else:
-                        partes = fecha_str.split()
-                        hora_local = partes[1] if len(partes) > 1 else '--:--'
+                            pass
+                        
+                    # Fallback: hora directa de fecha_str (ya es hora argentina)
+                    partes = fecha_str.split()
+                    hora_local = partes[1] if len(partes) > 1 else '--:--'
+
+
                     
                     # Generar predicción
                     prediccion = None
@@ -239,6 +247,7 @@ def procesar_partidos_hoy(cache_fuerzas: dict) -> list:
                         'visitante': p['visitante'],
                         'fecha': fecha_str,
                         'hora': hora_local,
+                        'fecha_utc': fecha_utc_real,
                         'prediccion': prediccion,
                         'recomendacion': recomendacion
                     })

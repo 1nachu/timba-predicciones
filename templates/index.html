@@ -51,7 +51,11 @@
             <div class="partido-card">
                 <div class="partido-row">
                     <div class="partido-hora">
-                        <span class="hora">{{ partido.hora }}</span>
+                        {% if partido.fecha_utc %}
+                            <span class="utc-time hora" data-utc="{{ partido.fecha_utc }}" data-display="time">{{ partido.hora }}</span>
+                        {% else %}
+                            <span class="hora">{{ partido.hora }}</span>
+                        {% endif %}
                     </div>
                     <div class="partido-equipos">
                         <div class="partido-equipo local">
