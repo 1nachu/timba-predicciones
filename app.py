@@ -429,10 +429,14 @@ def obtener_partidos_locales():
         cursor.execute("""
             SELECT data, 'proximos' as seccion FROM match_snapshots 
             WHERE status IN ('TIMED', 'SCHEDULED')
-            AND timestamp >= ?
-            ORDER BY timestamp ASC
+            AND json_extract(data, '$.utcDate') >= ?
+            AND json_extract(data, '$.utcDate') < ?
+            ORDER BY json_extract(data, '$.utcDate') ASC
             LIMIT 30
-        """, (inicio_dia,))
+        """, (
+            datetime(ahora.year, ahora.month, ahora.day, 0, 0, 0).isoformat(),
+            datetime(ahora.year, ahora.month, ahora.day + 1, 0, 0, 0).isoformat()
+            ))
         rows_proximos = cursor.fetchall()
 
         rows = rows_live + rows_proximos
