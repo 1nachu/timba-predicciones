@@ -41,6 +41,7 @@ from timba_core import (
     descargar_csv_safe, emparejar_equipo,
     DB_PATH
 )
+from utils.shared import get_db_connection, LIVE_SCORES_DB_PATH
 
 # Intentar importar cliente de API (opcional)
 try:
@@ -356,15 +357,15 @@ def obtener_mejor_recomendacion(prediccion):
 def limpiar_partidos_viejos():
     """
     Elimina partidos con más de 24 horas de antigüedad.
-    Ejecutar antes de cada consulta para mantener DB limpia.
+    Ejecutado por tareas de mantenimiento en segundo plano.
     """
-    db_path = os.path.join(os.path.dirname(__file__), 'data', 'databases', 'live_scores.db')
+    db_path = LIVE_SCORES_DB_PATH
     
-    if not os.path.exists(db_path):
+    if not os.path.exists(str(db_path)):
         return 0
     
     try:
-        conn = sqlite3.connect(db_path)
+        conn = get_db_connection(db_path)
         cursor = conn.cursor()
         
         # Timestamp de hace 24 horas
@@ -406,22 +407,18 @@ def obtener_partidos_locales():
     OPTIMIZADO:
     - Filtra solo partidos del día actual
     - Limita a 50 partidos máximo
-    - Ejecuta limpieza automática de partidos >24h
+    - Conexión no bloqueante en modo lectura
     """
-    # Ruta absoluta a la base de datos para evitar errores
-    db_path = os.path.join(os.path.dirname(__file__), 'data', 'databases', 'live_scores.db')
+    db_path = LIVE_SCORES_DB_PATH
     partidos = []
     
-    if not os.path.exists(db_path):
+    if not os.path.exists(str(db_path)):
         print(f"⚠️ Base de datos no encontrada: {db_path}")
         return []
     
-    # Limpieza automática de partidos viejos (>24h)
-    limpiar_partidos_viejos()
-    
     try:
-        # Conectar en modo solo lectura (URI mode) para no bloquear escrituras del servicio
-        conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)
+        # Conectar en modo solo lectura para no bloquear escrituras del servicio
+        conn = get_db_connection(db_path, readonly=True)
         cursor = conn.cursor()
         
         # Calcular timestamp del inicio del día actual (00:00:00)
@@ -1085,7 +1082,7 @@ def determinar_resultado_real(home_goals: int, away_goals: int) -> str:
 
 def obtener_historial_audit(liga_id: int, days_back: int):
     """Obtiene historial de predicciones auditadas desde la DB de football_data."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection(DB_PATH, readonly=True)
     cursor = conn.cursor()
 
     cursor.execute(

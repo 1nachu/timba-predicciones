@@ -47,11 +47,13 @@ import json
 
 # ========== IMPORTS DE RUTAS CENTRALIZADAS ==========
 try:
-    from utils.shared import TEAM_NORMALIZER_DB_PATH_STR
+    from utils.shared import TEAM_NORMALIZER_DB_PATH_STR, get_db_connection
     SHARED_AVAILABLE = True
 except ImportError:
     SHARED_AVAILABLE = False
     TEAM_NORMALIZER_DB_PATH_STR = "data/databases/team_normalizer.db"
+    def get_db_connection(p, readonly=False, timeout=10.0):
+        return sqlite3.connect(str(p), timeout=timeout)
 
 # Configurar logging
 logging.basicConfig(
@@ -158,9 +160,13 @@ class TeamNormalizer:
         self._load_cache()
         logger.info(f"TeamNormalizer initialized with DB: {self.db_path}")
     
+    def _get_connection(self, readonly: bool = False) -> sqlite3.Connection:
+        """Obtiene conexión optimizada para SQLite."""
+        return get_db_connection(self.db_path, readonly=readonly)
+    
     def _init_db(self):
         """Crea las tablas necesarias si no existen."""
-        conn = sqlite3.connect(self.db_path)
+        conn = self._get_connection()
         cursor = conn.cursor()
         
         # Tabla maestra de equipos - INCLUYE league_code PARA FILTRADO
@@ -247,7 +253,7 @@ class TeamNormalizer:
     
     def _load_cache(self):
         """Carga la caché desde la BD."""
-        conn = sqlite3.connect(self.db_path)
+        conn = self._get_connection(readonly=True)
         cursor = conn.cursor()
         
         # Cargar teams (global)
@@ -317,7 +323,7 @@ class TeamNormalizer:
         )
         
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = self._get_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -378,7 +384,7 @@ class TeamNormalizer:
             ID del mapeo
         """
         mapping_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         
         mapping = ExternalTeamMapping(
             mapping_id=mapping_id,
@@ -392,7 +398,7 @@ class TeamNormalizer:
         )
         
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = self._get_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -477,7 +483,7 @@ class TeamNormalizer:
             return uuid_val, 100.0
         
         # 4. Buscar por alias exacto
-        conn = sqlite3.connect(self.db_path)
+        conn = self._get_connection(readonly=True)
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -572,7 +578,7 @@ class TeamNormalizer:
             ID del alias
         """
         alias_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         
         alias = TeamAlias(
             alias_id=alias_id,
@@ -584,7 +590,7 @@ class TeamNormalizer:
         )
         
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = self._get_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -606,7 +612,7 @@ class TeamNormalizer:
     
     def get_team(self, team_uuid: str) -> Optional[Dict]:
         """Obtiene información completa de un equipo."""
-        conn = sqlite3.connect(self.db_path)
+        conn = self._get_connection(readonly=True)
         cursor = conn.cursor()
         
         cursor.execute("""
@@ -671,7 +677,7 @@ class TeamNormalizer:
         Args:
             league_code: Filtrar por liga (opcional)
         """
-        conn = sqlite3.connect(self.db_path)
+        conn = self._get_connection(readonly=True)
         cursor = conn.cursor()
         
         if league_code:
@@ -705,7 +711,7 @@ class TeamNormalizer:
     
     def get_stats(self) -> Dict:
         """Obtiene estadísticas del normalizador."""
-        conn = sqlite3.connect(self.db_path)
+        conn = self._get_connection(readonly=True)
         cursor = conn.cursor()
         
         cursor.execute("SELECT COUNT(*) FROM master_teams")
@@ -743,7 +749,7 @@ class TeamNormalizer:
     
     def export_mappings(self, output_file: str = "team_mappings.json"):
         """Exporta todos los mapeos a JSON para auditoría."""
-        conn = sqlite3.connect(self.db_path)
+        conn = self._get_connection(readonly=True)
         cursor = conn.cursor()
         
         export = {

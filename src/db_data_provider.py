@@ -25,12 +25,16 @@ from io import StringIO
 
 # ========== IMPORTS DE RUTAS CENTRALIZADAS ==========
 try:
-    from utils.shared import DB_PATH_STR, DB_PATH
+    from utils.shared import DB_PATH_STR, DB_PATH, API_CACHE_DB_PATH, PROJECT_ROOT, get_db_connection
     SHARED_AVAILABLE = True
 except ImportError:
     SHARED_AVAILABLE = False
+    PROJECT_ROOT = Path(__file__).parent.parent
     DB_PATH_STR = "data/databases/football_data.db"
     DB_PATH = Path(DB_PATH_STR)
+    API_CACHE_DB_PATH = Path("data/databases/api_football_cache.db")
+    def get_db_connection(p, readonly=False, timeout=10.0):
+        return sqlite3.connect(str(p), timeout=timeout)
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -50,13 +54,14 @@ class DatabaseDataProvider:
         Args:
             db_path: Ruta a la base de datos principal (usa centralizada si no se especifica)
         """
+        self.project_root = PROJECT_ROOT
+        
         # Usar constante centralizada si no se especifica
         if db_path is None:
             self.db_path = DB_PATH_STR
             self.db_full_path = DB_PATH
         else:
             self.db_path = db_path
-            self.project_root = Path(__file__).parent.parent
             self.db_full_path = self.project_root / db_path if not Path(db_path).is_absolute() else Path(db_path)
         
         # Verificar si existe la BD
@@ -84,8 +89,7 @@ class DatabaseDataProvider:
             return None
         
         try:
-            # REFACTORIZADO: Usar context manager para conexión SQLite
-            with sqlite3.connect(str(self.db_full_path)) as conn:
+            with get_db_connection(self.db_full_path, readonly=True) as conn:
                 # Consulta SQL para obtener datos filtrados por liga
                 if liga_codigo and str(liga_codigo).upper() != "ALL":
                     query = """
@@ -211,12 +215,11 @@ class DatabaseDataProvider:
         df = df_base.copy()
         
         # Aquí se puede integrar con api_football_cache.db si existe
-        api_cache_path = self.project_root / "data/databases/api_football_cache.db"
+        api_cache_path = API_CACHE_DB_PATH
         
         if api_cache_path.exists():
             try:
-                # REFACTORIZADO: Usar context manager para conexión SQLite
-                with sqlite3.connect(str(api_cache_path)) as conn:
+                with get_db_connection(api_cache_path, readonly=True) as conn:
                     # Aquí se pueden hacer joins inteligentes
                     pass
                 logger.info("✓ Datos enriquecidos con API cache")
@@ -285,8 +288,7 @@ class DatabaseDataProvider:
             }
         
         try:
-            # REFACTORIZADO: Usar context manager para conexión SQLite
-            with sqlite3.connect(str(self.db_full_path)) as conn:
+            with get_db_connection(self.db_full_path, readonly=True) as conn:
                 stats = {}
                 
                 # Total de registros

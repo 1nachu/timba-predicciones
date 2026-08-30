@@ -44,6 +44,7 @@ from timba_core import (
     descargar_csv_safe,
     emparejar_equipo
 )
+from utils.shared import get_db_connection, DB_PATH, LIVE_SCORES_DB_PATH
 
 # ========== CONFIGURACIÓN ==========
 # Ruta de salida del JSON
@@ -359,8 +360,7 @@ def guardar_cache(datos: dict):
 
 def init_audit_db():
     """Inicializa la base de datos de auditoría si no existe."""
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -395,18 +395,28 @@ def init_audit_db():
             resultado_real TEXT,
             goles_local INTEGER,
             goles_visitante INTEGER,
-            resultado_registrado_at TEXT,
             acierto_1x2 INTEGER,
-            guardado_at TEXT NOT NULL,
+            acierto_over_15 INTEGER,
+            acierto_over_25 INTEGER,
+            acierto_under_35 INTEGER,
+            acierto_btts INTEGER,
+            acierto_1x INTEGER,
+            acierto_x2 INTEGER,
+            acierto_12 INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(match_id)
         )
     """)
 
-    cursor.execute("""CREATE INDEX IF NOT EXISTS idx_audit_fecha ON predictions_audit(fecha_partido)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS idx_audit_liga ON predictions_audit(liga_id)""")
     cursor.execute(
-        """CREATE INDEX IF NOT EXISTS idx_audit_pendiente ON predictions_audit(resultado_real)
-           WHERE resultado_real IS NULL"""
+        "CREATE INDEX IF NOT EXISTS idx_audit_fecha ON predictions_audit (fecha_partido)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_liga ON predictions_audit (liga_id, fecha_partido)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_audit_resultado ON predictions_audit (resultado_real)"
     )
 
     conn.commit()
@@ -415,7 +425,7 @@ def init_audit_db():
 
 def limpiar_audit_viejo():
     """Elimina registros de auditoría más viejos que AUDIT_RETENTION_DAYS."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
         "DELETE FROM predictions_audit "
@@ -475,7 +485,7 @@ def guardar_prediccion_audit(partido: dict, prediccion: dict, liga_id: int, liga
     prediccion_1x2 = determinar_prediccion_1x2(prediccion) if prediccion else None
     pred = prediccion or {}
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection(DB_PATH)
     cursor = conn.cursor()
 
     cursor.execute(
@@ -599,7 +609,7 @@ def procesar_proximos_n_dias(cache_fuerzas: dict, dias: int):
 
 def registrar_resultados_desde_csv(cache_fuerzas: dict):
     """Registra resultados reales en la tabla de auditoría cargando CSV de football-data."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection(DB_PATH)
     cursor = conn.cursor()
 
     for liga_id, liga_info in LIGAS.items():

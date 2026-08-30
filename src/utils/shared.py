@@ -15,7 +15,8 @@ Autor: Timba Team
 import os
 import logging
 from pathlib import Path
-from typing import Optional
+import sqlite3
+from typing import Optional, Union
 
 import pandas as pd
 import io
@@ -64,6 +65,35 @@ SQLITE_CONNECTION_STRING = f"sqlite:///{DB_PATH}"
 DB_PATH_STR = str(DB_PATH)
 TEAM_NORMALIZER_DB_PATH_STR = str(TEAM_NORMALIZER_DB_PATH)
 LIVE_SCORES_DB_PATH_STR = str(LIVE_SCORES_DB_PATH)
+
+
+def get_db_connection(db_path: Union[str, Path] = DB_PATH, readonly: bool = False, timeout: float = 10.0) -> sqlite3.Connection:
+    """
+    Crea y configura una conexión SQLite optimizada y segura para concurrencia.
+    
+    Aplica:
+    - WAL Mode (Write-Ahead Logging) para permitir lecturas y escrituras simultáneas
+    - Synchronous = NORMAL para acelerar escrituras seguras
+    - Busy timeout de 5 segundos para evitar 'database is locked'
+    - Cache size ampliado a 64MB
+    """
+    db_str = str(db_path)
+    Path(db_str).parent.mkdir(parents=True, exist_ok=True)
+    
+    if readonly:
+        uri = f"file:{os.path.abspath(db_str)}?mode=ro"
+        conn = sqlite3.connect(uri, uri=True, timeout=timeout)
+    else:
+        conn = sqlite3.connect(os.path.abspath(db_str), timeout=timeout)
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA synchronous=NORMAL;")
+        except Exception as e:
+            logger.debug(f"No se pudo configurar WAL en {db_str}: {e}")
+            
+    conn.execute("PRAGMA busy_timeout=5000;")
+    conn.execute("PRAGMA cache_size=-64000;")
+    return conn
 
 # ========== CONFIGURACIÓN DE API ==========
 FOOTBALL_DATA_BASE_URL = "https://www.football-data.co.uk"
@@ -485,6 +515,7 @@ __all__ = [
     'ALIAS_TEAMS',
     'CHAMPIONS_EQUIPO_LIGA',
     # Funciones
+    'get_db_connection',
     'normalizar_csv', 'descargar_csv_safe',
     'emparejar_equipo', 'encontrar_equipo_similar', 'imprimir_barra',
 ]

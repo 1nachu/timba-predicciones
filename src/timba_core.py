@@ -72,6 +72,7 @@ except ImportError:
 # ========== IMPORTAR UTILIDADES COMPARTIDAS ==========
 try:
     from utils.shared import (
+        get_db_connection,
         normalizar_csv,
         descargar_csv_safe,
         emparejar_equipo,
@@ -1113,8 +1114,7 @@ class APIFootballCache:
         """Inicializa base de datos"""
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         
-        # REFACTORIZADO: Usar context manager para conexión SQLite
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             cursor = conn.cursor()
             
             # Tabla de fixtures
@@ -1184,8 +1184,7 @@ class APIFootballCache:
     
     def get_fixture(self, match_id: int) -> Optional[MatchFixture]:
         """Obtiene fixture del caché"""
-        # REFACTORIZADO: Usar context manager para conexión SQLite
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path, readonly=True) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             
@@ -1199,8 +1198,7 @@ class APIFootballCache:
     
     def save_fixture(self, fixture: MatchFixture):
         """Guarda fixture en caché"""
-        # REFACTORIZADO: Usar context manager para conexión SQLite
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -1219,8 +1217,7 @@ class APIFootballCache:
     
     def get_prediction(self, match_id: int) -> Optional[MatchPrediction]:
         """Obtiene predicción del caché"""
-        # REFACTORIZADO: Usar context manager para conexión SQLite
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path, readonly=True) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             
@@ -1234,8 +1231,7 @@ class APIFootballCache:
     
     def save_prediction(self, prediction: MatchPrediction):
         """Guarda predicción en caché"""
-        # REFACTORIZADO: Usar context manager para conexión SQLite
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -1258,8 +1254,7 @@ class APIFootballCache:
     def log_api_usage(self, endpoint: str, cost: int, success: bool,
                      response_time: float, quota_remaining: int):
         """Registra uso de API"""
-        # REFACTORIZADO: Usar context manager para conexión SQLite
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -1274,18 +1269,16 @@ class APIFootballCache:
         """Obtiene consumo de hoy"""
         today = datetime.now(timezone.utc).date()
         
-        # REFACTORIZADO: Usar context manager para conexión SQLite
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path, readonly=True) as conn:
             cursor = conn.cursor()
             
             cursor.execute("""
                 SELECT SUM(cost) as total FROM api_usage_log
                 WHERE DATE(timestamp) = ? AND success = 1
             """, (today,))
-            
             result = cursor.fetchone()
-        
-        return result[0] or 0
+            
+        return (result[0] if result and result[0] else 0)
 
 
 # ========== CLIENTE API-FOOTBALL ==========

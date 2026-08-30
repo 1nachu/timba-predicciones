@@ -45,12 +45,15 @@ try:
     from utils.shared import (
         LIVE_SCORES_DB_PATH_STR,
         CACHE_DIR,
+        get_db_connection
     )
     SHARED_AVAILABLE = True
 except ImportError:
     SHARED_AVAILABLE = False
     LIVE_SCORES_DB_PATH_STR = "data/databases/live_scores.db"
     CACHE_DIR = Path("data/live_scores_cache")
+    def get_db_connection(p, readonly=False, timeout=10.0):
+        return sqlite3.connect(str(p), timeout=timeout)
 
 # ========== CONFIGURACIÓN ==========
 logger = logging.getLogger(__name__)
@@ -212,7 +215,7 @@ class LiveScoresManager:
     
     def _init_database(self):
         """Inicializa base de datos SQLite"""
-        conn = sqlite3.connect(self.db_path)
+        conn = get_db_connection(self.db_path)
         cursor = conn.cursor()
         
         # Tabla de eventos
@@ -288,7 +291,7 @@ class LiveScoresManager:
                    match_data: Dict):
         """Guarda evento en base de datos"""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = get_db_connection(self.db_path)
             cursor = conn.cursor()
             
             cursor.execute("""
@@ -312,7 +315,7 @@ class LiveScoresManager:
         try:
             # Si el partido está FINISHED, verificar antigüedad
             if snapshot.status == 'FINISHED':
-                conn = sqlite3.connect(self.db_path)
+                conn = get_db_connection(self.db_path, readonly=True)
                 cursor = conn.cursor()
                 
                 # Buscar timestamp original del partido
@@ -321,6 +324,7 @@ class LiveScoresManager:
                     WHERE match_id = ?
                 """, (snapshot.match_id,))
                 row = cursor.fetchone()
+                conn.close()
                 
                 if row:
                     original_timestamp = row[0]
@@ -328,14 +332,11 @@ class LiveScoresManager:
                     
                     # Si tiene más de 12 horas y está FINISHED, no actualizar
                     if horas_transcurridas > 12:
-                        conn.close()
                         logger.debug(f"⏭️ Ignorando partido FINISHED antiguo: {snapshot.match_id}")
                         return
-                
-                conn.close()
             
             # Guardar/actualizar snapshot
-            conn = sqlite3.connect(self.db_path)
+            conn = get_db_connection(self.db_path)
             cursor = conn.cursor()
             
             cursor.execute("""
