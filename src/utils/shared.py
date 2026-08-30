@@ -244,43 +244,67 @@ ALIAS_TEAMS = {
 # Mapea nombres aproximados de equipos (para selector UI) a la liga doméstica (código CSV).
 # Los nombres no necesitan ser exactos; emparejar_equipo() hará fuzzy matching.
 CHAMPIONS_EQUIPO_LIGA = {
-    #Premier League (E0)
+    # Premier League (E0)
     'Arsenal': 'E0',
+    'Aston Villa': 'E0',
     'Chelsea': 'E0',
-    'Manchester City': 'E0',
     'Liverpool': 'E0',
+    'Manchester City': 'E0',
     'Manchester United': 'E0',
     'Newcastle United': 'E0',
     'Tottenham': 'E0',
 
-    #La Liga (SP1)
-    'Real Madrid': 'SP1',
-    'Barcelona': 'SP1',
+    # La Liga (SP1)
+    'Athletic Club': 'SP1',
     'Atleti': 'SP1',
+    'Barcelona': 'SP1',
+    'Girona': 'SP1',
+    'Real Madrid': 'SP1',
+    'Real Sociedad': 'SP1',
+    'Villarreal': 'SP1',
 
-    #Bundesliga (D1)
+    # Bundesliga (D1)
+    'Bayer Leverkusen': 'D1',
     'Bayern Munich': 'D1',
     'Borussia Dortmund': 'D1',
-    'Bayern Leverkusen': 'D1',
+    'Eintracht Frankfurt': 'D1',
+    'RB Leipzig': 'D1',
+    'Stuttgart': 'D1',
 
-    #Serie A (I1)
-    'Juventus': 'I1',
+    # Serie A (I1)
     'AC Milan': 'I1',
-    'Inter Milan': 'I1',
     'Atalanta': 'I1',
+    'Bologna': 'I1',
+    'Fiorentina': 'I1',
+    'Inter Milan': 'I1',
+    'Juventus': 'I1',
+    'Lazio': 'I1',
+    'Napoli': 'I1',
+    'Roma': 'I1',
 
-    #Ligue 1 (F1)
-    'PSG': 'F1',
+    # Ligue 1 (F1)
+    'Brest': 'F1',
+    'Lille': 'F1',
     'Lyon': 'F1',
+    'Marseille': 'F1',
+    'Monaco': 'F1',
+    'PSG': 'F1',
+    'Rennes': 'F1',
 
-    #Primeira Liga (P1)
+    # Primeira Liga (P1)
     'Benfica': 'P1',
+    'Braga': 'P1',
     'Porto': 'P1',
     'Sporting': 'P1',
+    'Sporting CP': 'P1',
 
-    #Eredivisie (N1)
+    # Eredivisie (N1)
+    'AZ Alkmaar': 'N1',
     'Ajax': 'N1',
+    'Feyenoord': 'N1',
     'PSV': 'N1',
+    'Twente': 'N1',
+    'Utrecht': 'N1',
 }
 
 

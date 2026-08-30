@@ -269,7 +269,7 @@ class FootballDataExtractor:
             else:
                 # Seleccionar temporadas según modo (ligas estándar)
                 if solo_actual:
-                    temporadas = [liga_info['temporadas'][0]]  # Solo la primera (más reciente)
+                    temporadas = liga_info['temporadas'][:3]  # Las 3 temporadas más recientes (ej: 2627, 2526, 2425)
                 else:
                     temporadas = liga_info['temporadas']  # Todas
                 
@@ -1025,8 +1025,8 @@ if __name__ == "__main__":
         solo_actual = not args.historico
         
         if solo_actual:
-            logger.info("🚀 Modo RÁPIDO: Solo temporada actual (25/26)")
-            logger.info("   Usa --historico para descargar todas las temporadas\n")
+            logger.info("🚀 Modo RÁPIDO: Temporadas recientes (3 por liga, ej: 26/27, 25/26, 24/25)")
+            logger.info("   Usa --historico para descargar todas las temporadas históricas\n")
         else:
             logger.info("📚 Modo HISTÓRICO: Descargando TODAS las temporadas (~11 por liga)")
             logger.info("   ⏱️  Esto puede tomar varios minutos...\n")
