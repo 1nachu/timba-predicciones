@@ -136,7 +136,7 @@ def determinar_prediccion_1x2(prediccion: dict) -> str:
 
 def cargar_fuerzas_liga(liga_id: int) -> tuple:
     """
-    Descarga CSV histórico y calcula fuerzas de ataque/defensa.
+    Obtiene datos históricos desde BD local (con fallback a CSV) y calcula fuerzas.
     
     Returns:
         tuple: (fuerzas, media_local, media_vis, equipos_validos) o vacío si falla
@@ -145,27 +145,29 @@ def cargar_fuerzas_liga(liga_id: int) -> tuple:
     if not liga_info:
         return {}, 0, 0, []
     
+    codigo = liga_info.get('codigo')
+    url = liga_info.get('url')
+    
+    if not codigo and not url:
+        return {}, 0, 0, []
+    
     try:
-        url = liga_info.get('url')
-        if not url:
-            return {}, 0, 0, []
-        
-        # Descargar CSV con solo columnas esenciales (ahorra RAM)
-        df = descargar_csv_safe(url, usecols=COLUMNAS_ESENCIALES)
+        from timba_core import _get_cached_historical_data
+        df = _get_cached_historical_data(codigo or 'ALL', 3, url or '')
         
         if df is None or df.empty:
-            log(f"Liga {liga_id}: CSV vacío o nulo", "WARN")
+            log(f"Liga {liga_id}: Datos vacíos", "WARN")
             return {}, 0, 0, []
         
-        # Calcular fuerzas (operación CPU-intensiva)
+        # Calcular fuerzas
         fuerzas, media_local, media_vis = calcular_fuerzas(df)
         equipos_validos = sorted(list(fuerzas.keys()))
         
-        log(f"Liga {liga_id} ({liga_info['nombre'][:30]}...): {len(equipos_validos)} equipos cargados", "OK")
+        log(f"Liga {liga_id} ({liga_info.get('nombre', codigo)[:30]}...): {len(equipos_validos)} equipos cargados", "OK")
         return fuerzas, media_local, media_vis, equipos_validos
         
     except Exception as e:
-        log(f"Liga {liga_id}: Error descargando CSV - {e}", "ERROR")
+        log(f"Liga {liga_id}: Error cargando datos - {e}", "ERROR")
         return {}, 0, 0, []
 
 

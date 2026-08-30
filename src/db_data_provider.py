@@ -86,8 +86,8 @@ class DatabaseDataProvider:
         try:
             # REFACTORIZADO: Usar context manager para conexión SQLite
             with sqlite3.connect(str(self.db_full_path)) as conn:
-                # Consulta SQL para obtener datos
-                if liga_codigo:
+                # Consulta SQL para obtener datos filtrados por liga
+                if liga_codigo and str(liga_codigo).upper() != "ALL":
                     query = """
                         SELECT 
                             date as Date,
@@ -111,17 +111,20 @@ class DatabaseDataProvider:
                             b365h as B365H,
                             b365d as B365D,
                             b365a as B365A,
-                            temporada as Temporada
+                            temporada as Temporada,
+                            league_code as LeagueCode
                         FROM matches
-                        WHERE temporada IN (
+                        WHERE league_code = ?
+                          AND temporada IN (
                             SELECT DISTINCT temporada 
                             FROM matches 
+                            WHERE league_code = ?
                             ORDER BY temporada DESC 
                             LIMIT ?
                         )
                         ORDER BY date DESC
                     """
-                    df = pd.read_sql_query(query, conn, params=(temporadas,))
+                    df = pd.read_sql_query(query, conn, params=(str(liga_codigo), str(liga_codigo), int(temporadas)))
                 else:
                     query = """
                         SELECT 
@@ -146,23 +149,30 @@ class DatabaseDataProvider:
                             b365h as B365H,
                             b365d as B365D,
                             b365a as B365A,
-                            temporada as Temporada
+                            temporada as Temporada,
+                            league_code as LeagueCode
                         FROM matches
+                        WHERE temporada IN (
+                            SELECT DISTINCT temporada 
+                            FROM matches 
+                            ORDER BY temporada DESC 
+                            LIMIT ?
+                        )
                         ORDER BY date DESC
                     """
-                    df = pd.read_sql_query(query, conn)
+                    df = pd.read_sql_query(query, conn, params=(int(temporadas),))
             
             if not df.empty:
-                logger.info(f"✓ Cargados {len(df)} registros desde BD local")
+                logger.info(f"✓ Cargados {len(df)} registros desde BD local para liga '{liga_codigo}'")
                 logger.info(f"  Período: {df['Date'].min()} a {df['Date'].max()}")
-                logger.info(f"  Equipos únicos: {df['HomeTeam'].nunique() + df['AwayTeam'].nunique()}")
+                logger.info(f"  Equipos únicos: {len(set(df['HomeTeam']).union(set(df['AwayTeam'])))}")
                 return df
             else:
-                logger.warning("⚠️  No hay datos en la BD")
+                logger.warning(f"⚠️  No hay datos en la BD para liga '{liga_codigo}'")
                 return None
                 
         except Exception as e:
-            logger.error(f"Error cargando datos de BD: {str(e)}")
+            logger.error(f"Error cargando datos de BD para liga '{liga_codigo}': {str(e)}")
             return None
     
     def get_data_from_csv(self, url: str) -> Optional[pd.DataFrame]:

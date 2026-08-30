@@ -247,11 +247,24 @@ class FootballDataExtractor:
             
             # Para ligas con URL directa (ej: Argentina), solo descargar una vez
             if liga_info.get('url_directa'):
-                logger.info(f"  📅 Liga extra con URL directa (temporada única)")
-                df = self.descargar_csv(liga_codigo, liga_info['temporadas'][0])
+                logger.info(f"  📅 Liga extra con URL directa (CSV multi-temporada)")
+                df = self.descargar_csv(liga_codigo, 'all')
                 if df is not None:
                     df = df.copy()
-                    df['Temporada'] = liga_info['temporadas'][0]
+                    if 'Season' in df.columns:
+                        df['Temporada'] = df['Season'].astype(str)
+                    elif 'Temporada' in df.columns:
+                        df['Temporada'] = df['Temporada'].astype(str)
+                    else:
+                        df['Temporada'] = str(liga_info['temporadas'][0])
+                    
+                    if solo_actual and 'Temporada' in df.columns:
+                        temporadas_disp = sorted(df['Temporada'].unique())
+                        temporadas_filtro = temporadas_disp[-2:] if len(temporadas_disp) >= 2 else temporadas_disp
+                        logger.info(f"  📅 Modo rápido: seleccionando temporadas recientes {temporadas_filtro}")
+                        df = df[df['Temporada'].isin(temporadas_filtro)].copy()
+                    
+                    df['league_code'] = liga_codigo
                     dfs_liga.append(df)
             else:
                 # Seleccionar temporadas según modo (ligas estándar)
@@ -267,7 +280,8 @@ class FootballDataExtractor:
                     if df is not None:
                         df = df.copy()  # Consolidar memoria para evitar PerformanceWarning
                         df['Temporada'] = temporada
-                    dfs_liga.append(df)
+                        df['league_code'] = liga_codigo
+                        dfs_liga.append(df)
                     time.sleep(1)  # Respetar rate limits
             
             if dfs_liga:
@@ -391,9 +405,13 @@ class FootballDataTransformer:
             if col in df.columns:
                 columnas_disponibles.append(col)
         
-        # Agregar columna de temporada si existe
+        # Agregar columna de temporada y league_code si existen
         if 'Temporada' in df.columns:
             columnas_disponibles.append('Temporada')
+        if 'league_code' in df.columns:
+            columnas_disponibles.append('league_code')
+        elif 'League_Code' in df.columns:
+            columnas_disponibles.append('League_Code')
         
         df_subset = df[columnas_disponibles].copy()
         logger.info(f"✓ Seleccionadas {len(columnas_disponibles)} columnas críticas")
@@ -412,9 +430,13 @@ class FootballDataTransformer:
         
         registros_antes = len(df)
         
-        # Eliminar duplicados basados en fecha, equipos y resultado
+        # Eliminar duplicados basados en fecha, equipos, resultado y liga
+        dup_subset = ['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG']
+        if 'league_code' in df.columns:
+            dup_subset.append('league_code')
+            
         df_sin_dup = df.drop_duplicates(
-            subset=['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG'],
+            subset=dup_subset,
             keep='first'
         )
         
@@ -422,11 +444,14 @@ class FootballDataTransformer:
         if duplicados_removidos > 0:
             logger.info(f"✓ Removidos {duplicados_removidos} registros duplicados")
         
-        # Validar que FTR sea válido (1, D, 2)
-        df_validado = df_sin_dup[df_sin_dup['FTR'].isin(['1', 'D', '2', 1, 2])].copy()
+        # Validar que FTR sea válido (H, D, A, 1, X, 2)
+        valid_ftr = ['H', 'D', 'A', '1', 'X', '2', 1, 2, 'h', 'd', 'a']
+        ftr_mapping = {'1': 'H', 1: 'H', 'X': 'D', '2': 'A', 2: 'A', 'h': 'H', 'd': 'D', 'a': 'A'}
+        df_validado = df_sin_dup[df_sin_dup['FTR'].isin(valid_ftr)].copy()
+        df_validado['FTR'] = df_validado['FTR'].replace(ftr_mapping)
         removidos = len(df_sin_dup) - len(df_validado)
         if removidos > 0:
-            logger.warning(f"✓ Removidos {removidos} registros con FTR inválido")
+            logger.info(f"✓ Removidos {removidos} registros sin resultado final o FTR inválido")
         
         # Asegurar tipos de datos correctos
         columnas_numericas = ['FTHG', 'FTAG', 'HS', 'AS', 'HST', 'AST', 'HF', 'AF', 'HR', 'AR', 'HY', 'AY']
@@ -563,6 +588,7 @@ class FootballDataLoader:
                 crear_tabla_sql = f"""
                 CREATE TABLE IF NOT EXISTS matches (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    league_code VARCHAR(10) NOT NULL,
                     date DATE NOT NULL,
                     home_team VARCHAR(100) NOT NULL,
                     away_team VARCHAR(100) NOT NULL,
@@ -590,7 +616,7 @@ class FootballDataLoader:
                     efectividad_local DECIMAL(5,2),
                     temporada VARCHAR(10),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(date, home_team, away_team)
+                    UNIQUE(date, home_team, away_team, league_code)
                 );
                 """
                 
@@ -601,6 +627,8 @@ class FootballDataLoader:
                     conn.execute(text("CREATE INDEX IF NOT EXISTS idx_date ON matches(date)"))
                     conn.execute(text("CREATE INDEX IF NOT EXISTS idx_teams ON matches(home_team, away_team)"))
                     conn.execute(text("CREATE INDEX IF NOT EXISTS idx_temporada ON matches(temporada)"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_league_temporada ON matches(league_code, temporada)"))
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS idx_league_teams ON matches(league_code, home_team, away_team)"))
                 
                 conn.commit()
                 logger.info("✓ Tablas creadas exitosamente")
@@ -674,7 +702,9 @@ class FootballDataLoader:
             'Over_25': 'over_25',
             'Diff_Tiros': 'diff_tiros',
             'Efectividad_Local': 'efectividad_local',
-            'Temporada': 'temporada'
+            'Temporada': 'temporada',
+            'league_code': 'league_code',
+            'League_Code': 'league_code'
         }
         
         df = df.rename(columns=mapeo)
@@ -692,6 +722,12 @@ class FootballDataLoader:
                     conn
                 )
                 
+                # Registros por liga
+                por_liga = pd.read_sql(
+                    "SELECT league_code, COUNT(*) as registros FROM matches GROUP BY league_code ORDER BY registros DESC",
+                    conn
+                )
+
                 # Registros por temporada
                 por_temporada = pd.read_sql(
                     "SELECT temporada, COUNT(*) as registros FROM matches GROUP BY temporada ORDER BY temporada DESC",
@@ -712,6 +748,7 @@ class FootballDataLoader:
                 
                 stats = {
                     'total_registros': total['total'].values[0],
+                    'ligas': por_liga.to_dict(orient='list'),
                     'temporadas': por_temporada.to_dict(orient='list'),
                     'fecha_inicio': fechas['fecha_inicio'].values[0],
                     'fecha_fin': fechas['fecha_fin'].values[0],
@@ -954,8 +991,8 @@ if __name__ == "__main__":
     parser.add_argument(
         '--ligas',
         type=str,
-        default='E0,SP1,D1,I1,F1,P1,N1',
-        help='Códigos de ligas separados por coma (default: E0,SP1,D1,I1,F1,P1,N1)'
+        default='E0,SP1,D1,I1,F1,P1,N1,ARG',
+        help='Códigos de ligas separados por coma (default: E0,SP1,D1,I1,F1,P1,N1,ARG)'
     )
     parser.add_argument(
         '--skip-create-tables',

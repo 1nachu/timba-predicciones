@@ -86,7 +86,7 @@ cache = Cache(app, config={
 def cargar_datos_liga_cached(liga_id: int):
     """
     Versión CACHEADA de cargar_datos_liga.
-    Descarga CSV y calcula fuerzas. MEMOIZADO: 1 hora.
+    Carga desde BD local (con fallback a CSV) y calcula fuerzas. MEMOIZADO: 1 hora.
     
     Args:
         liga_id: ID de la liga en LIGAS
@@ -95,26 +95,27 @@ def cargar_datos_liga_cached(liga_id: int):
         tuple: (fuerzas, media_local, media_vis, equipos) o valores vacíos si falla
     """
     liga_info = LIGAS.get(liga_id)
-    if not liga_info or not liga_info.get('url'):
-        # No hay CSV disponible (ej: Champions League) => no fuerzas disponibles
+    if not liga_info:
+        return {}, 0, 0, []
+    
+    codigo = liga_info.get('codigo')
+    url = liga_info.get('url')
+    
+    if not codigo and not url:
         return {}, 0, 0, []
     
     try:
-        # Descargar CSV de la liga (operación lenta)
-        # OPTIMIZADO: Solo cargar columnas esenciales para ahorrar memoria RAM
-        columnas_necesarias = ['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 
-                               'HS', 'AS', 'HC', 'AC', 'HY', 'AY', 'HR', 'AR',
-                               'HST', 'AST', 'HTHG', 'HTAG']
-        df = descargar_csv_safe(liga_info['url'], usecols=columnas_necesarias)
+        from timba_core import _get_cached_historical_data
+        df = _get_cached_historical_data(codigo or 'ALL', 3, url or '')
         
         if df is None or df.empty:
             return {}, 0, 0, []
         
-        # Calcular fuerzas (operación CPU-intensiva)
+        # Calcular fuerzas (operación optimizada)
         fuerzas, media_local, media_vis = calcular_fuerzas(df)
         equipos = sorted(list(fuerzas.keys()))
         
-        print(f"✅ Liga {liga_id} cacheada: {len(equipos)} equipos")
+        print(f"✅ Liga {liga_id} ({codigo}) cargada: {len(equipos)} equipos")
         return fuerzas, media_local, media_vis, equipos
         
     except Exception as e:
