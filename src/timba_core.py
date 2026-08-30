@@ -204,154 +204,185 @@ CSV_A_LIGA_ID = {'E0': 1, 'SP1': 2, 'I1': 3, 'D1': 4, 'F1': 5, 'P1': 6, 'N1': 7}
 
 
 def calcular_fuerzas(df):
+    """
+    Calcula fuerzas ofensivas, defensivas y estadísticas avanzadas por equipo.
+    OPTIMIZADO: Totalmente vectorizado con GroupBy y NumPy para máximo rendimiento.
+    """
+    df = df.copy()
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
     df = df.sort_values('Date').reset_index(drop=True)
-    promedio_goles_local_liga = df['FTHG'].mean()
-    promedio_goles_visitante_liga = df['FTAG'].mean()
+    
+    promedio_goles_local_liga = float(df['FTHG'].mean()) if len(df) > 0 else 0.0
+    promedio_goles_visitante_liga = float(df['FTAG'].mean()) if len(df) > 0 else 0.0
+    
+    # 1. Agrupaciones globales para Casa y Fuera
+    home_grp = df.groupby('HomeTeam')
+    away_grp = df.groupby('AwayTeam')
+    
+    home_gf = home_grp['FTHG'].mean()
+    home_ga = home_grp['FTAG'].mean()
+    away_gf = away_grp['FTAG'].mean()
+    away_ga = away_grp['FTHG'].mean()
+    
+    # 2. Córners
+    tiene_datos_corners = 'HC' in df.columns and 'AC' in df.columns
+    if tiene_datos_corners:
+        home_hc = home_grp['HC'].mean()
+        home_ac = home_grp['AC'].mean()
+        away_ac = away_grp['AC'].mean()
+        away_hc = away_grp['HC'].mean()
+    else:
+        home_hc = home_ac = away_ac = away_hc = None
+    
+    # 3. Tarjetas
+    has_hy = 'HY' in df.columns
+    has_ay = 'AY' in df.columns
+    has_hr = 'HR' in df.columns
+    has_ar = 'AR' in df.columns
+    home_hy = home_grp['HY'].mean() if has_hy else None
+    away_ay = away_grp['AY'].mean() if has_ay else None
+    home_hr = home_grp['HR'].mean() if has_hr else None
+    away_ar = away_grp['AR'].mean() if has_ar else None
+    
+    # 4. Tiros a puerta
+    has_hst = 'HST' in df.columns
+    has_ast = 'AST' in df.columns
+    home_hst = home_grp['HST'].mean() if has_hst else None
+    away_ast = away_grp['AST'].mean() if has_ast else None
+    
+    # 5. Partidos recientes (últimos 5 globales por equipo)
+    cols_home = {'Date': df['Date'], 'Team': df['HomeTeam'], 'GF': df['FTHG'], 'GC': df['FTAG']}
+    cols_away = {'Date': df['Date'], 'Team': df['AwayTeam'], 'GF': df['FTAG'], 'GC': df['FTHG']}
+    df_all_matches = pd.concat([pd.DataFrame(cols_home), pd.DataFrame(cols_away)], ignore_index=True)
+    df_all_matches = df_all_matches.sort_values('Date').reset_index(drop=True)
+    
+    recent_5 = df_all_matches.groupby('Team').tail(5)
+    rec_gf = recent_5.groupby('Team')['GF'].mean()
+    rec_gc = recent_5.groupby('Team')['GC'].mean()
+    
+    # 6. BTTS y Over 2.5
+    df['is_btts'] = (df['FTHG'] > 0) & (df['FTAG'] > 0)
+    df['is_over25'] = (df['FTHG'] + df['FTAG']) > 2.5
+    
+    home_btts_sum = home_grp['is_btts'].sum()
+    away_btts_sum = away_grp['is_btts'].sum()
+    home_over25_sum = home_grp['is_over25'].sum()
+    away_over25_sum = away_grp['is_over25'].sum()
+    home_count = home_grp.size()
+    away_count = away_grp.size()
+    
+    # 7. Goles en 2T
+    has_hthg = 'HTHG' in df.columns
+    has_htag = 'HTAG' in df.columns
+    home_g2t_sum = (df['FTHG'] - df['HTHG']).groupby(df['HomeTeam']).sum() if has_hthg else None
+    home_g2t_cnt = (df['FTHG'] - df['HTHG']).dropna().groupby(df['HomeTeam']).size() if has_hthg else None
+    away_g2t_sum = (df['FTAG'] - df['HTAG']).groupby(df['AwayTeam']).sum() if has_htag else None
+    away_g2t_cnt = (df['FTAG'] - df['HTAG']).dropna().groupby(df['AwayTeam']).size() if has_htag else None
+    
+    equipos = sorted(set(df['HomeTeam'].dropna()).union(set(df['AwayTeam'].dropna())))
     fuerzas = {}
-    equipos = sorted(df['HomeTeam'].unique())
+    
     for equipo in equipos:
-        partidos_casa_global = df[df['HomeTeam'] == equipo]
-        partidos_fuera_global = df[df['AwayTeam'] == equipo]
-        goles_a_favor_casa_global = partidos_casa_global['FTHG'].mean() if len(partidos_casa_global) > 0 else 0
-        goles_en_contra_casa_global = partidos_casa_global['FTAG'].mean() if len(partidos_casa_global) > 0 else 0
-        goles_a_favor_fuera_global = partidos_fuera_global['FTAG'].mean() if len(partidos_fuera_global) > 0 else 0
-        goles_en_contra_fuera_global = partidos_fuera_global['FTHG'].mean() if len(partidos_fuera_global) > 0 else 0
-        ataque_casa_global = goles_a_favor_casa_global / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0
-        defensa_casa_global = goles_en_contra_casa_global / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0
-        ataque_fuera_global = goles_a_favor_fuera_global / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0
-        defensa_fuera_global = goles_en_contra_fuera_global / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0
-        # REFACTORIZADO: Usar operaciones vectorizadas en lugar de iterrows()
-        # Crear DataFrames con columnas estandarizadas
-        if len(partidos_casa_global) > 0:
-            casa_df = partidos_casa_global[['Date', 'FTHG', 'FTAG']].copy()
-            casa_df.columns = ['Fecha', 'GF', 'GC']
-            casa_df['Tipo'] = 'Casa'
-        else:
-            casa_df = pd.DataFrame(columns=['Fecha', 'GF', 'GC', 'Tipo'])
+        gf_c_glob = float(home_gf.get(equipo, 0.0))
+        gc_c_glob = float(home_ga.get(equipo, 0.0))
+        gf_f_glob = float(away_gf.get(equipo, 0.0))
+        gc_f_glob = float(away_ga.get(equipo, 0.0))
         
-        if len(partidos_fuera_global) > 0:
-            fuera_df = partidos_fuera_global[['Date', 'FTAG', 'FTHG']].copy()
-            fuera_df.columns = ['Fecha', 'GF', 'GC']
-            fuera_df['Tipo'] = 'Fuera'
-        else:
-            fuera_df = pd.DataFrame(columns=['Fecha', 'GF', 'GC', 'Tipo'])
+        atq_c_glob = gf_c_glob / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0.0
+        def_c_glob = gc_c_glob / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0.0
+        atq_f_glob = gf_f_glob / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0.0
+        def_f_glob = gc_f_glob / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0.0
         
-        # Combinar y ordenar sin iterrows
-        todos_partidos_df = pd.concat([casa_df, fuera_df], ignore_index=True)
-        todos_partidos_df = todos_partidos_df.sort_values('Fecha')
-        ultimos_5_df = todos_partidos_df.tail(5)
+        gf_rec = float(rec_gf.get(equipo, 0.0))
+        gc_rec = float(rec_gc.get(equipo, 0.0))
+        atq_rec = gf_rec / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0.0
+        def_rec = gc_rec / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0.0
         
-        if len(ultimos_5_df) > 0:
-            goles_favor_reciente = ultimos_5_df['GF'].mean()
-            goles_contra_reciente = ultimos_5_df['GC'].mean()
-            ultimos_5 = ultimos_5_df.to_dict('records')
-        else:
-            goles_favor_reciente = goles_contra_reciente = 0
-            ultimos_5 = []
-        ataque_reciente = goles_favor_reciente / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0
-        defensa_reciente = goles_contra_reciente / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0
-        ataque_casa_final = (ataque_reciente * 0.6) + (ataque_casa_global * 0.4)
-        defensa_casa_final = (defensa_reciente * 0.6) + (defensa_casa_global * 0.4)
-        ataque_fuera_final = (ataque_reciente * 0.6) + (ataque_fuera_global * 0.4)
-        defensa_fuera_final = (defensa_reciente * 0.6) + (defensa_fuera_global * 0.4)
-        # Cálculo de CÓRNERS (ponderado 75% reciente + 25% histórico)
-        # DEFENSIVA: Verificar disponibilidad de columnas HC y AC
-        tiene_datos_corners = 'HC' in df.columns and 'AC' in df.columns
+        atq_c_final = (atq_rec * 0.6) + (atq_c_glob * 0.4)
+        def_c_final = (def_rec * 0.6) + (def_c_glob * 0.4)
+        atq_f_final = (atq_rec * 0.6) + (atq_f_glob * 0.4)
+        def_f_final = (def_rec * 0.6) + (def_f_glob * 0.4)
         
+        # Córners
         if tiene_datos_corners:
-            corners_casa_global = partidos_casa_global['HC'].mean() if len(partidos_casa_global) > 0 else 0
-            corners_fuera_global = partidos_fuera_global['AC'].mean() if len(partidos_fuera_global) > 0 else 0
-            corners_casa_contra = partidos_casa_global['AC'].mean() if len(partidos_casa_global) > 0 else 0
-            corners_fuera_contra = partidos_fuera_global['HC'].mean() if len(partidos_fuera_global) > 0 else 0
+            c_c_glob = float(home_hc.get(equipo, 0.0))
+            c_f_glob = float(away_ac.get(equipo, 0.0))
+            c_c_contra = float(home_ac.get(equipo, 0.0))
+            c_f_contra = float(away_hc.get(equipo, 0.0))
         else:
-            corners_casa_global = corners_fuera_global = corners_casa_contra = corners_fuera_contra = 0
+            c_c_glob = c_f_glob = c_c_contra = c_f_contra = 0.0
+            
+        c_c_rec = c_c_glob
+        c_f_rec = c_f_glob
+        corners_casa = (c_c_rec * 0.75) + (c_c_glob * 0.25)
+        corners_fuera = (c_f_rec * 0.75) + (c_f_glob * 0.25)
         
-        # Cálculo reciente de córners (si hay datos disponibles)
-        if len(ultimos_5) > 0 and tiene_datos_corners:
-            corners_casa_reciente = corners_casa_global  # Use historical as proxy for recent
-            corners_fuera_reciente = corners_fuera_global
+        # Tarjetas
+        tarjetas_am_casa = float(home_hy.get(equipo, 0.0)) if home_hy is not None else 0.0
+        tarjetas_am_fuera = float(away_ay.get(equipo, 0.0)) if away_ay is not None else 0.0
+        tarjetas_ro_casa = float(home_hr.get(equipo, 0.0)) if home_hr is not None else 0.0
+        tarjetas_ro_fuera = float(away_ar.get(equipo, 0.0)) if away_ar is not None else 0.0
+        
+        # Eficiencia de tiro
+        hst_c = float(home_hst.get(equipo, 0.0)) if home_hst is not None else 0.0
+        ast_f = float(away_ast.get(equipo, 0.0)) if away_ast is not None else 0.0
+        ef_c = (gf_c_glob / hst_c) * 100 if hst_c > 0 else 0.0
+        ef_f = (gf_f_glob / ast_f) * 100 if ast_f > 0 else 0.0
+        ef_prom = (ef_c + ef_f) / 2.0
+        
+        # BTTS y Over 2.5
+        tot_pts = int(home_count.get(equipo, 0)) + int(away_count.get(equipo, 0))
+        if tot_pts > 0:
+            tot_btts = int(home_btts_sum.get(equipo, 0)) + int(away_btts_sum.get(equipo, 0))
+            tot_o25 = int(home_over25_sum.get(equipo, 0)) + int(away_over25_sum.get(equipo, 0))
+            btts_pct = (tot_btts / tot_pts) * 100.0
+            over25_pct = (tot_o25 / tot_pts) * 100.0
         else:
-            corners_casa_reciente = corners_casa_global
-            corners_fuera_reciente = corners_fuera_global
+            btts_pct = 0.0
+            over25_pct = 0.0
+            
+        # Goles 2T
+        g2t_tot = 0.0
+        g2t_cnt = 0
+        if home_g2t_sum is not None and equipo in home_g2t_sum:
+            g2t_tot += float(home_g2t_sum.get(equipo, 0.0))
+            g2t_cnt += int(home_g2t_cnt.get(equipo, 0))
+        if away_g2t_sum is not None and equipo in away_g2t_sum:
+            g2t_tot += float(away_g2t_sum.get(equipo, 0.0))
+            g2t_cnt += int(away_g2t_cnt.get(equipo, 0))
+        g2t_prom = (g2t_tot / g2t_cnt) if g2t_cnt > 0 else 0.0
         
-        # Ponderar: 75% reciente + 25% histórico
-        corners_casa_ponderado = (corners_casa_reciente * 0.75) + (corners_casa_global * 0.25)
-        corners_fuera_ponderado = (corners_fuera_reciente * 0.75) + (corners_fuera_global * 0.25)
-        
-        corners_casa = corners_casa_ponderado
-        corners_fuera = corners_fuera_ponderado
-        tarjetas_am_casa = partidos_casa_global['HY'].mean() if 'HY' in df.columns and len(partidos_casa_global) > 0 else 0
-        tarjetas_am_fuera = partidos_fuera_global['AY'].mean() if 'AY' in df.columns and len(partidos_fuera_global) > 0 else 0
-        tarjetas_ro_casa = partidos_casa_global['HR'].mean() if 'HR' in df.columns and len(partidos_casa_global) > 0 else 0
-        tarjetas_ro_fuera = partidos_fuera_global['AR'].mean() if 'AR' in df.columns and len(partidos_fuera_global) > 0 else 0
         fuerzas[equipo] = {
-            'Ataque_Casa': ataque_casa_final,
-            'Defensa_Casa': defensa_casa_final,
-            'Ataque_Fuera': ataque_fuera_final,
-            'Defensa_Fuera': defensa_fuera_final,
-            'Ataque_Casa_Global': ataque_casa_global,
-            'Defensa_Casa_Global': defensa_casa_global,
-            'Ataque_Fuera_Global': ataque_fuera_global,
-            'Defensa_Fuera_Global': defensa_fuera_global,
-            'Ataque_Reciente': ataque_reciente,
-            'Defensa_Reciente': defensa_reciente,
-            'Goles_Favor_Reciente': goles_favor_reciente,
-            'Goles_Contra_Reciente': goles_contra_reciente,
+            'Ataque_Casa': atq_c_final,
+            'Defensa_Casa': def_c_final,
+            'Ataque_Fuera': atq_f_final,
+            'Defensa_Fuera': def_f_final,
+            'Ataque_Casa_Global': atq_c_glob,
+            'Defensa_Casa_Global': def_c_glob,
+            'Ataque_Fuera_Global': atq_f_glob,
+            'Defensa_Fuera_Global': def_f_glob,
+            'Ataque_Reciente': atq_rec,
+            'Defensa_Reciente': def_rec,
+            'Goles_Favor_Reciente': gf_rec,
+            'Goles_Contra_Reciente': gc_rec,
             'Corners_Casa': corners_casa,
             'Corners_Fuera': corners_fuera,
-            'Corners_Casa_Contra': corners_casa_contra,
-            'Corners_Fuera_Contra': corners_fuera_contra,
-            'Corners_Promedio': (corners_casa + corners_fuera) / 2,
+            'Corners_Casa_Contra': c_c_contra,
+            'Corners_Fuera_Contra': c_f_contra,
+            'Corners_Promedio': (corners_casa + corners_fuera) / 2.0,
             'Tarjetas_Am_Casa': tarjetas_am_casa,
             'Tarjetas_Am_Fuera': tarjetas_am_fuera,
-            'Tarjetas_Am_Promedio': (tarjetas_am_casa + tarjetas_am_fuera) / 2,
+            'Tarjetas_Am_Promedio': (tarjetas_am_casa + tarjetas_am_fuera) / 2.0,
             'Tarjetas_Ro_Casa': tarjetas_ro_casa,
             'Tarjetas_Ro_Fuera': tarjetas_ro_fuera,
-            'Tarjetas_Ro_Promedio': (tarjetas_ro_casa + tarjetas_ro_fuera) / 2,
-        }
-        # métricas adicionales
-        try:
-            hst_media_casa = partidos_casa_global['HST'].mean() if 'HST' in df.columns and len(partidos_casa_global) > 0 else 0
-            ast_media_fuera = partidos_fuera_global['AST'].mean() if 'AST' in df.columns and len(partidos_fuera_global) > 0 else 0
-            eficiencia_casa = (goles_a_favor_casa_global / hst_media_casa) * 100 if hst_media_casa > 0 else 0
-            eficiencia_fuera = (goles_a_favor_fuera_global / ast_media_fuera) * 100 if ast_media_fuera > 0 else 0
-            eficiencia_promedio = (eficiencia_casa + eficiencia_fuera) / 2
-        except Exception:
-            eficiencia_casa = eficiencia_fuera = eficiencia_promedio = 0
-        try:
-            partidos_equipo = pd.concat([partidos_casa_global, partidos_fuera_global], ignore_index=True)
-            total_partidos_equipo = len(partidos_equipo)
-            if total_partidos_equipo > 0:
-                btts_count = ((partidos_equipo['FTHG'] > 0) & (partidos_equipo['FTAG'] > 0)).sum()
-                over25_count = ((partidos_equipo['FTHG'] + partidos_equipo['FTAG']) > 2.5).sum()
-                btts_pct = (btts_count / total_partidos_equipo) * 100
-                over25_pct = (over25_count / total_partidos_equipo) * 100
-            else:
-                btts_pct = 0
-                over25_pct = 0
-        except Exception:
-            btts_pct = 0
-            over25_pct = 0
-        try:
-            goles_2t_list = []
-            if len(partidos_casa_global) > 0 and 'HTHG' in df.columns:
-                goles_2t_casa = (partidos_casa_global['FTHG'] - partidos_casa_global['HTHG']).dropna()
-                goles_2t_list.extend(goles_2t_casa.tolist())
-            if len(partidos_fuera_global) > 0 and 'HTAG' in df.columns:
-                goles_2t_fuera = (partidos_fuera_global['FTAG'] - partidos_fuera_global['HTAG']).dropna()
-                goles_2t_list.extend(goles_2t_fuera.tolist())
-            goles_2t_promedio = float(np.mean(goles_2t_list)) if len(goles_2t_list) > 0 else 0.0
-        except Exception:
-            goles_2t_promedio = 0.0
-        fuerzas[equipo].update({
-            'Eficiencia_Tiro_Casa_pct': eficiencia_casa,
-            'Eficiencia_Tiro_Fuera_pct': eficiencia_fuera,
-            'Eficiencia_Tiro_Promedio_pct': eficiencia_promedio,
+            'Tarjetas_Ro_Promedio': (tarjetas_ro_casa + tarjetas_ro_fuera) / 2.0,
+            'Eficiencia_Tiro_Casa_pct': ef_c,
+            'Eficiencia_Tiro_Fuera_pct': ef_f,
+            'Eficiencia_Tiro_Promedio_pct': ef_prom,
             'BTTS_pct': btts_pct,
             'Over25_pct': over25_pct,
-            'Goles_2T_Promedio': goles_2t_promedio,
-        })
+            'Goles_2T_Promedio': g2t_prom,
+        }
     
     # OPTIMIZACIÓN RASPBERRY PI: Forzar recolección de basura para liberar memoria
     gc.collect()
@@ -374,7 +405,7 @@ def predecir_partido(local, visitante, fuerzas, media_liga_local, media_liga_vis
         except Exception as e:
             logger.error(f"⚠️  Error en motor Cython: {e}. Usando fallback Python.")
     
-    # ========== FALLBACK: MOTOR PYTHON PURO ==========
+    # ========== FALLBACK: MOTOR PYTHON VECTORIZADO (NumPy) ==========
     fuerza_ataque_local = fuerzas[local]['Ataque_Casa']
     fuerza_defensa_visitante = fuerzas[visitante]['Defensa_Fuera']
     lambda_local = fuerza_ataque_local * fuerza_defensa_visitante * media_liga_local
@@ -382,35 +413,30 @@ def predecir_partido(local, visitante, fuerzas, media_liga_local, media_liga_vis
     fuerza_defensa_local = fuerzas[local]['Defensa_Casa']
     lambda_visitante = fuerza_ataque_visitante * fuerza_defensa_local * media_liga_visitante
     
-    # Aumentar rango a 0-10 para capturar más probabilidad cuando lambdas son altas
     max_goles = 10
-    prob_local = [poisson.pmf(i, lambda_local) for i in range(max_goles + 1)]
-    prob_visitante = [poisson.pmf(i, lambda_visitante) for i in range(max_goles + 1)]
+    k = np.arange(max_goles + 1)
+    prob_local_arr = poisson.pmf(k, lambda_local)
+    prob_vis_arr = poisson.pmf(k, lambda_visitante)
     
-    victoria_local = empate = victoria_visitante = 0
-    marcadores_exactos = []
-    for goles_l in range(max_goles + 1):
-        for goles_v in range(max_goles + 1):
-            prob = prob_local[goles_l] * prob_visitante[goles_v]
-            if goles_l > goles_v:
-                victoria_local += prob
-            elif goles_l == goles_v:
-                empate += prob
-            else:
-                victoria_visitante += prob
-            # Solo guardar marcadores hasta 6-6 para el top de marcadores
-            if goles_l <= 6 and goles_v <= 6:
-                marcadores_exactos.append({'marcador': f'{goles_l}-{goles_v}', 'prob': prob})
+    matriz_prob = np.outer(prob_local_arr, prob_vis_arr)
     
-    # Normalizar probabilidades para que sumen exactamente 1.0
+    empate = float(np.trace(matriz_prob))
+    victoria_local = float(np.sum(np.tril(matriz_prob, -1)))
+    victoria_visitante = float(np.sum(np.triu(matriz_prob, 1)))
+    
     total_prob = victoria_local + empate + victoria_visitante
     if total_prob > 0:
-        victoria_local = victoria_local / total_prob
-        empate = empate / total_prob
-        victoria_visitante = victoria_visitante / total_prob
+        victoria_local /= total_prob
+        empate /= total_prob
+        victoria_visitante /= total_prob
     
-    marcadores_exactos.sort(key=lambda x: x['prob'], reverse=True)
-    top_3_marcadores = marcadores_exactos[:3]
+    # Top 3 marcadores (hasta 6-6)
+    sub_mat = matriz_prob[:7, :7]
+    indices_top = np.argsort(sub_mat.ravel())[::-1][:3]
+    top_3_marcadores = [
+        {'marcador': f'{idx // 7}-{idx % 7}', 'prob': float(sub_mat.ravel()[idx])}
+        for idx in indices_top
+    ]
     
     # ========== MERCADOS DE GOLES (Over/Under) ==========
     # λ_total = λ_local + λ_visitante (suma de Poisson es Poisson)

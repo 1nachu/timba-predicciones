@@ -144,6 +144,8 @@ def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double m
 
     # RETORNO DEL DICCIONARIO COMPLETO
     return {
+        'xG_Local': lambda_local,
+        'xG_Vis': lambda_visitante,
         'Goles_Esp_Local': lambda_local,
         'Goles_Esp_Vis': lambda_visitante,
         'Prob_Local': victoria_local,
