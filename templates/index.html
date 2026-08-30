@@ -36,6 +36,7 @@
                 {% elif 'Ligue' in liga_data.nombre %}🇫🇷
                 {% elif 'Primeira' in liga_data.nombre %}🇵🇹
                 {% elif 'Eredivisie' in liga_data.nombre %}🇳🇱
+                {% elif 'Champions' in liga_data.nombre %}🏆
                 {% else %}⚽{% endif %}
             </span>
             <span class="liga-name">{{ liga_data.nombre }}</span>
@@ -82,9 +83,9 @@
                         <span class="pred-item visitante">2: {{ partido.prediccion.visitante|int }}%</span>
                     </div>
                     <div class="pred-bar">
-                        <div class="pred-bar-local" style="width: {{ partido.prediccion.local }}%"></div>
-                        <div class="pred-bar-empate" style="width: {{ partido.prediccion.empate }}%"></div>
-                        <div class="pred-bar-visitante" style="width: {{ partido.prediccion.visitante }}%"></div>
+                        <div class="pred-bar-local" data-width="{{ partido.prediccion.local }}"></div>
+                        <div class="pred-bar-empate" data-width="{{ partido.prediccion.empate }}"></div>
+                        <div class="pred-bar-visitante" data-width="{{ partido.prediccion.visitante }}"></div>
                     </div>
                 </div>
                 {% else %}

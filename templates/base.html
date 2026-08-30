@@ -134,6 +134,13 @@
             
             <div class="sidebar-section">
                 <div class="sidebar-header">
+                    <span>🏆</span> EUROPA
+                </div>
+                <a href="/fixtures?liga_id=8" class="sidebar-item">Champions League</a>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-header">
                     <span class="flag">🇦🇷</span> ARGENTINA
                 </div>
                 <a href="/fixtures?liga_id=10" class="sidebar-item">Liga Profesional</a>
@@ -269,8 +276,8 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Aplicar width desde data-width a progress bars
-            document.querySelectorAll('.progress-bar[data-width]').forEach(function(el) {
+            // Aplicar width desde data-width a elementos que usan porcentaje dinámico
+            document.querySelectorAll('[data-width]').forEach(function(el) {
                 const width = parseFloat(el.getAttribute('data-width'));
                 if (!isNaN(width)) el.style.width = width + '%';
             });

@@ -121,7 +121,7 @@
                 </div>
                 <div class="progress">
                     <div class="progress-bar bg-primary" 
-                         style="width: {{ [((prediction['Goles_Esp_Local'] / 4) * 100), 100]|min }}%">
+                         data-width="{{ [((prediction['Goles_Esp_Local'] / 4) * 100), 100]|min }}">
                     </div>
                 </div>
             </div>
@@ -133,7 +133,7 @@
                 </div>
                 <div class="progress">
                     <div class="progress-bar bg-danger" 
-                         style="width: {{ [((prediction['Goles_Esp_Vis'] / 4) * 100), 100]|min }}%">
+                         data-width="{{ [((prediction['Goles_Esp_Vis'] / 4) * 100), 100]|min }}">
                     </div>
                 </div>
             </div>
@@ -250,7 +250,7 @@
                     </div>
                     <div class="progress" style="height: 12px;">
                         <div class="progress-bar bg-warning" 
-                             style="width: {{ [((prediction['Tarjetas_Am_Local'] / 3) * 100), 100]|min }}%"></div>
+                             data-width="{{ [((prediction['Tarjetas_Am_Local'] / 3) * 100), 100]|min }}"></div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -269,7 +269,7 @@
                     </div>
                     <div class="progress" style="height: 12px;">
                         <div class="progress-bar bg-warning" 
-                             style="width: {{ [((prediction['Tarjetas_Am_Vis'] / 3) * 100), 100]|min }}%"></div>
+                             data-width="{{ [((prediction['Tarjetas_Am_Vis'] / 3) * 100), 100]|min }}"></div>
                     </div>
                 </div>
             </div>
@@ -364,7 +364,7 @@
                                 <strong>{{ reco.corto }}</strong>
                                 <div class="small text-muted">{{ reco.texto }}</div>
                                 <div class="progress mt-1" style="height: 6px;">
-                                    <div class="progress-bar bg-{{ reco.class }}" style="width: {{ reco.prob }}%"></div>
+                                    <div class="progress-bar bg-{{ reco.class }}" data-width="{{ reco.prob }}"></div>
                                 </div>
                                 <small class="fw-bold">{{ reco.prob }}%</small>
                             </div>

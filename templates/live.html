@@ -220,6 +220,9 @@
             </small>
         </div>
 
+        <!-- Metadata para scripts (sin usar dobles llaves en JS) -->
+        <div id="liveMeta" data-has-partidos="{{ (partidos|length > 0)|lower }}" style="display:none;"></div>
+
     {% else %}
         <!-- Sin partidos -->
         <div class="no-matches">
@@ -269,20 +272,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    {% if partidos %}
-    // Countdown y auto-refresh cada 30 segundos
-    let seconds = 30;
-    const countdownEl = document.getElementById('countdown');
+    const hasPartidos = document.getElementById('liveMeta')?.dataset?.hasPartidos === 'true';
+    if (hasPartidos) {
+        // Countdown y auto-refresh cada 30 segundos
+        let seconds = 30;
+        const countdownEl = document.getElementById('countdown');
 
-    const interval = setInterval(function() {
-        seconds--;
-        if (countdownEl) countdownEl.textContent = seconds;
-        if (seconds <= 0) {
-            clearInterval(interval);
-            location.reload();
-        }
-    }, 1000);
-    {% endif %}
+        const interval = setInterval(function() {
+            seconds--;
+            if (countdownEl) countdownEl.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(interval);
+                location.reload();
+            }
+        }, 1000);
+    }
 });
 </script>
 {% endblock %}

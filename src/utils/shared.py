@@ -76,8 +76,12 @@ CURRENT_SEASON = "2526"  # 2025-26
 # Ligas con fuentes de datos confiables (7 europeas + Argentina)
 ALIAS_TEAMS = {
     # --- PREMIER LEAGUE (E0) ---
-    "Manchester United": "Man United", "Man Utd": "Man United",
-    "Manchester City": "Man City",
+    "Manchester United": "Man United", "Man Utd": "Man United", "Manchester United FC": "Manchester United",
+    "Manchester City": "Man City", "Manchester City FC": "Man City",
+    "Arsenal FC": "Arsenal",
+    "Chelsea FC": "Chelsea",
+    "Liverpool FC": "Liverpool",
+    "Aston Villa FC": "Aston Villa",
     "Tottenham Hotspur": "Tottenham", "Spurs": "Tottenham",
     "Wolverhampton Wanderers": "Wolves", "Wolverhampton": "Wolves",
     "Nottingham Forest": "Nott'm Forest",
@@ -90,7 +94,9 @@ ALIAS_TEAMS = {
     "Ipswich Town": "Ipswich",
 
     # --- LA LIGA (SP1) ---
-    "Atletico Madrid": "Ath Madrid", "Atlético de Madrid": "Ath Madrid",
+    "Real Madrid CF": "Real Madrid",
+    "FC Barcelona": "Barcelona",
+    "Atleti": "Ath Madrid", "Atletico Madrid": "Ath Madrid", "Atlético de Madrid": "Ath Madrid", "Atletico de Madrid": "Ath Madrid", "Club Atlético de Madrid": "Ath Madrid",
     "Athletic Club": "Ath Bilbao", "Athletic Bilbao": "Ath Bilbao",
     "Real Betis": "Betis", "Real Betis Balompié": "Betis",
     "Celta de Vigo": "Celta", "RC Celta": "Celta",
@@ -109,7 +115,7 @@ ALIAS_TEAMS = {
     "Borussia Dortmund": "Dortmund",
     "Borussia Monchengladbach": "M'gladbach", "Borussia Mönchengladbach": "M'gladbach",
     "Eintracht Frankfurt": "Ein Frankfurt",
-    "Bayern Munich": "Bayern Munich", "FC Bayern München": "Bayern Munich",
+    "Bayern Munich": "Bayern Munich", "FC Bayern München": "Bayern Munich", "Bayern München": "Bayern Munich",
     "VfB Stuttgart": "Stuttgart",
     "VfL Wolfsburg": "Wolfsburg",
     "Mainz 05": "Mainz", "1. FSV Mainz 05": "Mainz",
@@ -134,10 +140,10 @@ ALIAS_TEAMS = {
     "Torino FC": "Torino",
 
     # --- LIGUE 1 (F1) ---
-    "Paris Saint-Germain": "Paris SG", "Paris SG": "Paris SG", "PSG": "Paris SG",
+    "Paris Saint-Germain FC": "Paris SG", "Paris Saint-Germain": "Paris SG", "Paris SG": "Paris SG", "PSG": "Paris SG",
     "Olympique de Marseille": "Marseille", "Olympique Marseille": "Marseille",
     "Olympique Lyonnais": "Lyon", "Olympique Lyon": "Lyon",
-    "AS Monaco": "Monaco",
+    "AS Monaco FC": "Monaco", "AS Monaco": "Monaco",
     "Stade Rennais FC": "Rennes", "Stade Rennais": "Rennes",
     "RC Lens": "Lens",
     "Havre Athletic Club": "Le Havre", "Le Havre AC": "Le Havre",
@@ -147,13 +153,15 @@ ALIAS_TEAMS = {
     "RC Strasbourg Alsace": "Strasbourg",
 
     # --- EREDIVISIE (N1) ---
-    "PSV": "PSV Eindhoven",
+    "AFC Ajax": "Ajax",
+    "PSV": "PSV Eindhoven", "PSV Eindhoven": "PSV Eindhoven",
     "AZ": "AZ Alkmaar",
     "FC Twente": "Twente",
     "FC Utrecht": "Utrecht",
     "FC Groningen": "Groningen",
     "FC Volendam": "Volendam",
     "PEC Zwolle": "Zwolle",
+    "Feyenoord Rotterdam": "Feyenoord",
     "sc Heerenveen": "Heerenveen", "SC Heerenveen": "Heerenveen",
     "Heracles Almelo": "Heracles",
     "N.E.C. Nijmegen": "Nijmegen", "NEC Nijmegen": "Nijmegen", "NEC": "Nijmegen",
@@ -199,6 +207,50 @@ ALIAS_TEAMS = {
     "Talleres de Córdoba": "Talleres Cordoba", "Talleres": "Talleres Cordoba",
     "Unión de Santa Fe": "Union de Santa Fe", "Union": "Union de Santa Fe", "Unión": "Union de Santa Fe",
     "Vélez Sarsfield": "Velez Sarsfield", "Velez": "Velez Sarsfield",
+}
+
+
+# ========== MAPEOS PARA CHAMPIONS LEAGUE ==========
+# Mapea nombres aproximados de equipos (para selector UI) a la liga doméstica (código CSV).
+# Los nombres no necesitan ser exactos; emparejar_equipo() hará fuzzy matching.
+CHAMPIONS_EQUIPO_LIGA = {
+    #Premier League (E0)
+    'Arsenal': 'E0',
+    'Chelsea': 'E0',
+    'Manchester City': 'E0',
+    'Liverpool': 'E0',
+    'Manchester United': 'E0',
+    'Newcastle United': 'E0',
+    'Tottenham': 'E0',
+
+    #La Liga (SP1)
+    'Real Madrid': 'SP1',
+    'Barcelona': 'SP1',
+    'Atleti': 'SP1',
+
+    #Bundesliga (D1)
+    'Bayern Munich': 'D1',
+    'Borussia Dortmund': 'D1',
+    'Bayern Leverkusen': 'D1',
+
+    #Serie A (I1)
+    'Juventus': 'I1',
+    'AC Milan': 'I1',
+    'Inter Milan': 'I1',
+    'Atalanta': 'I1',
+
+    #Ligue 1 (F1)
+    'PSG': 'F1',
+    'Lyon': 'F1',
+
+    #Primeira Liga (P1)
+    'Benfica': 'P1',
+    'Porto': 'P1',
+    'Sporting': 'P1',
+
+    #Eredivisie (N1)
+    'Ajax': 'N1',
+    'PSV': 'N1',
 }
 
 
@@ -431,6 +483,7 @@ __all__ = [
     'FOOTBALL_DATA_BASE_URL', 'FOOTBALL_API_BASE_URL', 'CURRENT_SEASON',
     # Datos
     'ALIAS_TEAMS',
+    'CHAMPIONS_EQUIPO_LIGA',
     # Funciones
     'normalizar_csv', 'descargar_csv_safe',
     'emparejar_equipo', 'encontrar_equipo_similar', 'imprimir_barra',

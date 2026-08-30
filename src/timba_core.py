@@ -78,6 +78,7 @@ try:
         encontrar_equipo_similar,
         imprimir_barra,
         ALIAS_TEAMS,
+        CHAMPIONS_EQUIPO_LIGA,
         DB_PATH,
         LOGS_DIR,
     )
@@ -86,6 +87,7 @@ except ImportError:
     from difflib import get_close_matches
     
     ALIAS_TEAMS = {}
+    CHAMPIONS_EQUIPO_LIGA = {}
     DB_PATH = Path("data/databases/football_data.db")
     LOGS_DIR = Path("logs")
     
@@ -117,37 +119,51 @@ LIGAS = {
     1: {
         'nombre': 'Premier League (Inglaterra) - Temporada 25/26',
         'url': 'https://www.football-data.co.uk/mmz4281/2526/E0.csv',
-        'codigo': 'E0'
+        'codigo': 'E0',
+        'bandera': '🏴󠁧󠁢󠁥󠁮󠁧󠁿'
     },
     2: {
         'nombre': 'La Liga (España) - Temporada 25/26',
         'url': 'https://www.football-data.co.uk/mmz4281/2526/SP1.csv',
-        'codigo': 'SP1'
+        'codigo': 'SP1',
+        'bandera': '🇪🇸'
     },
     3: {
         'nombre': 'Serie A (Italia) - Temporada 25/26',
         'url': 'https://www.football-data.co.uk/mmz4281/2526/I1.csv',
-        'codigo': 'I1'
+        'codigo': 'I1',
+        'bandera': '🇮🇹'
     },
     4: {
         'nombre': 'Bundesliga (Alemania) - Temporada 25/26',
         'url': 'https://www.football-data.co.uk/mmz4281/2526/D1.csv',
-        'codigo': 'D1'
+        'codigo': 'D1',
+        'bandera': '🇩🇪'
     },
     5: {
         'nombre': 'Ligue 1 (Francia) - Temporada 25/26',
         'url': 'https://www.football-data.co.uk/mmz4281/2526/F1.csv',
-        'codigo': 'F1'
+        'codigo': 'F1',
+        'bandera': '🇫🇷'
     },
     6: {
         'nombre': 'Primeira Liga (Portugal) - Temporada 25/26',
         'url': 'https://www.football-data.co.uk/mmz4281/2526/P1.csv',
-        'codigo': 'P1'
+        'codigo': 'P1',
+        'bandera': '🇵🇹'
     },
     7: {
         'nombre': 'Eredivisie (Países Bajos) - Temporada 25/26',
         'url': 'https://www.football-data.co.uk/mmz4281/2526/N1.csv',
-        'codigo': 'N1'
+        'codigo': 'N1',
+        'bandera': '🇳🇱'
+    },
+    8: {
+        'nombre': 'UEFA Champions League - Temporada 25/26',
+        'url': None,
+        'codigo': 'CL',
+        'es_torneo': True,
+        'bandera': '🏆'
     },
     10: {
         'nombre': 'Liga Profesional (Argentina) - Temporada 2026',
@@ -167,8 +183,12 @@ URLS_FIXTURE = {
     5: {'url': 'https://fixturedownload.com/feed/json/ligue-1-2025', 'liga': 'Ligue 1'},
     6: {'url': 'https://fixturedownload.com/feed/json/primeira-liga-2025', 'liga': 'Primeira Liga'},
     7: {'url': 'https://fixturedownload.com/feed/json/eredivisie-2025', 'liga': 'Eredivisie'},
+    8: {'url': 'https://fixturedownload.com/feed/json/champions-league-2025', 'liga': 'Champions League'},
     10: {'url': 'https://www.promiedos.com.ar/league/liga-profesional/hc', 'liga': 'Liga Profesional'},
 }
+
+# Mapea código CSV (football-data.co.uk) a liga_id interno (LIGAS)
+CSV_A_LIGA_ID = {'E0': 1, 'SP1': 2, 'I1': 3, 'D1': 4, 'F1': 5, 'P1': 6, 'N1': 7}
 
 
 # ========== DESCARGA DE CSV - ELIMINADO CÓDIGO DUPLICADO ==========
@@ -499,6 +519,8 @@ def predecir_partido(local, visitante, fuerzas, media_liga_local, media_liga_vis
         prob_vis_mas_cards = 0.45
     
     return {
+        'xG_Local': lambda_local,
+        'xG_Vis': lambda_visitante,
         'Goles_Esp_Local': lambda_local,
         'Goles_Esp_Vis': lambda_visitante,
         'Prob_Local': victoria_local,
@@ -550,6 +572,66 @@ def predecir_partido(local, visitante, fuerzas, media_liga_local, media_liga_vis
         'Prob_Local_Mas_Cards': prob_local_mas_cards,
         'Prob_Vis_Mas_Cards': prob_vis_mas_cards,
     }
+
+
+def predecir_partido_champions(local: str, visitante: str, cache_fuerzas: dict):
+    """Predice un partido de Champions usando fuerzas de ligas domésticas.
+
+    Args:
+        local: Nombre del equipo local tal como viene de la API.
+        visitante: Nombre del equipo visitante tal como viene de la API.
+        cache_fuerzas: Diccionario {liga_id: (fuerzas, media_local, media_vis, equipos)}
+
+    Retorna:
+        dict de predicción (igual que predecir_partido) o None si faltan datos.
+    """
+    # Emparejar nombres de equipos a las llaves conocidas de CHAMPIONS_EQUIPO_LIGA.
+    # Esto permite usar nombres aproximados y confiar en el fuzzy matching.
+    key_local = emparejar_equipo(local, list(CHAMPIONS_EQUIPO_LIGA.keys()))
+    key_vis = emparejar_equipo(visitante, list(CHAMPIONS_EQUIPO_LIGA.keys()))
+
+    liga_local_csv = CHAMPIONS_EQUIPO_LIGA.get(key_local)
+    liga_vis_csv = CHAMPIONS_EQUIPO_LIGA.get(key_vis)
+
+    if not liga_local_csv or not liga_vis_csv:
+        logger.warning(f"No se encontró liga doméstica para: {local} ({key_local}->{liga_local_csv}), {visitante} ({key_vis}->{liga_vis_csv})")
+        return None
+
+    liga_local_id = CSV_A_LIGA_ID.get(liga_local_csv)
+    liga_vis_id = CSV_A_LIGA_ID.get(liga_vis_csv)
+
+    if liga_local_id is None or liga_vis_id is None:
+        logger.warning(f"No se encontró liga_id para códigos CSV: {liga_local_csv}, {liga_vis_csv}")
+        return None
+
+    cache_local = cache_fuerzas.get(liga_local_id)
+    cache_vis = cache_fuerzas.get(liga_vis_id)
+
+    if not cache_local or not cache_vis:
+        logger.warning(f"Cache de fuerzas incompleta para Champions: {liga_local_id}, {liga_vis_id}")
+        return None
+
+    fuerzas_local, media_local_local, media_vis_local, equipos_local = cache_local
+    fuerzas_vis, media_local_vis, media_vis_vis, equipos_vis = cache_vis
+
+    local_match = emparejar_equipo(local, equipos_local)
+    visitante_match = emparejar_equipo(visitante, equipos_vis)
+
+    if local_match not in fuerzas_local or visitante_match not in fuerzas_vis:
+        logger.warning(f"Equipo no encontrado en cache de fuerzas: {local_match} o {visitante_match}")
+        return None
+
+    # Promedio entre medias de ambas ligas (home y away)
+    media_goles_local = (media_local_local + media_local_vis) / 2
+    media_goles_vis = (media_vis_local + media_vis_vis) / 2
+
+    # Combinar fuerzas de ambas ligas en un solo dict para predecir
+    fuerzas_combinadas = {
+        local_match: fuerzas_local[local_match],
+        visitante_match: fuerzas_vis[visitante_match],
+    }
+
+    return predecir_partido(local_match, visitante_match, fuerzas_combinadas, media_goles_local, media_goles_vis)
 
 
 def obtener_h2h(local, visitante, df):

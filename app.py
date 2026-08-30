@@ -37,8 +37,9 @@ SEND_FILE_MAX_AGE_DEFAULT = 2592000
 # ========== IMPORTS LOCALES ==========
 from timba_core import (
     LIGAS, URLS_FIXTURE,
-    predecir_partido, calcular_fuerzas, obtener_proximos_partidos,
-    descargar_csv_safe, emparejar_equipo
+    predecir_partido, predecir_partido_champions, calcular_fuerzas, obtener_proximos_partidos,
+    descargar_csv_safe, emparejar_equipo,
+    DB_PATH
 )
 
 # Intentar importar cliente de API (opcional)
@@ -94,7 +95,8 @@ def cargar_datos_liga_cached(liga_id: int):
         tuple: (fuerzas, media_local, media_vis, equipos) o valores vacíos si falla
     """
     liga_info = LIGAS.get(liga_id)
-    if not liga_info:
+    if not liga_info or not liga_info.get('url'):
+        # No hay CSV disponible (ej: Champions League) => no fuerzas disponibles
         return {}, 0, 0, []
     
     try:
@@ -164,6 +166,16 @@ def predecir_partido_cached(liga_id: int, local_nombre: str, visitante_nombre: s
     Returns:
         dict: Predicción con probabilidades o None si falla
     """
+    if liga_id == 8:
+        # Champions League: usar fuerzas de las ligas domésticas de cada equipo
+        cache_todas = {
+            lid: cargar_datos_liga_cached(lid)
+            for lid in LIGAS
+            if LIGAS[lid].get('url') is not None
+        }
+        from timba_core import predecir_partido_champions
+        return predecir_partido_champions(local_nombre, visitante_nombre, cache_todas)
+
     # Recuperamos fuerzas (ya cacheado por 1 hora)
     fuerzas, media_local, media_vis, equipos_validos = cargar_datos_liga_cached(liga_id)
     
@@ -495,13 +507,13 @@ def inject_globals():
 DASHBOARD_CACHE_FILE = os.path.join(os.path.dirname(__file__), 'data', 'dashboard_cache.json')
 
 
-def cargar_dashboard_cache() -> dict:
+def cargar_dashboard_cache() -> Optional[dict]:
     """
     Carga datos pre-calculados desde data/dashboard_cache.json.
     Generado por background_updater.py en segundo plano.
     
     Returns:
-        dict: Datos del cache o estructura vacía si falla
+        Optional[dict]: Datos del cache o None si falla
     """
     try:
         if os.path.exists(DASHBOARD_CACHE_FILE):
@@ -621,7 +633,12 @@ def predict():
     
     # Cargar datos de la liga
     df, fuerzas, media_local, media_vis, equipos = cargar_datos_liga(liga_id)
-    
+
+    if liga_id == 8:
+        # Champions League: no hay CSV, usar listado de equipos del mapping
+        from timba_core import CHAMPIONS_EQUIPO_LIGA
+        equipos = sorted(CHAMPIONS_EQUIPO_LIGA.keys())
+
     if not equipos:
         flash(f"⚠️ No se pudieron cargar datos de la liga. Verifica tu conexión.", "warning")
     
@@ -643,49 +660,58 @@ def predict():
     # Si tenemos equipos seleccionados, ejecutar predicción
     if seleccion_local and seleccion_visita and seleccion_local != seleccion_visita:
         
-        # NORMALIZACIÓN CRÍTICA: Los nombres de fixtures pueden no coincidir
-        # con la base de datos histórica. Usamos emparejar_equipo para corregirlos.
-        equipos_validos = list(fuerzas.keys()) if fuerzas else []
-        
-        if equipos_validos:
-            # Normalizar nombres usando fuzzy matching
-            local_normalizado = emparejar_equipo(seleccion_local, equipos_validos)
-            visitante_normalizado = emparejar_equipo(seleccion_visita, equipos_validos)
-            
-            # Verificar si la normalización encontró coincidencias válidas
-            if local_normalizado in fuerzas and visitante_normalizado in fuerzas:
-                # Calcular predicción con nombres normalizados
-                prediction = predecir_partido(
-                    local_normalizado, 
-                    visitante_normalizado, 
-                    fuerzas, 
-                    media_local, 
-                    media_vis
-                )
-                
-                if prediction:
-                    recomendaciones = generar_recomendaciones(prediction)
-                    
-                    # Actualizar nombres para mostrar los normalizados
-                    # (mantener originales en display pero usar normalizados internamente)
-                    if local_normalizado != seleccion_local:
-                        flash(f"ℹ️ '{seleccion_local}' normalizado a '{local_normalizado}'", "info")
-                    if visitante_normalizado != seleccion_visita:
-                        flash(f"ℹ️ '{seleccion_visita}' normalizado a '{visitante_normalizado}'", "info")
-                    
-                    # Usar nombres normalizados para la visualización
-                    seleccion_local = local_normalizado
-                    seleccion_visita = visitante_normalizado
+        if liga_id == 8:
+            # Champions League: no hay CSV, usamos fuerzas de ligas domésticas
+            prediction = predecir_partido_cached(liga_id, seleccion_local, seleccion_visita)
+            if prediction:
+                recomendaciones = generar_recomendaciones(prediction)
             else:
-                # No se encontró coincidencia
-                errores = []
-                if local_normalizado not in fuerzas:
-                    errores.append(f"'{seleccion_local}' → no encontrado (intenté: '{local_normalizado}')")
-                if visitante_normalizado not in fuerzas:
-                    errores.append(f"'{seleccion_visita}' → no encontrado (intenté: '{visitante_normalizado}')")
-                flash(f"❌ Equipos no encontrados en BD: {', '.join(errores)}", "danger")
+                flash("❌ No se pudo generar predicción para Champions League.", "danger")
+
         else:
-            flash("❌ No hay datos de equipos disponibles para esta liga.", "danger")
+            # NORMALIZACIÓN CRÍTICA: Los nombres de fixtures pueden no coincidir
+            # con la base de datos histórica. Usamos emparejar_equipo para corregirlos.
+            equipos_validos = list(fuerzas.keys()) if fuerzas else []
+            
+            if equipos_validos:
+                # Normalizar nombres usando fuzzy matching
+                local_normalizado = emparejar_equipo(seleccion_local, equipos_validos)
+                visitante_normalizado = emparejar_equipo(seleccion_visita, equipos_validos)
+                
+                # Verificar si la normalización encontró coincidencias válidas
+                if local_normalizado in fuerzas and visitante_normalizado in fuerzas:
+                    # Calcular predicción con nombres normalizados
+                    prediction = predecir_partido(
+                        local_normalizado, 
+                        visitante_normalizado, 
+                        fuerzas, 
+                        media_local, 
+                        media_vis
+                    )
+                    
+                    if prediction:
+                        recomendaciones = generar_recomendaciones(prediction)
+                        
+                        # Actualizar nombres para mostrar los normalizados
+                        # (mantener originales en display pero usar normalizados internamente)
+                        if local_normalizado != seleccion_local:
+                            flash(f"ℹ️ '{seleccion_local}' normalizado a '{local_normalizado}'", "info")
+                        if visitante_normalizado != seleccion_visita:
+                            flash(f"ℹ️ '{seleccion_visita}' normalizado a '{visitante_normalizado}'", "info")
+                        
+                        # Usar nombres normalizados para la visualización
+                        seleccion_local = local_normalizado
+                        seleccion_visita = visitante_normalizado
+                else:
+                    # No se encontró coincidencia
+                    errores = []
+                    if local_normalizado not in fuerzas:
+                        errores.append(f"'{seleccion_local}' → no encontrado (intenté: '{local_normalizado}')")
+                    if visitante_normalizado not in fuerzas:
+                        errores.append(f"'{seleccion_visita}' → no encontrado (intenté: '{visitante_normalizado}')")
+                    flash(f"❌ Equipos no encontrados en BD: {', '.join(errores)}", "danger")
+            else:
+                flash("❌ No hay datos de equipos disponibles para esta liga.", "danger")
     
     elif seleccion_local and seleccion_visita and seleccion_local == seleccion_visita:
         flash("⚠️ Debes seleccionar dos equipos diferentes.", "warning")
@@ -809,6 +835,7 @@ API_TO_LEAGUE_CODE = {
     'FL1': 'F1',   # Ligue 1
     'PPL': 'P1',   # Primeira Liga (Portugal)
     'DED': 'N1',   # Eredivisie (Países Bajos)
+    'CL': 'CL',    # Champions League (no tiene CSV propio)
 }
 
 # Caché de datos históricos para evitar recargas repetidas durante la sesión
@@ -927,7 +954,27 @@ def enriquecer_partidos_con_prediccion(partidos: list) -> list:
                 continue
             
             liga_id = API_TO_LIGA_ID[api_code]
-            
+
+            # Caso especial: Champions League (no hay CSV en LIGAS, se calcula con todas las ligas)
+            if api_code == 'CL':
+                cache_todas = {
+                    lid: cargar_datos_liga_cached(lid)
+                    for lid in LIGAS
+                    if LIGAS[lid].get('url') is not None
+                }
+                pred = predecir_partido_champions(
+                    partido['homeTeam']['name'],
+                    partido['awayTeam']['name'],
+                    cache_todas
+                )
+                if pred:
+                    partido['prediccion_timba'] = {
+                        'prob_local': round(pred.get('Prob_Local', 0) * 100, 1),
+                        'prob_empate': round(pred.get('Prob_Empate', 0) * 100, 1),
+                        'prob_visitante': round(pred.get('Prob_Vis', 0) * 100, 1),
+                    }
+                continue
+
             # Cargar datos históricos (con caché)
             if liga_id not in _cache_fuerzas:
                 liga_info = LIGAS.get(liga_id)
@@ -1007,17 +1054,17 @@ def live():
 # RUTA: Historial de Aciertos (Accuracy History)
 # ============================================================
 
-# Ligas disponibles para el historial (con API Football-Data.org)
+# Ligas disponibles para el historial (basado en CSV football-data.co.uk)
 LIGAS_HISTORY = {
-    'PL': {'nombre': 'Premier League', 'bandera': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'liga_id': 1},
-    'PD': {'nombre': 'La Liga', 'bandera': '🇪🇸', 'liga_id': 2},
-    'SA': {'nombre': 'Serie A', 'bandera': '🇮🇹', 'liga_id': 3},
-    'BL1': {'nombre': 'Bundesliga', 'bandera': '🇩🇪', 'liga_id': 4},
-    'FL1': {'nombre': 'Ligue 1', 'bandera': '🇫🇷', 'liga_id': 5},
-    'PPL': {'nombre': 'Primeira Liga', 'bandera': '🇵🇹', 'liga_id': 6},
-    'DED': {'nombre': 'Eredivisie', 'bandera': '🇳🇱', 'liga_id': 7},
-    # Nota: Argentina (ASL) no disponible - API gratuita no la soporta
+    liga['codigo']: {
+        'nombre': liga['nombre'],
+        'bandera': liga.get('bandera', '⚽'),
+        'liga_id': liga_id
+    }
+    for liga_id, liga in LIGAS.items()
+    if liga.get('url') is not None
 }
+
 
 
 def determinar_resultado_real(home_goals: int, away_goals: int) -> str:
@@ -1033,6 +1080,104 @@ def determinar_resultado_real(home_goals: int, away_goals: int) -> str:
         return 'AWAY_WIN'
     else:
         return 'DRAW'
+
+
+def obtener_historial_audit(liga_id: int, days_back: int):
+    """Obtiene historial de predicciones auditadas desde la DB de football_data."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT local, visitante, fecha_partido, prob_local, prob_empate, prob_visitante,
+               prob_1x, prob_x2, prob_12, prediccion_1x2, resultado_real,
+               goles_local, goles_visitante, acierto_1x2
+        FROM predictions_audit
+        WHERE liga_id = ?
+          AND fecha_partido >= datetime('now', ? || ' days')
+          AND resultado_real IS NOT NULL
+        ORDER BY fecha_partido DESC
+        """,
+        (liga_id, f'-{days_back}')
+    )
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    resultados = []
+    aciertos = 0
+    fallos = 0
+    sin_prediccion = 0
+
+    for row in rows:
+        (local, visitante, fecha_partido, prob_local, prob_empate, prob_visitante,
+         prob_1x, prob_x2, prob_12, prediccion_1x2, resultado_real,
+         goles_local, goles_visitante, acierto_1x2) = row
+
+        # Determinar texto y probabilidad de la predicción
+        if prediccion_1x2 == 'HOME_WIN':
+            prediccion_texto = 'Local'
+            prediccion_prob = round((prob_local or 0) * 100, 1)
+        elif prediccion_1x2 == 'AWAY_WIN':
+            prediccion_texto = 'Visitante'
+            prediccion_prob = round((prob_visitante or 0) * 100, 1)
+        elif prediccion_1x2 == 'DRAW':
+            prediccion_texto = 'Empate'
+            prediccion_prob = round((prob_empate or 0) * 100, 1)
+        elif prediccion_1x2 == '1X':
+            prediccion_texto = '1X'
+            prediccion_prob = round((prob_1x or 0) * 100, 1)
+        elif prediccion_1x2 == 'X2':
+            prediccion_texto = 'X2'
+            prediccion_prob = round((prob_x2 or 0) * 100, 1)
+        elif prediccion_1x2 == '12':
+            prediccion_texto = '12'
+            prediccion_prob = round((prob_12 or 0) * 100, 1)
+        else:
+            prediccion_texto = prediccion_1x2 or ''
+            prediccion_prob = 0
+
+        acierto = None
+        if acierto_1x2 is not None:
+            acierto = bool(acierto_1x2)
+            if acierto:
+                aciertos += 1
+            else:
+                fallos += 1
+        else:
+            sin_prediccion += 1
+
+        resultados.append({
+            'local': local,
+            'visitante': visitante,
+            'goles_local': goles_local,
+            'goles_visitante': goles_visitante,
+            'resultado_real': resultado_real,
+            'prediccion_ia': prediccion_1x2,
+            'prediccion_texto': prediccion_texto,
+            'prediccion_prob': prediccion_prob,
+            'prob_local': round((prob_local or 0) * 100, 1),
+            'prob_empate': round((prob_empate or 0) * 100, 1),
+            'prob_visitante': round((prob_visitante or 0) * 100, 1),
+            'acierto': acierto,
+            'fecha': (fecha_partido or '')[:10],
+            'error': None
+        })
+
+    total = len(resultados)
+    evaluados = aciertos + fallos
+    precision = round((aciertos / evaluados * 100), 1) if evaluados > 0 else 0
+
+    estadisticas = {
+        'total_partidos': total,
+        'evaluados': evaluados,
+        'aciertos': aciertos,
+        'fallos': fallos,
+        'sin_prediccion': sin_prediccion,
+        'precision': precision
+    }
+
+    return resultados, estadisticas
 
 
 def determinar_prediccion_ia(prediccion: dict) -> tuple:
@@ -1298,13 +1443,14 @@ def history():
     """
     
     # Parámetros GET
-    league_code = request.args.get('league_code', 'PL').upper()
+    default_league_code = next(iter(LIGAS_HISTORY)) if LIGAS_HISTORY else ''
+    league_code = request.args.get('league_code', default_league_code).upper()
     days_back = int(request.args.get('days', 7))
     
     # Validar liga
     if league_code not in LIGAS_HISTORY:
-        flash(f"⚠️ Liga '{league_code}' no soportada. Usando Premier League.", "warning")
-        league_code = 'PL'
+        flash(f"⚠️ Liga '{league_code}' no soportada. Usando {LIGAS_HISTORY.get(default_league_code, {}).get('nombre', 'la liga')}.", "warning")
+        league_code = default_league_code
     
     # Validar días
     if days_back not in [7, 14, 30]:
@@ -1324,14 +1470,14 @@ def history():
     }
     es_demo = False
     
-    # Verificar API key
-    api_key = os.getenv('FOOTBALL_DATA_API_KEY')
-    
-    if not api_key:
-        flash("⚠️ Configura FOOTBALL_DATA_API_KEY para ver datos reales", "warning")
+    # Obtener historial desde la DB de auditoría
+    try:
+        resultados, estadisticas = obtener_historial_audit(liga_id, days_back)
+        if not resultados:
+            raise ValueError('No hay datos de auditoría disponibles')
+    except Exception as e:
+        flash("⚠️ No hay datos de historial disponibles. Mostrando datos de ejemplo.", "warning")
         es_demo = True
-        
-        # Datos de ejemplo para demo (con nueva estructura de Doble Oportunidad)
         resultados = [
             {
                 'local': 'Arsenal', 'visitante': 'Chelsea',
@@ -1374,49 +1520,6 @@ def history():
             'sin_prediccion': 0,
             'precision': 75.0
         }
-    
-    elif not API_CLIENT_AVAILABLE:
-        flash("❌ FootballDataClient no está disponible", "danger")
-    
-    elif FootballDataClient is not None:
-        # MODO PRODUCCIÓN: Obtener partidos reales
-        try:
-            client = FootballDataClient(api_key)
-            partidos = client.get_finished_matches(league_code, days_back=days_back)
-            
-            if not partidos:
-                flash(f"📭 No se encontraron partidos finalizados en los últimos {days_back} días", "info")
-            else:
-                # Evaluar predicciones
-                resultados, estadisticas = evaluar_partidos_finalizados(partidos, liga_id)
-                
-                if 'error' in estadisticas:
-                    flash(f"⚠️ {estadisticas['error']}", "warning")
-                    
-        except Exception as e:
-            error_msg = str(e)
-            if '403' in error_msg or 'Forbidden' in error_msg or 'Authorization' in error_msg:
-                flash(f"⚠️ Liga '{liga_info['nombre']}' no disponible en plan gratuito de la API. Mostrando datos de ejemplo.", "warning")
-                es_demo = True
-                # Datos de ejemplo genéricos
-                resultados = [
-                    {
-                        'local': 'Equipo A', 'visitante': 'Equipo B',
-                        'goles_local': 2, 'goles_visitante': 1,
-                        'resultado_real': 'HOME_WIN', 'prediccion_ia': 'HOME_WIN',
-                        'prediccion_texto': 'Local', 'prediccion_prob': 52.3,
-                        'prob_local': 52.3, 'prob_empate': 26.1, 'prob_visitante': 21.6,
-                        'acierto': True, 'fecha': '2026-01-25', 'error': None
-                    },
-                ]
-                estadisticas = {
-                    'total_partidos': 1, 'evaluados': 1, 'aciertos': 1,
-                    'fallos': 0, 'sin_prediccion': 0, 'precision': 100.0
-                }
-            else:
-                flash(f"❌ Error obteniendo partidos: {e}", "danger")
-                import traceback
-                traceback.print_exc()
     
     return render_template('results.html',
                            resultados=resultados,

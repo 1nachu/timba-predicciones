@@ -104,12 +104,12 @@
             <div class="progress" style="height: 28px; border-radius: 8px;">
                 <div class="progress-bar bg-success" 
                      role="progressbar"
-                     style="width: {{ (estadisticas.aciertos / estadisticas.evaluados * 100)|round(1) }}%">
+                     data-width="{{ (estadisticas.aciertos / estadisticas.evaluados * 100)|round(1) }}">
                     <span class="fw-bold">{{ estadisticas.aciertos }} ✓</span>
                 </div>
                 <div class="progress-bar bg-danger" 
                      role="progressbar"
-                     style="width: {{ (estadisticas.fallos / estadisticas.evaluados * 100)|round(1) }}%">
+                     data-width="{{ (estadisticas.fallos / estadisticas.evaluados * 100)|round(1) }}">
                     <span class="fw-bold">{{ estadisticas.fallos }} ✗</span>
                 </div>
             </div>

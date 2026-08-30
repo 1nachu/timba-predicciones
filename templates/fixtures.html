@@ -77,9 +77,9 @@
                         <span class="text-danger fw-bold">2: {{ partido.prediccion.visitante|int }}%</span>
                     </div>
                     <div class="progress" style="height: 12px;">
-                        <div class="progress-bar bg-primary" style="width: {{ partido.prediccion.local }}%"></div>
-                        <div class="progress-bar bg-secondary" style="width: {{ partido.prediccion.empate }}%"></div>
-                        <div class="progress-bar bg-danger" style="width: {{ partido.prediccion.visitante }}%"></div>
+                        <div class="progress-bar bg-primary" data-width="{{ partido.prediccion.local }}"></div>
+                        <div class="progress-bar bg-secondary" data-width="{{ partido.prediccion.empate }}"></div>
+                        <div class="progress-bar bg-danger" data-width="{{ partido.prediccion.visitante }}"></div>
                     </div>
                 </div>
                 {% else %}
@@ -144,19 +144,19 @@
                                 {% if partido.prediccion %}
                                 <div class="progress" style="height: 28px;">
                                     <div class="progress-bar bg-primary" 
-                                         style="width: {{ partido.prediccion.local }}%"
+                                         data-width="{{ partido.prediccion.local }}"
                                          data-bs-toggle="tooltip" 
                                          title="Local: {{ partido.prediccion.local }}%">
                                         {% if partido.prediccion.local >= 15 %}{{ partido.prediccion.local|int }}%{% endif %}
                                     </div>
                                     <div class="progress-bar bg-secondary" 
-                                         style="width: {{ partido.prediccion.empate }}%"
+                                         data-width="{{ partido.prediccion.empate }}"
                                          data-bs-toggle="tooltip" 
                                          title="Empate: {{ partido.prediccion.empate }}%">
                                         {% if partido.prediccion.empate >= 15 %}{{ partido.prediccion.empate|int }}%{% endif %}
                                     </div>
                                     <div class="progress-bar bg-danger" 
-                                         style="width: {{ partido.prediccion.visitante }}%"
+                                         data-width="{{ partido.prediccion.visitante }}"
                                          data-bs-toggle="tooltip" 
                                          title="Visitante: {{ partido.prediccion.visitante }}%">
                                         {% if partido.prediccion.visitante >= 15 %}{{ partido.prediccion.visitante|int }}%{% endif %}

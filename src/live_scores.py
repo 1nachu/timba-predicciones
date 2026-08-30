@@ -70,7 +70,7 @@ DEFAULT_COMPETITIONS = [
     'FL1',   # Ligue 1
     'PPL',   # Primeira Liga (Portugal)
     'DED',   # Eredivisie (Países Bajos)
-    # 'CL',  # Champions League - No disponible en API gratuita
+    'CL',    # Champions League
 ]
 
 
