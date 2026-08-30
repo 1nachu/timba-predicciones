@@ -79,11 +79,31 @@ COLUMNAS_ESENCIALES = [
 ]
 
 
+# ========== CONFIGURACIÓN DE LOGGING ESTRUCTURADO ==========
+os.makedirs(os.path.join(PROJECT_ROOT, 'logs'), exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] [%(name)s] %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(PROJECT_ROOT, 'logs', 'background_updater.log')),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("background_updater")
+
+
 def log(mensaje: str, nivel: str = "INFO"):
-    """Logger simple con timestamp."""
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    """Logger estructurado con timestamp y niveles estándar."""
     iconos = {"INFO": "ℹ️", "OK": "✅", "WARN": "⚠️", "ERROR": "❌", "START": "🚀"}
-    print(f"[{timestamp}] {iconos.get(nivel, 'ℹ️')} {mensaje}")
+    msg_formatted = f"{iconos.get(nivel, 'ℹ️')} {mensaje}"
+    if nivel in ["ERROR"]:
+        logger.error(msg_formatted)
+    elif nivel in ["WARN"]:
+        logger.warning(msg_formatted)
+    elif nivel in ["DEBUG"]:
+        logger.debug(msg_formatted)
+    else:
+        logger.info(msg_formatted)
 
 
 def cargar_fuerzas_liga(liga_id: int) -> tuple:
