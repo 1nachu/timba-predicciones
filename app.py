@@ -77,14 +77,19 @@ app.secret_key = os.getenv('SECRET_KEY', 'clave_super_secreta_timba_2026')
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = SEND_FILE_MAX_AGE_DEFAULT
 
 # ============================================================
-# CONFIGURACIÓN DE FLASK-CACHING (OPTIMIZADO PARA RASPBERRY PI)
+# CONFIGURACIÓN DE FLASK-CACHING (PERSISTENTE / INTER-PROCESO)
 # ============================================================
-# SimpleCache: Almacena en memoria RAM del proceso
-# Ideal para Raspberry Pi y aplicaciones single-process
+# FileSystemCache: Almacena en disco (data/flask_cache)
+# Permite compartir caché entre múltiples workers de Flask, Gunicorn y CLI
+FLASK_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'flask_cache')
+os.makedirs(FLASK_CACHE_DIR, exist_ok=True)
+
 cache = Cache(app, config={
-    'CACHE_TYPE': 'SimpleCache',           # Caché en memoria RAM
-    'CACHE_DEFAULT_TIMEOUT': 600,           # Timeout por defecto: 10 minutos
-    'CACHE_THRESHOLD': 200                  # Máximo 200 items en caché
+    'CACHE_TYPE': 'FileSystemCache',
+    'CACHE_DIR': FLASK_CACHE_DIR,
+    'CACHE_DEFAULT_TIMEOUT': 600,       # Timeout por defecto: 10 minutos
+    'CACHE_THRESHOLD': 500,             # Máximo 500 items en caché
+    'CACHE_IGNORE_ERRORS': True
 })
 
 
