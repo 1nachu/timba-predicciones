@@ -450,7 +450,7 @@ def guardar_prediccion_audit(partido: dict, prediccion: dict, liga_id: int, liga
     fecha_solo = fecha_dt.strftime('%Y-%m-%d')
 
     # Guardar solo si el partido no comenzó aún
-    if fecha_dt <= datetime.utcnow():
+    if fecha_dt <= datetime.now():
         return
 
     match_id = f"{liga_id}_{local_csv}_{visitante_csv}_{fecha_solo}"
@@ -499,7 +499,7 @@ def guardar_prediccion_audit(partido: dict, prediccion: dict, liga_id: int, liga
             pred.get('Over_95'),
             pred.get('Over_25_Cards'),
             pred.get('Over_35_Cards'),
-            datetime.utcnow().isoformat() + 'Z'
+            datetime.now(timezone.utc).isoformat()
         )
     )
 
@@ -509,7 +509,7 @@ def guardar_prediccion_audit(partido: dict, prediccion: dict, liga_id: int, liga
 
 def procesar_proximos_n_dias(cache_fuerzas: dict, dias: int):
     """Procesa predicciones para los próximos N días y guarda en la auditoría."""
-    hoy = datetime.utcnow().date()
+    hoy = datetime.now().date()
     hasta = hoy + timedelta(days=dias)
 
     for liga_id in ORDEN_LIGAS:
