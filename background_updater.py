@@ -45,6 +45,13 @@ from timba_core import (
     emparejar_equipo
 )
 from utils.shared import get_db_connection, DB_PATH, LIVE_SCORES_DB_PATH
+from utils.markets import (
+    obtener_mejor_recomendacion,
+    determinar_prediccion_1x2,
+    generar_recomendaciones,
+    PREDICCION_UMBRAL_GANA,
+    PREDICCION_UMBRAL_DOBLE,
+)
 
 # ========== CONFIGURACIÓN ==========
 # Ruta de salida del JSON
@@ -54,10 +61,6 @@ OUTPUT_FILE = os.path.join(PROJECT_ROOT, 'data', 'dashboard_cache.json')
 AUDIT_RETENTION_DAYS = 30      # días que se conservan registros de auditoría
 AUDIT_FUTURE_DAYS = 7          # días hacia adelante para guardar predicciones
 DB_PATH = os.path.join(PROJECT_ROOT, 'data', 'databases', 'football_data.db')
-
-# Umbrales de predicción (mantener consistencia con obtener_mejor_recomendacion)
-PREDICCION_UMBRAL_GANA = 0.55
-PREDICCION_UMBRAL_DOBLE = 0.70
 
 # Zona horaria Argentina (UTC-3)
 TZ_ARGENTINA = timezone(timedelta(hours=-3))
@@ -81,58 +84,6 @@ def log(mensaje: str, nivel: str = "INFO"):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     iconos = {"INFO": "ℹ️", "OK": "✅", "WARN": "⚠️", "ERROR": "❌", "START": "🚀"}
     print(f"[{timestamp}] {iconos.get(nivel, 'ℹ️')} {mensaje}")
-
-
-def obtener_mejor_recomendacion(prediccion: dict) -> str:
-    """Genera recomendación simple basada en probabilidades."""
-    prob_local = prediccion.get('Prob_Local', 0)
-    prob_empate = prediccion.get('Prob_Empate', 0)
-    prob_vis = prediccion.get('Prob_Vis', 0)
-    
-    if prob_local >= PREDICCION_UMBRAL_GANA:
-        return f"1 ({round(prob_local * 100)}%)"
-    elif prob_vis >= PREDICCION_UMBRAL_GANA:
-        return f"2 ({round(prob_vis * 100)}%)"
-    elif prediccion.get('Prob_1X', 0) >= PREDICCION_UMBRAL_DOBLE:
-        return "1X"
-    elif prediccion.get('Prob_X2', 0) >= PREDICCION_UMBRAL_DOBLE:
-        return "X2"
-    elif prediccion.get('Over_25', 0) >= 0.65:
-        return "Over 2.5"
-    elif prediccion.get('Over_15', 0) >= 0.75:
-        return "Over 1.5"
-    else:
-        return "—"
-
-
-def determinar_prediccion_1x2(prediccion: dict) -> str:
-    """Determina el código 1X2 basado en las probabilidades de la predicción.
-
-    Usa los mismos umbrales que obtener_mejor_recomendacion().
-    """
-    prob_local = prediccion.get('Prob_Local', 0)
-    prob_empate = prediccion.get('Prob_Empate', 0)
-    prob_vis = prediccion.get('Prob_Vis', 0)
-
-    if prob_local >= PREDICCION_UMBRAL_GANA:
-        return 'HOME_WIN'
-    if prob_vis >= PREDICCION_UMBRAL_GANA:
-        return 'AWAY_WIN'
-
-    if prediccion.get('Prob_1X', 0) >= PREDICCION_UMBRAL_DOBLE:
-        return '1X'
-    if prediccion.get('Prob_X2', 0) >= PREDICCION_UMBRAL_DOBLE:
-        return 'X2'
-    if prediccion.get('Prob_12', 0) >= PREDICCION_UMBRAL_DOBLE:
-        return '12'
-
-    # Default: el más probable entre las 3 opciones simples
-    valores = {
-        'HOME_WIN': prob_local,
-        'DRAW': prob_empate,
-        'AWAY_WIN': prob_vis
-    }
-    return max(valores, key=valores.get)
 
 
 def cargar_fuerzas_liga(liga_id: int) -> tuple:

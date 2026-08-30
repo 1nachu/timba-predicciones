@@ -83,6 +83,15 @@ try:
         DB_PATH,
         LOGS_DIR,
     )
+    from utils.markets import (
+        obtener_mejor_recomendacion,
+        determinar_prediccion_1x2,
+        generar_recomendaciones,
+        calcular_semaforo,
+        calcular_mercados_adicionales,
+        PREDICCION_UMBRAL_GANA,
+        PREDICCION_UMBRAL_DOBLE,
+    )
 except ImportError:
     logger.warning("⚠️  utils.shared no disponible, usando funciones locales")
     from difflib import get_close_matches
@@ -209,7 +218,7 @@ def calcular_fuerzas(df):
     OPTIMIZADO: Totalmente vectorizado con GroupBy y NumPy para máximo rendimiento.
     """
     df = df.copy()
-    df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df = df.sort_values('Date').reset_index(drop=True)
     
     promedio_goles_local_liga = float(df['FTHG'].mean()) if len(df) > 0 else 0.0

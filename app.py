@@ -42,6 +42,14 @@ from timba_core import (
     DB_PATH
 )
 from utils.shared import get_db_connection, LIVE_SCORES_DB_PATH
+from utils.markets import (
+    generar_recomendaciones,
+    obtener_mejor_recomendacion,
+    determinar_prediccion_1x2,
+    calcular_semaforo,
+    PREDICCION_UMBRAL_GANA,
+    PREDICCION_UMBRAL_DOBLE,
+)
 
 # Intentar importar cliente de API (opcional)
 try:
@@ -235,120 +243,6 @@ def cargar_datos_liga(liga_id):
     """
     fuerzas, media_local, media_vis, equipos = cargar_datos_liga_cached(liga_id)
     return None, fuerzas, media_local, media_vis, equipos
-
-
-# ============================================================
-# HELPER: Generar recomendaciones (Semáforo)
-# ============================================================
-def generar_recomendaciones(prediccion, umbral_alto=0.70, umbral_medio=0.55):
-    """
-    Genera lista de recomendaciones basada en probabilidades.
-    Incluye: Goles, Córners y Tarjetas.
-    """
-    recos = []
-    
-    # ========== REGLAS DE GOLES ==========
-    reglas_goles = [
-        ('Prob_1X', 'Doble Oportunidad: Local o Empate', '1X', '⚽'),
-        ('Prob_X2', 'Doble Oportunidad: Empate o Visitante', 'X2', '⚽'),
-        ('Prob_12', 'Sin Empate: Gana alguien', '12', '⚽'),
-        ('Over_15', 'Más de 1.5 Goles', 'Over 1.5 Goles', '⚽'),
-        ('Over_25', 'Más de 2.5 Goles', 'Over 2.5 Goles', '⚽'),
-        ('Under_35', 'Menos de 3.5 Goles (Seguridad)', 'Under 3.5 Goles', '⚽'),
-    ]
-    
-    # ========== REGLAS DE CÓRNERS ==========
-    reglas_corners = [
-        ('Over_85', 'Más de 8.5 Córners', 'Over 8.5 Córners', '🚩'),
-        ('Over_95', 'Más de 9.5 Córners', 'Over 9.5 Córners', '🚩'),
-        ('Prob_Local_Mas_Corners', 'Local saca más córners', 'Local +Córners', '🚩'),
-    ]
-    
-    # ========== REGLAS DE TARJETAS ==========
-    reglas_tarjetas = [
-        ('Over_25_Cards', 'Más de 2.5 Tarjetas Amarillas', 'Over 2.5 Tarjetas', '🟨'),
-        ('Over_35_Cards', 'Más de 3.5 Tarjetas Amarillas', 'Over 3.5 Tarjetas', '🟨'),
-        ('Over_45_Cards', 'Más de 4.5 Tarjetas Amarillas', 'Over 4.5 Tarjetas', '🟨'),
-        ('Under_55_Cards', 'Menos de 5.5 Tarjetas (Seguro)', 'Under 5.5 Tarjetas', '🟨'),
-    ]
-    
-    # Procesar todas las reglas
-    todas_reglas = reglas_goles + reglas_corners + reglas_tarjetas
-    
-    for key, texto, corto, emoji in todas_reglas:
-        prob = prediccion.get(key, 0)
-        if prob >= umbral_alto:
-            recos.append({
-                'tipo': 'fuego',
-                'texto': texto,
-                'corto': corto,
-                'prob': round(prob * 100, 1),
-                'icon': '🔥',
-                'emoji': emoji,
-                'class': 'success'
-            })
-        elif prob >= umbral_medio:
-            recos.append({
-                'tipo': 'alerta',
-                'texto': texto,
-                'corto': corto,
-                'prob': round(prob * 100, 1),
-                'icon': '⚠️',
-                'emoji': emoji,
-                'class': 'warning'
-            })
-    
-    # ========== REGLA ESPECIAL: Tarjeta Roja ==========
-    # Umbral más bajo porque las rojas son raras (>15% ya es notable)
-    prob_roja = prediccion.get('Prob_Red_Card', 0)
-    if prob_roja >= 0.20:
-        recos.append({
-            'tipo': 'fuego',
-            'texto': 'Alta probabilidad de Tarjeta Roja',
-            'corto': 'Habrá Roja',
-            'prob': round(prob_roja * 100, 1),
-            'icon': '🔥',
-            'emoji': '🟥',
-            'class': 'danger'
-        })
-    elif prob_roja >= 0.12:
-        recos.append({
-            'tipo': 'alerta',
-            'texto': 'Posible Tarjeta Roja en el partido',
-            'corto': 'Roja Posible',
-            'prob': round(prob_roja * 100, 1),
-            'icon': '⚠️',
-            'emoji': '🟥',
-            'class': 'warning'
-        })
-    
-    # Ordenar por probabilidad descendente
-    recos.sort(key=lambda x: x['prob'], reverse=True)
-    
-    return recos
-
-
-def obtener_mejor_recomendacion(prediccion):
-    """Retorna la mejor apuesta corta para la tabla de fixtures."""
-    prob_local = prediccion.get('Prob_Local', 0)
-    prob_empate = prediccion.get('Prob_Empate', 0)
-    prob_vis = prediccion.get('Prob_Vis', 0)
-    
-    # Buscar la mayor probabilidad base
-    if prob_local >= 0.55:
-        return f"1 ({round(prob_local*100)}%)"
-    elif prob_vis >= 0.55:
-        return f"2 ({round(prob_vis*100)}%)"
-    elif prediccion.get('Prob_1X', 0) >= 0.70:
-        return "1X"
-    elif prediccion.get('Prob_X2', 0) >= 0.70:
-        return "X2"
-    elif prediccion.get('Over_25', 0) >= 0.65:
-        return "Over 2.5"
-    elif prediccion.get('Over_15', 0) >= 0.75:
-        return "Over 1.5"
-    else:
-        return "—"
 
 
 # ============================================================
