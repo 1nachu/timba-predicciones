@@ -249,3 +249,61 @@ python -m src.etl_football_data
 - ✅ `src/etl_football_data.py`: Registrar equipos con `league_code` durante ETL
 - ✅ `src/live_scores.py`: Usar rutas centralizadas
 - ✅ `src/db_data_provider.py`: Usar rutas centralizadas
+
+---
+
+## 3. Migración a la Arquitectura Modular v2.2 (Agosto 2026)
+
+### 3.1 Nueva Estructura de Módulos
+
+La lógica monolítica de `src/timba_core.py` se ha desacoplado en paquetes específicos:
+
+```
+src/
+├── core/
+│   ├── models.py          # Dataclasses y Enums (MatchPrediction, MLFeatures, etc.)
+│   └── prediction.py      # Algoritmos Poisson, cálculo de fuerzas y predicción Champions
+├── scrapers/
+│   └── fixtures_scraper.py # Scraping de Promiedos y feeds JSON/CSV
+└── utils/
+    ├── markets.py         # Reglas de mercados 1X2, Doble Oportunidad, Semáforo
+    └── shared.py          # Conexión SQLite WAL, normalizaciones y rutas
+```
+
+> **Retrocompatibilidad:** `src/timba_core.py` actúa como una fachada que re-exporta todas las funciones y clases. Cualquier código legado que importe `from timba_core import ...` continuará funcionando sin modificaciones.
+
+### 3.2 Conexión Centralizada SQLite (Modo WAL)
+
+Para evitar bloqueos `database is locked`, use siempre el helper [`get_db_connection`](../src/utils/shared.py):
+
+```python
+from utils.shared import get_db_connection, DB_PATH
+
+# Lectura no bloqueante (Web / API)
+conn = get_db_connection(DB_PATH, readonly=True)
+
+# Escritura con WAL y timeout de 5 segundos (ETL / Background)
+conn = get_db_connection(DB_PATH, readonly=False, timeout=10.0)
+```
+
+### 3.3 Migración de Caché a `FileSystemCache`
+
+En `app.py`, `SimpleCache` fue reemplazado por `FileSystemCache` para compartir datos memoizados entre procesos:
+
+```python
+cache = Cache(app, config={
+    'CACHE_TYPE': 'FileSystemCache',
+    'CACHE_DIR': os.path.join(PROJECT_ROOT, 'data', 'flask_cache'),
+    'CACHE_DEFAULT_TIMEOUT': 600,
+    'CACHE_THRESHOLD': 500,
+    'CACHE_IGNORE_ERRORS': True
+})
+```
+
+### 3.4 Ejecución de Tests Automatizados
+
+Para verificar que la migración no introdujo regresiones:
+
+```bash
+pytest -v tests/
+```
