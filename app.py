@@ -529,12 +529,13 @@ def predict():
     liga_id = int(request.args.get('liga_id', request.form.get('liga_id', 1)))
     
     # Cargar datos de la liga
-    df, fuerzas, media_local, media_vis, equipos = cargar_datos_liga(liga_id)
-
     if liga_id == 8:
-        # Champions League: no hay CSV, usar listado de equipos del mapping
+        # Champions League: no hay CSV propio, usar listado de equipos del mapping
         from timba_core import CHAMPIONS_EQUIPO_LIGA
         equipos = sorted(CHAMPIONS_EQUIPO_LIGA.keys())
+        df, fuerzas, media_local, media_vis = None, {}, 0.0, 0.0
+    else:
+        df, fuerzas, media_local, media_vis, equipos = cargar_datos_liga(liga_id)
 
     if not equipos:
         flash(f"⚠️ No se pudieron cargar datos de la liga. Verifica tu conexión.", "warning")

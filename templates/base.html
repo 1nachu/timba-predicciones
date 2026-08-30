@@ -275,15 +275,16 @@
     </div>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        function initUI(root) {
+            root = root || document;
             // Aplicar width desde data-width a elementos que usan porcentaje dinámico
-            document.querySelectorAll('[data-width]').forEach(function(el) {
+            root.querySelectorAll('[data-width]').forEach(function(el) {
                 const width = parseFloat(el.getAttribute('data-width'));
                 if (!isNaN(width)) el.style.width = width + '%';
             });
             
             // Conversión UTC a hora local
-            document.querySelectorAll('.utc-time').forEach(function(el) {
+            root.querySelectorAll('.utc-time').forEach(function(el) {
                 const utcString = el.getAttribute('data-utc') || el.textContent.trim();
                 if (!utcString) return;
                 try {
@@ -300,11 +301,18 @@
             });
             
             // Toggle sidebar en móvil
-            document.querySelectorAll('.sidebar-header').forEach(function(header) {
-                header.addEventListener('click', function() {
-                    this.parentElement.classList.toggle('collapsed');
-                });
+            root.querySelectorAll('.sidebar-header').forEach(function(header) {
+                if (!header.dataset.listenerAttached) {
+                    header.dataset.listenerAttached = 'true';
+                    header.addEventListener('click', function() {
+                        this.parentElement.classList.toggle('collapsed');
+                    });
+                }
             });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initUI(document);
             
             // Copiar dirección de Bitcoin al portapapeles
             const copyBtcBtn = document.getElementById('copyBtcBtn');
@@ -312,7 +320,6 @@
                 copyBtcBtn.addEventListener('click', function() {
                     const btcAddress = document.getElementById('btcAddress').textContent;
                     navigator.clipboard.writeText(btcAddress).then(function() {
-                        // Cambiar icono temporalmente
                         const icon = copyBtcBtn.querySelector('i');
                         const originalClass = icon.className;
                         icon.className = 'bi bi-check2-all';
@@ -327,6 +334,11 @@
                     });
                 });
             }
+        });
+
+        // Soporte para HTMX Boosting y swaps dinámicos
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            initUI(evt.detail.target || document);
         });
     </script>
     

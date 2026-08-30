@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-<!-- {% block title %}Predicción Manual - Timba Predictor{% endblock %} -->
-{% block og_title %}{{ local }} vs {{ visitante }} — Predicción Timba{% endblock %}
+{% block title %}Predicción Manual - Timba Predictor{% endblock %}
+{% block og_title %}{{ seleccion_local or 'Predicción' }} vs {{ seleccion_visita or 'Partido' }} — Predicción Timba{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
