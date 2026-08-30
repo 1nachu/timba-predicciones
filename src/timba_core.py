@@ -127,49 +127,49 @@ except ImportError:
 # 7 ligas europeas + Argentina (datos de football-data.co.uk)
 LIGAS = {
     1: {
-        'nombre': 'Premier League (Inglaterra) - Temporada 25/26',
-        'url': 'https://www.football-data.co.uk/mmz4281/2526/E0.csv',
+        'nombre': 'Premier League (Inglaterra) - Temporada 26/27',
+        'url': 'https://www.football-data.co.uk/mmz4281/2627/E0.csv',
         'codigo': 'E0',
         'bandera': '🏴󠁧󠁢󠁥󠁮󠁧󠁿'
     },
     2: {
-        'nombre': 'La Liga (España) - Temporada 25/26',
-        'url': 'https://www.football-data.co.uk/mmz4281/2526/SP1.csv',
+        'nombre': 'La Liga (España) - Temporada 26/27',
+        'url': 'https://www.football-data.co.uk/mmz4281/2627/SP1.csv',
         'codigo': 'SP1',
         'bandera': '🇪🇸'
     },
     3: {
-        'nombre': 'Serie A (Italia) - Temporada 25/26',
-        'url': 'https://www.football-data.co.uk/mmz4281/2526/I1.csv',
+        'nombre': 'Serie A (Italia) - Temporada 26/27',
+        'url': 'https://www.football-data.co.uk/mmz4281/2627/I1.csv',
         'codigo': 'I1',
         'bandera': '🇮🇹'
     },
     4: {
-        'nombre': 'Bundesliga (Alemania) - Temporada 25/26',
-        'url': 'https://www.football-data.co.uk/mmz4281/2526/D1.csv',
+        'nombre': 'Bundesliga (Alemania) - Temporada 26/27',
+        'url': 'https://www.football-data.co.uk/mmz4281/2627/D1.csv',
         'codigo': 'D1',
         'bandera': '🇩🇪'
     },
     5: {
-        'nombre': 'Ligue 1 (Francia) - Temporada 25/26',
-        'url': 'https://www.football-data.co.uk/mmz4281/2526/F1.csv',
+        'nombre': 'Ligue 1 (Francia) - Temporada 26/27',
+        'url': 'https://www.football-data.co.uk/mmz4281/2627/F1.csv',
         'codigo': 'F1',
         'bandera': '🇫🇷'
     },
     6: {
-        'nombre': 'Primeira Liga (Portugal) - Temporada 25/26',
-        'url': 'https://www.football-data.co.uk/mmz4281/2526/P1.csv',
+        'nombre': 'Primeira Liga (Portugal) - Temporada 26/27',
+        'url': 'https://www.football-data.co.uk/mmz4281/2627/P1.csv',
         'codigo': 'P1',
         'bandera': '🇵🇹'
     },
     7: {
-        'nombre': 'Eredivisie (Países Bajos) - Temporada 25/26',
-        'url': 'https://www.football-data.co.uk/mmz4281/2526/N1.csv',
+        'nombre': 'Eredivisie (Países Bajos) - Temporada 26/27',
+        'url': 'https://www.football-data.co.uk/mmz4281/2627/N1.csv',
         'codigo': 'N1',
         'bandera': '🇳🇱'
     },
     8: {
-        'nombre': 'UEFA Champions League - Temporada 25/26',
+        'nombre': 'UEFA Champions League - Temporada 26/27',
         'url': None,
         'codigo': 'CL',
         'es_torneo': True,
@@ -186,14 +186,14 @@ LIGAS = {
 
 # ========== DICCIONARIO DE FIXTURES (CALENDARIOS) ==========
 URLS_FIXTURE = {
-    1: {'url': 'https://fixturedownload.com/feed/json/epl-2025', 'liga': 'Premier League'},
-    2: {'url': 'https://fixturedownload.com/feed/json/la-liga-2025', 'liga': 'La Liga'},
-    3: {'url': 'https://fixturedownload.com/feed/json/serie-a-2025', 'liga': 'Serie A'},
-    4: {'url': 'https://fixturedownload.com/feed/json/bundesliga-2025', 'liga': 'Bundesliga'},
-    5: {'url': 'https://fixturedownload.com/feed/json/ligue-1-2025', 'liga': 'Ligue 1'},
-    6: {'url': 'https://fixturedownload.com/feed/json/primeira-liga-2025', 'liga': 'Primeira Liga'},
-    7: {'url': 'https://fixturedownload.com/feed/json/eredivisie-2025', 'liga': 'Eredivisie'},
-    8: {'url': 'https://fixturedownload.com/feed/json/champions-league-2025', 'liga': 'Champions League'},
+    1: {'url': 'https://fixturedownload.com/feed/json/epl-2026', 'liga': 'Premier League'},
+    2: {'url': 'https://fixturedownload.com/feed/json/la-liga-2026', 'liga': 'La Liga'},
+    3: {'url': 'https://fixturedownload.com/feed/json/serie-a-2026', 'liga': 'Serie A'},
+    4: {'url': 'https://fixturedownload.com/feed/json/bundesliga-2026', 'liga': 'Bundesliga'},
+    5: {'url': 'https://fixturedownload.com/feed/json/ligue-1-2026', 'liga': 'Ligue 1'},
+    6: {'url': 'https://fixturedownload.com/feed/json/primeira-liga-2026', 'liga': 'Primeira Liga'},
+    7: {'url': 'https://fixturedownload.com/feed/json/eredivisie-2026', 'liga': 'Eredivisie'},
+    8: {'url': 'https://fixturedownload.com/feed/json/champions-league-2026', 'liga': 'Champions League'},
     10: {'url': 'https://www.promiedos.com.ar/league/liga-profesional/hc', 'liga': 'Liga Profesional'},
 }
 

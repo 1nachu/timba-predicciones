@@ -100,7 +100,7 @@ FOOTBALL_DATA_BASE_URL = "https://www.football-data.co.uk"
 FOOTBALL_API_BASE_URL = "https://api.football-data.org/v4"
 
 # ========== TEMPORADA ACTUAL ==========
-CURRENT_SEASON = "2526"  # 2025-26
+CURRENT_SEASON = "2627"  # 2026-27
 
 # ========== DICCIONARIO DE ALIAS DE EQUIPOS ==========
 # Ligas con fuentes de datos confiables (7 europeas + Argentina)
@@ -399,13 +399,13 @@ def descargar_csv_safe(url_or_list, timeout: int = 15, usecols: Optional[list] =
             df = None
             if usecols:
                 try:
-                    df = pd.read_csv(io.StringIO(text), usecols=usecols)
+                    df = pd.read_csv(io.StringIO(text), usecols=usecols, on_bad_lines='skip')
                 except ValueError as e:
                     # Columnas no encontradas (ej: CSV de Argentina tiene formato diferente)
                     logger.debug(f"usecols falló ({e}), cargando todas las columnas")
-                    df = pd.read_csv(io.StringIO(text))
+                    df = pd.read_csv(io.StringIO(text), on_bad_lines='skip')
             else:
-                df = pd.read_csv(io.StringIO(text))
+                df = pd.read_csv(io.StringIO(text), on_bad_lines='skip')
             
             if df is None or df.empty:
                 logger.warning(f"CSV vacío desde {url}")

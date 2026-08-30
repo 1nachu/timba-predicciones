@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'src'))
 
 # ========== IMPORTS ESTÁNDAR ==========
 import json
+import logging
 import time
 import argparse
 import sqlite3
