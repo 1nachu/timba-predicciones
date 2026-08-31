@@ -44,7 +44,11 @@ env/
 
 # === Databases (generadas localmente) ===
 data/databases/*.db
+*.db-wal
+*.db-shm
 *.db
+*.db-wal
+*.db-shm
 
 # === Cache ===
 data/flask_cache/
