@@ -5,9 +5,10 @@
 ![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?style=flat-square&logo=sqlite&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-2.0+-150458?style=flat-square&logo=pandas&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Pytest](https://img.shields.io/badge/Tests-53%20Passing-success?style=flat-square&logo=pytest&logoColor=white)
+![Pytest](https://img.shields.io/badge/Tests-60%20Passing-success?style=flat-square&logo=pytest&logoColor=white)
 ![Season](https://img.shields.io/badge/Season-2026%2F2027-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+
 
 **Sistema profesional de predicción de fútbol y apuestas de valor (Value Betting)** basado en Distribución de Poisson con ajuste **Dixon-Coles (1997)**, Criterio de Kelly, normalización inteligente de equipos por liga, API REST JSON v1, motor de **Backtesting Cuantitativo**, arquitectura modular en Blueprints y despliegue contenerizado con Docker.
 
@@ -315,15 +316,16 @@ Timba Predictor incluye un Bot de Telegram con interfaz interactiva completa bas
 
 ## 🧪 Suite de Tests Automatizados
 
-La suite integral de tests cubre matemáticas, modelos Poisson/Dixon-Coles, endpoints web, API REST, In-Play en vivo, Bot de Telegram y backtesting:
+La suite integral de tests cubre matemáticas, modelos Poisson/Dixon-Coles, endpoints web, API REST, In-Play en vivo, Bot de Telegram, configuración centralizada, ETL modular y backtesting:
 
 ```bash
 pytest -v
 ```
 
 ```
-============================= 53 passed in 13.96s ==============================
+============================= 60 passed in 32.07s ==============================
 ```
+
 
 ---
 
