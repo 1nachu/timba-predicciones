@@ -5,7 +5,7 @@
 ![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?style=flat-square&logo=sqlite&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-2.0+-150458?style=flat-square&logo=pandas&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Pytest](https://img.shields.io/badge/Tests-43%20Passing-success?style=flat-square&logo=pytest&logoColor=white)
+![Pytest](https://img.shields.io/badge/Tests-53%20Passing-success?style=flat-square&logo=pytest&logoColor=white)
 ![Season](https://img.shields.io/badge/Season-2026%2F2027-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
@@ -286,16 +286,43 @@ python scripts/run_backtest.py --league SP1 --seasons 3 --stake-mode kelly --kel
 
 ---
 
+## 🤖 Bot de Telegram Interactivo (`bot.py`)
+
+Timba Predictor incluye un Bot de Telegram con interfaz interactiva completa basada en botones inline y comandos directos:
+
+### Configuración Rápida
+1. Crea un bot con [@BotFather](https://t.me/BotFather) en Telegram y copia el token.
+2. Agrega el token en tu archivo `.env`:
+   ```env
+   TELEGRAM_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRstuVWXyz
+   ```
+3. Inicia el bot:
+   ```bash
+   python bot.py
+   ```
+
+### Comandos del Bot
+- `/start` - Menú interactivo con botones inline para navegación rápida.
+- `/live` - Marcadores en tiempo real y predicciones dinámicas In-Play.
+- `/proximos [liga_id]` - Fixture del día con probabilidades 1X2 del modelo.
+- `/predecir <Local> vs <Visitante>` - Análisis completo pre-match (xG, 1X2, Over/Under, BTTS, marcadores probables).
+- `/inplay <Local> vs <Vis> <score> min <minuto> [rojas L-V]` - Simulación In-Play en vivo con minuto, marcador y expulsiones.
+  *(Ej: `/inplay Real Madrid vs Barcelona 2-1 min 70 rojas 0-1`)*
+- `/valuebets` - Oportunidades de apuestas de valor (+EV) y sizing de Kelly.
+- `/ligas` - Listado interactivo de competiciones soportadas.
+
+---
+
 ## 🧪 Suite de Tests Automatizados
 
-La suite integral de tests cubre matemáticas, modelos, endpoints web, API REST, normalización y backtesting:
+La suite integral de tests cubre matemáticas, modelos Poisson/Dixon-Coles, endpoints web, API REST, In-Play en vivo, Bot de Telegram y backtesting:
 
 ```bash
 pytest -v
 ```
 
 ```
-============================= 43 passed in 12.50s ==============================
+============================= 53 passed in 13.96s ==============================
 ```
 
 ---

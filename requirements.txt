@@ -38,3 +38,7 @@ gunicorn>=21.0.0
 # Descomenta para compilar el módulo timba_fast.pyx
 Cython>=3.0.0
 setuptools>=65.0.0
+
+# === Telegram Bot ===
+python-telegram-bot>=20.0
+
