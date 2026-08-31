@@ -43,12 +43,10 @@ env/
 *~
 
 # === Databases (generadas localmente) ===
-data/databases/*.db
-*.db-wal
-*.db-shm
 *.db
 *.db-wal
 *.db-shm
+data/databases/
 
 # === Cache ===
 data/flask_cache/
@@ -67,9 +65,11 @@ Thumbs.db
 # === Archivos temporales/notas ===
 http timba.txt
 
-# === Cython Build ===
+# === Cython Build Artifacts ===
+# Solo se versiona el fuente .pyx; los compilados se generan localmente
 src/*.c
 src/*.html
+*.so
 
 # === Jupyter (si se usa) ===
 .ipynb_checkpoints/
@@ -78,3 +78,4 @@ src/*.html
 .pytest_cache/
 .coverage
 htmlcov/
+
