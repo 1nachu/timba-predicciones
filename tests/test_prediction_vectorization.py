@@ -89,3 +89,23 @@ def test_obtener_h2h(sample_match_data):
     if len(teams) >= 2:
         h2h = obtener_h2h(teams[0], teams[1], sample_match_data)
         assert isinstance(h2h, list)
+
+
+def test_aplicar_ajuste_dixon_coles():
+    from core.prediction import aplicar_ajuste_dixon_coles
+    
+    # Matriz 3x3 de Poisson independiente
+    mat_orig = np.array([
+        [0.10, 0.12, 0.05],
+        [0.15, 0.18, 0.08],
+        [0.08, 0.10, 0.14]
+    ])
+    mat_orig /= np.sum(mat_orig)
+    
+    # Con rho negativo (típico), 0-0 y 1-1 aumentan ligeramente y 0-1, 1-0 disminuyen
+    mat_ajustada = aplicar_ajuste_dixon_coles(mat_orig, lambda_local=1.3, lambda_vis=1.1, rho=-0.11)
+    
+    assert np.isclose(np.sum(mat_ajustada), 1.0, atol=1e-5)
+    assert mat_ajustada.shape == mat_orig.shape
+    assert mat_ajustada[0, 0] >= mat_orig[0, 0]  # Corrección positiva de 0-0
+

@@ -307,3 +307,124 @@ def calcular_mercados_adicionales(
         'Prob_Local_Mas_Cards': prob_local_mas_cards,
         'Prob_Vis_Mas_Cards': prob_vis_mas_cards,
     }
+
+
+# ============================================================
+# CÁLCULOS DE VALUE BETTING Y GESTIÓN DE CAPITAL (KELLY)
+# ============================================================
+
+def calcular_valor_esperado(probabilidad: float, cuota: float) -> float:
+    """
+    Calcula el Valor Esperado (Expected Value - EV) de una apuesta.
+    
+    Formula: EV = (Probabilidad * Cuota) - 1.0
+    Un EV > 0 indica una apuesta con esperanza matemática positiva (Value Bet).
+    """
+    if cuota <= 1.0 or probabilidad <= 0.0:
+        return -1.0
+    return (probabilidad * cuota) - 1.0
+
+
+def calcular_criterio_kelly(
+    probabilidad: float,
+    cuota: float,
+    fraccion: float = 0.25,
+    max_stake: float = 5.0
+) -> float:
+    """
+    Calcula el tamaño óptimo de apuesta como porcentaje del bankroll usando el Criterio de Kelly.
+    
+    Args:
+        probabilidad: Probabilidad estimada por el modelo (0.0 a 1.0)
+        cuota: Cuota decimal ofrecida por la casa de apuestas (> 1.0)
+        fraccion: Fracción de Kelly para control de volatilidad (default: 0.25 = Cuarto de Kelly)
+        max_stake: Porcentaje máximo del bankroll permitido por apuesta (default: 5.0%)
+        
+    Returns:
+        Porcentaje recomendado de apuesta (ej: 2.3% del bankroll)
+    """
+    if cuota <= 1.0 or probabilidad <= 0.0:
+        return 0.0
+        
+    b = cuota - 1.0
+    p = probabilidad
+    q = 1.0 - p
+    f_star = (b * p - q) / b
+    
+    if f_star <= 0.0:
+        return 0.0
+        
+    stake = f_star * fraccion * 100.0
+    return round(min(stake, max_stake), 2)
+
+
+def evaluar_value_bets(
+    prediccion: Dict,
+    cuotas: Optional[Dict[str, float]] = None,
+    min_ev: float = 0.03
+) -> List[Dict]:
+    """
+    Identifica apuestas de valor positivo (Value Bets) comparando las probabilidades
+    del modelo con las cuotas del mercado (Bet365 / Bookmakers).
+    
+    Args:
+        prediccion: Diccionario con probabilidades calculadas
+        cuotas: Diccionario de cuotas (ej: {'B365H': 2.10, 'B365D': 3.40, 'B365A': 3.80})
+        min_ev: Umbral mínimo de EV para calificar como Value Bet (default: 3% de ventaja)
+        
+    Returns:
+        Lista de apuestas de valor ordenadas por EV descendente
+    """
+    if not prediccion or not cuotas:
+        return []
+        
+    value_bets = []
+    
+    mercados_a_evaluar = [
+        ('Victoria Local (1)', 'Prob_Local', ['B365H', 'home_odds', 'cuota_local', '1']),
+        ('Empate (X)', 'Prob_Empate', ['B365D', 'draw_odds', 'cuota_empate', 'X']),
+        ('Victoria Visitante (2)', 'Prob_Vis', ['B365A', 'away_odds', 'cuota_vis', '2']),
+        ('Más de 2.5 Goles', 'Over_25', ['B365_O25', 'over_25_odds', 'cuota_over25']),
+        ('Menos de 2.5 Goles', 'Under_25', ['B365_U25', 'under_25_odds', 'cuota_under25']),
+    ]
+    
+    for nombre, prob_key, cuota_keys in mercados_a_evaluar:
+        prob = prediccion.get(prob_key)
+        if prob is None and prob_key == 'Under_25':
+            o25 = prediccion.get('Over_25')
+            prob = (1.0 - o25) if o25 is not None else None
+            
+        if prob is None or prob <= 0.0:
+            continue
+            
+        cuota = None
+        for k in cuota_keys:
+            if k in cuotas and cuotas[k] is not None:
+                try:
+                    val = float(cuotas[k])
+                    if val > 1.0:
+                        cuota = val
+                        break
+                except (ValueError, TypeError):
+                    continue
+                    
+        if cuota and cuota > 1.0:
+            ev = calcular_valor_esperado(prob, cuota)
+            if ev >= min_ev:
+                cuota_implicita = 1.0 / cuota
+                edge = prob - cuota_implicita
+                kelly_stake = calcular_criterio_kelly(prob, cuota, fraccion=0.25)
+                value_bets.append({
+                    'mercado': nombre,
+                    'prob_modelo': round(prob * 100, 1),
+                    'cuota': round(cuota, 2),
+                    'prob_implicita': round(cuota_implicita * 100, 1),
+                    'edge_pct': round(edge * 100, 1),
+                    'ev_pct': round(ev * 100, 1),
+                    'kelly_stake_pct': kelly_stake,
+                    'badge': '🔥 VALUE BET' if ev >= 0.10 else '✨ VALOR'
+                })
+                
+    value_bets.sort(key=lambda x: x['ev_pct'], reverse=True)
+    return value_bets
+

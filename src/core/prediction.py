@@ -225,22 +225,68 @@ def calcular_fuerzas(df: pd.DataFrame) -> Tuple[Dict, float, float]:
     return fuerzas, promedio_goles_local_liga, promedio_goles_visitante_liga
 
 
+def aplicar_ajuste_dixon_coles(
+    matriz_prob: np.ndarray,
+    lambda_local: float,
+    lambda_vis: float,
+    rho: float = -0.11
+) -> np.ndarray:
+    """
+    Ajuste de Dixon y Coles (1997) para modelar la correlación entre goles de local y visitante
+    en marcadores de bajo puntaje (0-0, 1-0, 0-1, 1-1). Corrige la subdispersión de empates.
+    """
+    if matriz_prob.shape[0] < 2 or matriz_prob.shape[1] < 2 or rho == 0.0:
+        return matriz_prob
+        
+    mat = matriz_prob.copy()
+    
+    tau_00 = max(0.0, 1.0 - (lambda_local * lambda_vis * rho))
+    tau_01 = max(0.0, 1.0 + (lambda_local * rho))
+    tau_10 = max(0.0, 1.0 + (lambda_vis * rho))
+    tau_11 = max(0.0, 1.0 - rho)
+    
+    mat[0, 0] *= tau_00
+    mat[0, 1] *= tau_01
+    mat[1, 0] *= tau_10
+    mat[1, 1] *= tau_11
+    
+    total = np.sum(mat)
+    if total > 0:
+        mat /= total
+    return mat
+
+
+# Coeficientes relativos de fuerza por liga para normalización inter-liga (Champions League)
+COEFICIENTES_LIGAS = {
+    'E0': 1.15,   # Premier League
+    'SP1': 1.10,  # La Liga
+    'D1': 1.05,   # Bundesliga
+    'I1': 1.05,   # Serie A
+    'F1': 0.95,   # Ligue 1
+    'P1': 0.88,   # Primeira Liga
+    'N1': 0.85,   # Eredivisie
+    'B1': 0.82,   # Liga Belga
+    'ARG': 0.85,  # Liga Argentina
+}
+
+
 def predecir_partido(
     local: str,
     visitante: str,
     fuerzas: Dict,
     media_liga_local: float,
-    media_liga_visitante: float
+    media_liga_visitante: float,
+    aplicar_dixon_coles: bool = True
 ) -> Optional[Dict]:
     """
     Predice probabilidades 1X2, marcadores exactos y mercados derivados.
-    Usa módulo Cython compilado con fallback vectorizado NumPy.
+    Usa módulo Cython compilado con fallback vectorizado NumPy y ajuste Dixon-Coles.
     """
     if local not in fuerzas or visitante not in fuerzas:
         return None
     
     # Motor Cython
-    if USE_CYTHON:
+    if USE_CYTHON and not aplicar_dixon_coles:
         try:
             resultado = predecir_partido_optimizado(
                 local, visitante, fuerzas, media_liga_local, media_liga_visitante
@@ -250,7 +296,7 @@ def predecir_partido(
         except Exception as e:
             logger.error(f"⚠️  Error en motor Cython: {e}. Usando fallback Python.")
     
-    # Fallback NumPy vectorizado
+    # Fallback NumPy vectorizado con ajuste Dixon-Coles
     f_loc = fuerzas[local]
     f_vis = fuerzas[visitante]
     
@@ -267,6 +313,9 @@ def predecir_partido(
     prob_vis_arr = poisson.pmf(k, lambda_visitante)
     
     matriz_prob = np.outer(prob_local_arr, prob_vis_arr)
+    
+    if aplicar_dixon_coles:
+        matriz_prob = aplicar_ajuste_dixon_coles(matriz_prob, lambda_local, lambda_visitante)
     
     empate = float(np.trace(matriz_prob))
     victoria_local = float(np.sum(np.tril(matriz_prob, -1)))
@@ -331,7 +380,8 @@ def predecir_partido(
 
 def predecir_partido_champions(local: str, visitante: str, cache_fuerzas: dict) -> Optional[Dict]:
     """
-    Predice un partido de UEFA Champions League combinando fuerzas de distintas ligas.
+    Predice un partido de UEFA Champions League combinando fuerzas de distintas ligas
+    y aplicando ponderación de coeficientes inter-liga.
     """
     key_local = emparejar_equipo(local, list(CHAMPIONS_EQUIPO_LIGA.keys()))
     key_vis = emparejar_equipo(visitante, list(CHAMPIONS_EQUIPO_LIGA.keys()))
@@ -370,9 +420,22 @@ def predecir_partido_champions(local: str, visitante: str, cache_fuerzas: dict) 
     media_goles_local = (media_local_local + media_local_vis) / 2
     media_goles_vis = (media_vis_local + media_vis_vis) / 2
 
+    # Ajuste por coeficiente de liga (calibración inter-liga)
+    coef_local = COEFICIENTES_LIGAS.get(liga_local_csv, 1.0)
+    coef_vis = COEFICIENTES_LIGAS.get(liga_vis_csv, 1.0)
+
+    f_loc_ajustada = dict(fuerzas_local[local_match])
+    f_vis_ajustada = dict(fuerzas_vis[visitante_match])
+
+    f_loc_ajustada['Ataque_Casa'] = f_loc_ajustada.get('Ataque_Casa', 1.0) * coef_local
+    f_loc_ajustada['Defensa_Casa'] = f_loc_ajustada.get('Defensa_Casa', 1.0) / coef_local if coef_local > 0 else 1.0
+
+    f_vis_ajustada['Ataque_Fuera'] = f_vis_ajustada.get('Ataque_Fuera', 1.0) * coef_vis
+    f_vis_ajustada['Defensa_Fuera'] = f_vis_ajustada.get('Defensa_Fuera', 1.0) / coef_vis if coef_vis > 0 else 1.0
+
     fuerzas_combinadas = {
-        local_match: fuerzas_local[local_match],
-        visitante_match: fuerzas_vis[visitante_match],
+        local_match: f_loc_ajustada,
+        visitante_match: f_vis_ajustada,
     }
 
     return predecir_partido(local_match, visitante_match, fuerzas_combinadas, media_goles_local, media_goles_vis)

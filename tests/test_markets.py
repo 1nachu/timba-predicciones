@@ -72,3 +72,41 @@ def test_calcular_semaforo():
     assert calcular_semaforo(0.75)['nivel'] == 'ALTO'
     assert calcular_semaforo(0.60)['nivel'] == 'MEDIO'
     assert calcular_semaforo(0.40)['nivel'] == 'BAJO'
+
+
+def test_value_betting_and_kelly():
+    from utils.markets import calcular_valor_esperado, calcular_criterio_kelly, evaluar_value_bets
+    
+    # Probabilidad 50% con cuota 2.20 -> EV = 0.50 * 2.20 - 1 = +0.10 (10% EV)
+    ev = calcular_valor_esperado(0.50, 2.20)
+    assert round(ev, 2) == 0.10
+    
+    # Kelly: b = 1.20, p = 0.50, q = 0.50 -> f* = (1.20*0.50 - 0.50)/1.20 = 0.10/1.20 = 8.33%
+    # Con fraccion 0.25 (cuarto de Kelly) -> 2.08% stake
+    kelly = calcular_criterio_kelly(0.50, 2.20, fraccion=0.25)
+    assert 2.0 <= kelly <= 2.2
+    
+    # Apuesta sin valor: prob 40% con cuota 2.00 -> EV = -0.20
+    ev_neg = calcular_valor_esperado(0.40, 2.00)
+    assert ev_neg < 0
+    assert calcular_criterio_kelly(0.40, 2.00) == 0.0
+    
+    # Evaluar lista de apuestas de valor
+    pred = {
+        'Prob_Local': 0.55,
+        'Prob_Empate': 0.25,
+        'Prob_Vis': 0.20,
+        'Over_25': 0.65
+    }
+    cuotas = {
+        'B365H': 2.10,  # EV = 0.55 * 2.10 - 1 = +0.155 (15.5%) -> Value Bet
+        'B365D': 3.20,  # EV = 0.25 * 3.20 - 1 = -0.20 -> No Value
+        'B365A': 4.00,  # EV = 0.20 * 4.00 - 1 = -0.20 -> No Value
+        'B365_O25': 1.80  # EV = 0.65 * 1.80 - 1 = +0.170 (17%) -> Value Bet
+    }
+    
+    vb = evaluar_value_bets(pred, cuotas, min_ev=0.05)
+    assert len(vb) == 2
+    assert vb[0]['ev_pct'] > 0
+    assert all('kelly_stake_pct' in bet for bet in vb)
+
