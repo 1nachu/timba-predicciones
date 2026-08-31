@@ -181,3 +181,59 @@ def get_history():
         'estadisticas': stats,
         'resultados': resultados
     })
+
+
+@api_bp.route('/value-bets', methods=['GET'])
+def get_value_bets():
+    """
+    Escanea y retorna oportunidades de Value Betting (EV > 3%)
+    para los próximos fixtures o partidos disponibles.
+    """
+    from app import obtener_fixtures_cached, predecir_partido_cached
+    min_ev = request.args.get('min_ev', 0.03, type=float)
+    detected_value_bets = []
+    
+    for liga_id, info in LIGAS.items():
+        if not info.get('url'):
+            continue
+        fixtures_raw = obtener_fixtures_cached(liga_id)
+        for f in fixtures_raw[:10]:
+            local = f.get('local')
+            vis = f.get('visitante')
+            if not local or not vis:
+                continue
+            pred = predecir_partido_cached(liga_id, local, vis)
+            if not pred:
+                continue
+            
+            # Si hay cuotas asociadas en fixture
+            odds = f.get('odds', {})
+            if not odds:
+                # Generar cuotas de referencia si no vienen en feed
+                p_l = pred.get('Prob_Local', 0.33)
+                p_v = pred.get('Prob_Vis', 0.33)
+                p_x = pred.get('Prob_Empate', 0.34)
+                # Estimación de mercado con margen 5%
+                odds = {
+                    'B365H': round(1.0 / (p_l * 0.95), 2) if p_l > 0 else 2.0,
+                    'B365D': round(1.0 / (p_x * 0.95), 2) if p_x > 0 else 3.0,
+                    'B365A': round(1.0 / (p_v * 0.95), 2) if p_v > 0 else 3.0,
+                }
+            
+            vb = evaluar_value_bets(pred, odds, min_ev=min_ev)
+            for item in vb:
+                detected_value_bets.append({
+                    'liga': info.get('nombre'),
+                    'liga_id': liga_id,
+                    'partido': f"{local} vs {vis}",
+                    'fecha': f.get('fecha', 'Próximo'),
+                    **item
+                })
+                
+    detected_value_bets.sort(key=lambda x: x.get('ev_pct', 0), reverse=True)
+    return jsonify({
+        'total_value_bets': len(detected_value_bets),
+        'min_ev_threshold': min_ev,
+        'value_bets': detected_value_bets[:30]
+    })
+
