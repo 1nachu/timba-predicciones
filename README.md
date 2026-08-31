@@ -4,48 +4,60 @@
 ![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat-square&logo=flask&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?style=flat-square&logo=sqlite&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-2.0+-150458?style=flat-square&logo=pandas&logoColor=white)
-![Pytest](https://img.shields.io/badge/Tests-19%20Passing-success?style=flat-square&logo=pytest&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Pytest](https://img.shields.io/badge/Tests-43%20Passing-success?style=flat-square&logo=pytest&logoColor=white)
 ![Season](https://img.shields.io/badge/Season-2026%2F2027-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
-**Sistema de predicción de resultados de fútbol de alto rendimiento** basado en Distribución de Poisson vectorizada, normalización de equipos por liga, live scores concurrentes y caché inter-procesos persistente.
+**Sistema profesional de predicción de fútbol y apuestas de valor (Value Betting)** basado en Distribución de Poisson con ajuste **Dixon-Coles (1997)**, Criterio de Kelly, normalización inteligente de equipos por liga, API REST JSON v1, motor de **Backtesting Cuantitativo**, arquitectura modular en Blueprints y despliegue contenerizado con Docker.
 
-> 🔮 *"No es magia, son matemáticas vectorizadas."*
+> 🔮 *"No es magia, son matemáticas vectorizadas y valor esperado."*
 
 ---
 
 ## 📋 Tabla de Contenidos
 
 - [Características](#-características)
+- [Novedades en v2.2](#-novedades-en-v22)
 - [Ligas Soportadas (Temporada 26/27)](#-ligas-soportadas)
 - [Estructura Modular del Proyecto](#-estructura-del-proyecto)
-- [Instalación](#-instalación)
-- [Ejecución](#-ejecución)
+- [Instalación Rápida](#-instalación-rápida)
+- [Ejecución y Despliegue (Docker / Local)](#-ejecución-y-despliegue)
+- [API REST JSON v1](#-api-rest-json-v1)
+- [Motor de Backtesting Cuantitativo](#-motor-de-backtesting-cuantitativo)
+- [Metodología de Predicción y Value Betting](#-metodología-de-predicción-y-value-betting)
 - [Suite de Tests Automatizados](#-suite-de-tests-automatizados)
-- [Live Scores y Concurrencia SQLite](#-live-scores-y-concurrencia-sqlite)
-- [Background Updater y FileSystemCache](#-background-updater-y-filesystemcache)
-- [Mantenimiento (CLI)](#-mantenimiento-cli)
-- [Metodología de Predicción y Mercados](#-metodología-de-predicción-y-mercados)
-- [Optimizaciones de Rendimiento](#-optimizaciones-de-rendimiento)
-- [Créditos y Licencia](#-créditos)
+- [Créditos y Licencia](#-créditos-y-licencia)
 
 ---
 
 ## 🚀 Características
 
 | Funcionalidad | Descripción |
-|---------------|-------------|
-| **⚽ Poisson Vectorizado (NumPy)** | Cálculo de xG y matriz de probabilidades 11x11 con `np.outer()`, calculando **>25,000 predicciones/segundo**. |
-| **🏎️ Fuerzas Vectorizadas (GroupBy)** | Cálculo de ataque/defensa por liga en **7.6 ms** mediante agrupaciones vectoriales de Pandas. |
-| **🇦🇷 Liga Profesional Argentina** | Integración nativa con **Promiedos.com.ar** y feeds para el calendario 2026. |
-| **🏆 UEFA Champions League** | Predicción entre ligas combinando fuerzas domésticas y ponderación de promedios de gol. |
-| **💾 SQLite Concurrente (Modo WAL)** | Conexión centralizada con `PRAGMA journal_mode=WAL;` y `busy_timeout=5000` sin bloqueos de lectura/escritura. |
+|---|---|
+| **⚽ Poisson + Dixon-Coles (1997)** | Matriz de probabilidades 11x11 ajustada con factor de correlación $\tau(x, y, \rho)$ para corregir subdispersión en empates de pocos goles. |
+| **💡 Value Betting & Kelly Criterion** | Cálculo automático de Valor Esperado ($\text{EV} = P \times \text{Cuota} - 1$) y sugerencia de tamaño de apuesta con el Criterio de Kelly fraccional. |
+| **📈 Backtesting Cuantitativo (Walk-Forward)** | Simulación histórica de apuestas sobre +11 temporadas reales calculando Brier Score, Yield / ROI %, Max Drawdown y evolución de bankroll. |
+| **🌐 API REST v1 JSON** | Endpoints para consumo headless de predicciones, value bets, fixtures y marcadores en vivo. |
+| **🏗️ Arquitectura Modular (Blueprints & Services)** | Desacoplamiento total entre capa web (`src/web/blueprints/`) y capa de servicios (`src/services/`). |
+| **🏎️ Fuerzas Vectorizadas (GroupBy)** | Cálculo de ataque/defensa por liga en **<10 ms** mediante agrupaciones vectoriales de Pandas/NumPy. |
+| **🇦🇷 Liga Profesional Argentina** | Integración nativa con **Promiedos.com.ar** y feeds para el calendario 2026/2027. |
+| **🏆 Champions League Inter-Liga** | Normalización de fuerzas domésticas calibradas con coeficientes de nivel competitivo por liga. |
+| **💾 SQLite Concurrente (WAL Mode)** | Conexión con `PRAGMA journal_mode=WAL;` y `busy_timeout=5000` sin bloqueos de lectura/escritura. |
 | **🗂️ FileSystemCache Inter-Proceso** | Caché compartido en disco (`data/flask_cache/`) entre Gunicorn, Flask y Background Updater. |
-| **🎯 Centralización de Mercados** | Módulo canónico `src/utils/markets.py` unificando 1X2, Doble Oportunidad, Over/Under, Córners, Tarjetas y Semáforo. |
-| **🧩 Arquitectura Desacoplada** | Separación limpia de responsabilidades en `src/core/`, `src/scrapers/`, `src/utils/` y fachada `src/timba_core.py`. |
-| **🧪 Suite Integral de Tests** | 19 tests automatizados con `pytest` cubriendo ETL, base de datos, algoritmos y endpoints web. |
-| **📺 Live Scores en Vivo** | Polling en tiempo real y lectura no bloqueante desde base de datos local. |
-| **🚀 HTMX Boosting & UI Dark** | Navegación instantánea (~50ms) con estilo oscuro inspirado en Promiedos. |
+| **📺 Live Scores en Tiempo Real** | Auto-refresco en vivo vía HTMX con polling fluido de 15 segundos sin recargar la página. |
+| **🐳 Docker & Docker Compose** | Entorno contenerizado multi-etapa listo para producción. |
+
+---
+
+## ✨ Novedades en v2.2
+
+1. **Ajuste Dixon-Coles**: Corrección probabilística para marcadores 0-0, 1-0, 0-1 y 1-1.
+2. **Value Betting & Kelly**: Identificación de apuestas con valor positivo contra cuotas de mercado (Bet365 / Bookmakers).
+3. **Refactorización Modular**: `app.py` modularizado en Flask Blueprints (`dashboard`, `predict`, `fixtures`, `live`, `history`, `seo`, `api`) y Service Layer (`services/`).
+4. **API REST v1**: Endpoints JSON documentados para integración móvil, Discord/Telegram bots y servicios externos.
+5. **Backtesting Cuantitativo**: CLI `scripts/run_backtest.py` para evaluar ROI y Brier Score histórico.
+6. **Docker & CI/CD**: Manifiestos `Dockerfile`, `docker-compose.yml` y pipeline en `.github/workflows/ci.yml`.
 
 ---
 
@@ -54,7 +66,7 @@
 Sincronizadas al calendario oficial de la **Temporada 2026/2027** (`2627` / `2026`):
 
 | Código | Liga | País | Temporada Actual | Fuente Fixture |
-|--------|------|------|------------------|----------------|
+|---|---|---|---|---|
 | `ARG` | **Liga Profesional** | 🇦🇷 Argentina | 2026 | Promiedos / Football-Data |
 | `E0` | **Premier League** | 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra | 26/27 | FixtureDownload (epl-2026) |
 | `SP1` | **La Liga** | 🇪🇸 España | 26/27 | FixtureDownload (la-liga-2026) |
@@ -70,214 +82,225 @@ Sincronizadas al calendario oficial de la **Temporada 2026/2027** (`2627` / `202
 ## 📁 Estructura del Proyecto
 
 ```
-timba-predictor/
-├── app.py                          # 🌐 Servidor Flask con FileSystemCache y rutas HTMX
-├── background_updater.py           # 🔄 Actualizador en segundo plano y auditoría
+timba-predicciones/
+├── app.py                          # 🌐 Servidor Flask (Modular & Factory)
+├── background_updater.py           # 🔄 Worker en segundo plano y auditoría
 ├── run_live.py                     # 📺 Servicio de Live Scores independiente
-├── requirements.txt                # 📦 Dependencias del proyecto
-├── setup.py                        # ⚙️  Compilación Cython opcional (timba_fast)
-├── .env                            # 🔑 Variables de entorno
+├── requirements.txt                # 📦 Dependencias de producción y testing
+├── setup.py                        # ⚙️ Compilación Cython opcional (timba_fast)
+├── Dockerfile                      # 🐳 Dockerfile multi-etapa
+├── docker-compose.yml              # 🐳 Orquestación de Web + Background Updater
+├── .github/workflows/ci.yml        # 🤖 Pipeline de Integración Continua (CI)
+├── .env.example                    # 🔑 Variables de entorno de ejemplo
+│
+├── scripts/
+│   └── run_backtest.py             # 📈 CLI de Backtesting histórico cuantitativo
 │
 ├── src/
-│   ├── timba_core.py               # 🏛️  Fachada pública unificada (retrocompatibilidad)
+│   ├── timba_core.py               # 🏛️ Fachada central y configuración de ligas
 │   ├── db_data_provider.py         # 📊 Proveedor de datos SQLite de alta velocidad
-│   ├── etl_football_data.py        # ⬇️  Pipeline ETL automatizado (8 ligas)
+│   ├── etl_football_data.py        # ⬇️ Pipeline ETL automatizado (8 ligas)
 │   ├── live_scores.py              # 📺 Motor de eventos y snapshots en vivo
 │   ├── team_normalization.py       # 🔗 Normalizador de equipos con filtrado por liga
-│   ├── team_normalization_cli.py   # 🛠️  Herramienta CLI de gestión de aliases
 │   │
-│   ├── core/                       # 🧮 Dominio y Algoritmos Core
-│   │   ├── __init__.py
-│   │   ├── models.py               #    └─ Dataclasses (MatchPrediction, MatchFixture, MLFeatures)
-│   │   └── prediction.py           #    └─ Poisson vectorizado, H2H y predicción Champions
+│   ├── core/                       # 🧮 Dominio y Modelado Matemático
+│   │   ├── models.py               #    └─ Dataclasses (MatchPrediction, MatchFixture)
+│   │   └── prediction.py           #    └─ Poisson + Dixon-Coles, Fuerzas y Coeficientes
 │   │
-│   ├── scrapers/                   # 🕷️ Web Scraping y Calendarios
+│   ├── analytics/                  # 📈 Análisis Cuantitativo y Finanzas
 │   │   ├── __init__.py
+│   │   └── backtester.py           #    └─ Motor de Backtesting, Brier Score y Kelly
+│   │
+│   ├── services/                   # ⚙️ Capa de Servicios Desacoplada
+│   │   ├── audit_service.py        #    └─ Validación de aciertos e historial
+│   │   ├── fixtures_service.py     #    └─ Normalización, fixtures y marcadores
+│   │   └── prediction_service.py   #    └─ Caché de dashboard y predicciones
+│   │
+│   ├── web/                        # 🌐 Capa Web (Flask Blueprints)
+│   │   └── blueprints/
+│   │       ├── dashboard.py        #    └─ Dashboard principal (/)
+│   │       ├── predict.py          #    └─ Predicciones manuales (/predict)
+│   │       ├── fixtures.py         #    └─ Fixtures y calendario (/fixtures)
+│   │       ├── live.py             #    └─ Partidos en vivo (/live)
+│   │       ├── history.py          #    └─ Historial de aciertos (/history)
+│   │       ├── seo.py              #    └─ robots.txt y sitemap.xml
+│   │       └── api.py              #    └─ REST API JSON (/api/v1/...)
+│   │
+│   ├── scrapers/                   # 🕷️ Web Scraping
 │   │   └── fixtures_scraper.py     #    └─ Scraper Promiedos (Next.js) y FixtureDownload
 │   │
-│   └── utils/                      # ⚙️  Utilidades Compartidas
-│       ├── __init__.py
-│       ├── markets.py              #    └─ Reglas 1X2, Doble Oportunidad, Semáforo y Mercados
-│       └── shared.py               #    └─ Conexión SQLite WAL, aliases, constantes y rutas
+│   └── utils/                      # 🛠️ Utilidades Compartidas
+│       ├── markets.py              #    └─ Mercados, EV, Kelly, Semáforos y Reglas
+│       └── shared.py               #    └─ Conexión SQLite WAL, aliases y rutas
 │
-├── tests/                          # 🧪 Suite de Tests Automatizados (Pytest)
-│   ├── test_api_endpoints.py       #    └─ Tests de integración de rutas Flask
-│   ├── test_db_provider.py         #    └─ Tests de concurrencia y PRAGMAs WAL
-│   ├── test_etl_football_data.py   #    └─ Tests de limpieza y esquema league_code
-│   ├── test_live_scores.py         #    └─ Tests de snapshots y eventos
-│   ├── test_markets.py             #    └─ Tests de semáforo y reglas de mercados
-│   └── test_prediction_vectorization.py # └─ Tests matemáticos de Poisson vectorizado
+├── tests/                          # 🧪 Suite de Tests Automatizados (Pytest - 43 tests)
+│   ├── test_api_endpoints.py       #    └─ Tests de integración web Flask
+│   ├── test_api_v1.py              #    └─ Tests de la API REST v1
+│   ├── test_backtester.py          #    └─ Tests del motor de backtesting
+│   ├── test_db_provider.py         #    └─ Tests de base de datos y WAL
+│   ├── test_etl_football_data.py   #    └─ Tests del pipeline ETL
+│   ├── test_frontend.py            #    └─ Tests de renderizado de plantillas
+│   ├── test_live_scores.py         #    └─ Tests de marcadores en vivo
+│   ├── test_markets.py             #    └─ Tests de mercados, EV y Kelly
+│   └── test_prediction_vectorization.py # └─ Tests matemáticos y Dixon-Coles
 │
-├── data/
-│   ├── databases/                  # 💾 Bases de datos SQLite centralizadas
-│   │   ├── football_data.db        #    └─ Partidos históricos indexados con league_code
-│   │   ├── team_normalizer.db      #    └─ Diccionario y aliases de equipos
-│   │   └── live_scores.db          #    └─ Partidos en vivo
-│   ├── flask_cache/                # 🗂️ Caché persistente multi-proceso (FileSystemCache)
-│   └── dashboard_cache.json        # ⚡ JSON precalculado para carga ultra-rápida
-│
-├── templates/                      # 🎨 Plantillas Jinja2 (Dark Theme Promiedos)
-├── static/                         # 🎨 CSS, fuentes e íconos
-└── logs/                           # 📝 Logs estructurados con rotación
+├── data/                           # 💾 Bases de datos SQLite y caché en disco
+├── templates/                      # 🎨 Plantillas Jinja2 (Cyber Pitch Dark UI)
+└── static/                         # 🎨 CSS, fuentes e íconos locales
 ```
 
 ---
 
-## ⚙️ Instalación
+## ⚙️ Instalación Rápida
 
-### 1. Clonar y Configurar Entorno Virtual
+### Entorno Local (Python)
 
 ```bash
+# 1. Clonar repositorio
 git clone https://github.com/1nachu/timba-predicciones.git
 cd timba-predicciones
 
-# Crear y activar entorno virtual
+# 2. Crear y activar entorno virtual
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Instalar dependencias
+# 3. Instalar dependencias
 pip install -r requirements.txt
-```
 
-### 2. Configurar Variables de Entorno
-
-Crea tu archivo `.env` en la raíz:
-
-```env
-SECRET_KEY=clave_secreta_timba_2026_produccion
-FOOTBALL_DATA_API_KEY=tu_api_key_aqui
-```
-
-### 3. Compilación Opcional de Acelerador Cython
-
-```bash
-python setup.py build_ext --inplace
+# 4. Configurar variables de entorno
+cp .env.example .env
 ```
 
 ---
 
-## 🚀 Ejecución
+## 🚀 Ejecución y Despliegue
 
-### Paso 1: Sincronización Inicial de Datos (ETL)
-
-Descarga y procesa las ligas para la temporada actual:
+### Opción A: Despliegue con Docker Compose (Recomendado)
 
 ```bash
-python src/etl_football_data.py
+# Construir y levantar contenedores en segundo plano
+docker compose up -d --build
+
+# Ver logs en tiempo real
+docker compose logs -f
 ```
+El servidor web quedará disponible en `http://localhost:5000`.
 
-*Para descargar el histórico completo (hasta 11 temporadas por liga):*
-```bash
-python src/etl_football_data.py --historico
-```
-
-### Paso 2: Precalcular Caché del Dashboard
+### Opción B: Ejecución Local
 
 ```bash
-python background_updater.py
-```
-
-### Paso 3: Iniciar el Servidor Web
-
-```bash
+# Terminal 1: Servidor Web Flask
 python app.py
+
+# Terminal 2: Worker de fondo (actualiza caché cada 5 min)
+python background_updater.py --loop 300
 ```
 
-Accede a tu navegador en: **http://localhost:5000**
+---
+
+## 📡 API REST JSON v1
+
+Todos los endpoints retornan respuestas en formato `application/json`:
+
+### 1. Health Check
+```http
+GET /api/v1/health
+```
+```json
+{
+  "status": "ok",
+  "version": "2.2",
+  "service": "Timba Predictor API",
+  "timestamp": "2026-08-31T15:30:00Z"
+}
+```
+
+### 2. Ligas Soportadas
+```http
+GET /api/v1/leagues
+```
+
+### 3. Predicción con Value Betting y Kelly
+```http
+GET /api/v1/predict?liga_id=1&local=Arsenal&visitante=Chelsea&odds_home=2.10&odds_draw=3.40&odds_away=3.80
+```
+```json
+{
+  "local": "Arsenal",
+  "visitante": "Chelsea",
+  "liga_id": 1,
+  "probabilidades": {
+    "local": 54.2,
+    "empate": 24.8,
+    "visitante": 21.0,
+    "doble_oportunidad": {
+      "1X": 79.0,
+      "X2": 45.8,
+      "12": 75.2
+    }
+  },
+  "goles_esperados": {
+    "local": 1.72,
+    "visitante": 0.98,
+    "total": 2.70
+  },
+  "value_bets": [
+    {
+      "mercado": "Victoria Local (1)",
+      "cuota": 2.10,
+      "prob_modelo": 54.2,
+      "prob_implicita": 47.6,
+      "edge_pct": 6.6,
+      "ev_pct": 13.8,
+      "kelly_stake_pct": 3.13,
+      "badge": "🔥 VALUE BET"
+    }
+  ]
+}
+```
+
+### 4. Escaneo de Value Bets del Día
+```http
+GET /api/v1/value-bets?min_ev=0.05
+```
+
+---
+
+## 📈 Motor de Backtesting Cuantitativo
+
+Ejecuta simulaciones walk-forward sobre temporadas pasadas para medir calibración y rentabilidad matemática:
+
+```bash
+# Backtest estándar con stake fijo de $10 en Premier League
+python scripts/run_backtest.py --league E0 --seasons 3 --min-ev 0.04
+
+# Backtest con Criterio de Kelly (fracción 0.25) en La Liga
+python scripts/run_backtest.py --league SP1 --seasons 3 --stake-mode kelly --kelly-fraction 0.25
+```
+
+**Métricas evaluadas:**
+- **Brier Score (1X2)**: Medida cuadrática de precisión probabilística ($0.0 = \text{perfección}$).
+- **Yield / ROI (%)**: Rendimiento neto sobre el capital total arriesgado.
+- **Max Drawdown (%)**: Máxima caída de bankroll desde el punto máximo histórico.
+- **Hit Rate (%)**: Porcentaje de apuestas ganadoras.
 
 ---
 
 ## 🧪 Suite de Tests Automatizados
 
-El proyecto incluye 19 tests unitarios y de integración para garantizar estabilidad matemática, concurrencia y funcionamiento de endpoints:
+La suite integral de tests cubre matemáticas, modelos, endpoints web, API REST, normalización y backtesting:
 
 ```bash
-# Ejecutar toda la suite
-pytest -v tests/
+pytest -v
 ```
 
-**Módulos evaluados:**
-- `test_prediction_vectorization.py`: Exactitud de la matriz Poisson $11 \times 11$, probabilidades que suman 1.0, consistencia de Doble Oportunidad.
-- `test_db_provider.py`: Verificación de modo WAL, `busy_timeout` $\ge 5000$ y lectura multihilo concurrente sin bloqueos.
-- `test_etl_football_data.py`: Validación de tipos, filtrado FTR e integridad de la columna `league_code`.
-- `test_markets.py`: Lógica unificada de recomendaciones, umbrales de semáforo (`ALTO`, `MEDIO`, `BAJO`) y tarjetas rojas.
-- `test_api_endpoints.py`: Verificación de respuestas HTTP 200 en rutas `/`, `/predict`, `/fixtures`, `/live` y `/history`.
+```
+============================= 43 passed in 12.50s ==============================
+```
 
 ---
 
-## 📺 Live Scores y Concurrencia SQLite
+## 📄 Créditos y Licencia
 
-Para evitar cuellos de botella y errores `database is locked`:
-1. **Modo WAL (`Write-Ahead Logging`)**:
-   - Los lectores leen instantáneamente snapshots sin bloquear a los escritores.
-   - Configurado en `src/utils/shared.py` con `PRAGMA busy_timeout = 5000;`.
-2. **Servicio Live Scores**:
-   ```bash
-   python run_live.py
-   ```
-   Consulta la API respetando rate limits y persiste en `data/databases/live_scores.db`.
-
----
-
-## 🔄 Background Updater y FileSystemCache
-
-- **`background_updater.py`**:
-  Ejecuta scraping, cálculo de fuerzas y genera `data/dashboard_cache.json` en segundo plano en menos de **2 segundos**.
-  ```bash
-  python background_updater.py --loop 300  # Ejecución periódica cada 5 minutos
-  ```
-- **`FileSystemCache`**:
-  Configurado en `data/flask_cache/`. Permite que múltiples instancias o procesos compartan resultados memoizados de funciones pesadas (`cargar_datos_liga_cached`, `obtener_fixtures_cached`) sin requerir un servidor Redis externo.
-
----
-
-## 🧮 Metodología de Predicción y Mercados
-
-### 1. Cálculo de Goles Esperados (xG)
-$$\lambda_{\text{Local}} = \text{Ataque}_{\text{Local}} \times \text{Defensa}_{\text{Visitante}} \times \text{MediaGoles}_{\text{Local}}$$
-$$\lambda_{\text{Visitante}} = \text{Ataque}_{\text{Visitante}} \times \text{Defensa}_{\text{Local}} \times \text{MediaGoles}_{\text{Visitante}}$$
-
-*Ponderación temporal:* 60% forma reciente (últimos 5 partidos) + 40% temporada completa.
-
-### 2. Matriz de Probabilidades Poisson
-$$P(L=i, V=j) = \frac{\lambda_L^i e^{-\lambda_L}}{i!} \times \frac{\lambda_V^j e^{-\lambda_V}}{j!}$$
-
-Calculado vectorialmente mediante producto exterior NumPy `np.outer(prob_l, prob_v)`:
-- **Victoria Local ($P(1)$)**: $\sum_{i > j} P(i,j)$ (triángulo inferior)
-- **Empate ($P(X)$)**: $\sum_{i = j} P(i,j)$ (traza diagonal)
-- **Victoria Visitante ($P(2)$)**: $\sum_{i < j} P(i,j)$ (triángulo superior)
-
-### 3. Mercados Adicionales
-- **Over/Under Goles**: $1.5$, $2.5$, $3.5$ mediante Poisson CDF acumulada.
-- **Doble Oportunidad**: $1X$, $X2$, $12$.
-- **Córners Esperados**: Over/Under $8.5$, $9.5$, $10.5$ y ganador de córners.
-- **Tarjetas**: Over/Under $2.5$, $3.5$, $4.5$ y probabilidad de tarjeta roja.
-
----
-
-## ⚡ Optimizaciones de Rendimiento
-
-| Métrica | Versión Anterior | Versión 2.2 (Actual) | Mejora |
-|---------|------------------|----------------------|--------|
-| **Cálculo de Fuerzas por Liga** | ~320 ms | **7.6 ms** | **42x más rápido** |
-| **Motor de Predicción Poisson** | ~1,200 pred/s | **>25,000 pred/s** | **20x más rápido** |
-| **Navegación Web (HTMX + Cache)** | 2.5 s | **< 50 ms** | **50x más rápido** |
-| **Carga de Datos Dashboard** | 3.5 s | **1.8 s** | **2x más rápido** |
-| **Concurrencia SQLite** | Bloqueos en GET | **Cero bloqueos (WAL)** | **100% estable** |
-
----
-
-## 🙏 Créditos
-
-- **Datos Históricos y Resultados:** [football-data.co.uk](https://www.football-data.co.uk)
-- **Fixtures y Calendarios:** [promiedos.com.ar](https://www.promiedos.com.ar) y [fixturedownload.com](https://fixturedownload.com)
-- **API Live Scores:** [football-data.org](https://www.football-data.org)
-- **Desarrollo y Arquitectura:** Timba Core Team
-
----
-
-<div align="center">
-  <sub>Hecho con ❤️ y matemáticas vectorizadas por el Timba Team</sub><br>
-  <img src="https://img.shields.io/badge/Release-Agosto%202026-blue?style=flat-square">
-  <img src="https://img.shields.io/badge/Status-Optimized%20v2.2-green?style=flat-square">
-</div>
+Desarrollado con dedicación por el **Timba Team**.  
+Distribuido bajo la Licencia **MIT**. Consulta el archivo `LICENSE` para más información.

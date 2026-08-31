@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timba-web
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=super_secreta_timba_prod_2026
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - timba-network
+
+  updater:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timba-updater
+    restart: unless-stopped
+    command: ["python", "background_updater.py", "--loop", "300"]
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - timba-network
+
+networks:
+  timba-network:
+    driver: bridge
