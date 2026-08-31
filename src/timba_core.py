@@ -81,6 +81,7 @@ try:
         ALIAS_TEAMS,
         CHAMPIONS_EQUIPO_LIGA,
         DB_PATH,
+        API_CACHE_DB_PATH as API_CACHE_PATH,
         LOGS_DIR,
     )
     from utils.markets import (
