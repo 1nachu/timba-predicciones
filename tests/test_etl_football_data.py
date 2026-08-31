@@ -11,6 +11,14 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 from etl_football_data import FootballDataTransformer
+from etl import (
+    FootballDataExtractor,
+    FootballDataTransformer as ModularTransformer,
+    FootballDataLoader,
+    FootballETLPipeline,
+    LIGAS_CONFIG,
+    COLUMNAS_CRITICAS,
+)
 from db_data_provider import DatabaseDataProvider
 
 
@@ -61,3 +69,23 @@ def test_database_league_code_query():
     assert df_e0 is not None
     assert len(df_e0) > 0
     assert 'league_code' in df_e0.columns or 'HomeTeam' in df_e0.columns
+
+
+def test_etl_modular_package():
+    """Verifica que el paquete modular src/etl exporta todas las clases y config necesarias."""
+    assert 'E0' in LIGAS_CONFIG
+    assert 'ARG' in LIGAS_CONFIG
+    assert 'Date' in COLUMNAS_CRITICAS
+    assert issubclass(ModularTransformer, object)
+    
+    extractor = FootballDataExtractor()
+    assert extractor.timeout == 30
+    
+    loader = FootballDataLoader(db_type='sqlite')
+    assert loader.db_type == 'sqlite'
+    
+    pipeline = FootballETLPipeline(db_type='sqlite')
+    assert pipeline.extractor is not None
+    assert pipeline.transformer is not None
+    assert pipeline.loader is not None
+
