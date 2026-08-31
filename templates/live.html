@@ -1,29 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}En Vivo - Timba Predictor{% endblock %}
+{% block title %}En Vivo — Timba Predictor{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-2 px-md-4 py-2 live-container">
+<div class="container-fluid px-0 px-md-2 py-1 live-container">
     
-    <!-- Header compacto estilo Promiedos -->
-    <div class="live-page-header d-flex justify-content-between align-items-center mb-2">
+    <!-- Header Live -->
+    <div class="live-page-header d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center gap-2">
             <span class="live-dot"></span>
             <h1 class="live-title mb-0">PARTIDOS EN VIVO</h1>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <span class="update-indicator" id="lastUpdate">
-                <i class="bi bi-clock"></i> <span id="updateTime">--:--</span>
+            <span class="badge bg-dark border border-secondary" id="lastUpdate">
+                <i class="bi bi-clock text-info me-1"></i> <span id="updateTime">--:--</span>
             </span>
-            <button class="btn btn-sm btn-refresh" onclick="location.reload()">
+            <button class="btn btn-sm btn-outline-secondary" onclick="location.reload()" title="Recargar ahora">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
         </div>
     </div>
 
     {% if es_demo %}
-    <div class="demo-banner mb-2">
-        <i class="bi bi-info-circle"></i> MODO DEMO - Datos de ejemplo
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3 py-2">
+        <i class="bi bi-info-circle"></i>
+        <span>MODO DEMO — Datos simulados de ejemplo</span>
     </div>
     {% endif %}
 
@@ -33,9 +34,7 @@
         {% set partidos_live = partidos | selectattr('seccion', 'equalto', 'live') | list %}
         {% set partidos_proximos = partidos | selectattr('seccion', 'equalto', 'proximos') | list %}
 
-        {# ============================================================ #}
-        {# MACRO para renderizar tabla de partidos por liga             #}
-        {# ============================================================ #}
+        {# MACRO para renderizar tabla de partidos por liga #}
         {% macro render_partidos(lista, mostrar_prediccion_inline) %}
             {% set current_league = namespace(name='') %}
             {% for partido in lista %}
@@ -47,11 +46,11 @@
                         </tbody></table></div>
                     {% endif %}
                     {% set current_league.name = league_name %}
-                    <div class="league-section mb-2">
+                    <div class="league-section mb-3">
                         <div class="league-header">
-                            <i class="bi bi-trophy-fill"></i>
+                            <i class="bi bi-trophy-fill text-warning"></i>
                             <span class="league-name">{{ league_name|upper }}</span>
-                            <span class="league-country">
+                            <span class="league-country text-muted small">
                                 {% if partido.competition and partido.competition.area %}
                                     {{ partido.competition.area.name }}
                                 {% endif %}
@@ -83,14 +82,14 @@
 
                 <tr class="match-row {% if is_live %}match-live{% elif is_finished %}match-finished{% endif %}" data-timestamp="{{ match_timestamp }}">
 
-                    <!-- Estado/Minuto -->
+                    <!-- Estado / Minuto -->
                     <td class="match-status-cell">
                         {% if is_live %}
                             <div class="status-badge status-live">
                                 {% if is_halftime %}
                                     <span>ET</span>
                                 {% elif match_minute > 0 %}
-                                    <span class="minute-text">{{ match_minute }}'</span>
+                                    <span>{{ match_minute }}'</span>
                                 {% else %}
                                     <span>LIVE</span>
                                 {% endif %}
@@ -100,7 +99,7 @@
                         {% else %}
                             <div class="status-badge status-scheduled">
                                 {% if partido.utcDate %}
-                                    <span class="utc-time" data-utc="{{ partido.utcDate }}" data-display="datetime">--:--</span>
+                                    <span class="utc-time" data-utc="{{ partido.utcDate }}" data-display="time">--:--</span>
                                 {% else %}
                                     PROG
                                 {% endif %}
@@ -112,36 +111,36 @@
                     <td class="team-cell team-home">
                         <span class="team-name">{{ home_team }}</span>
                         {% if partido.prediccion_timba and partido.prediccion_timba.prob_local|default(0) > 55 %}
-                            <span class="pred-badge pred-fav" title="Favorito {{ partido.prediccion_timba.prob_local|int }}%">★</span>
+                            <span class="badge bg-warning text-dark ms-1" title="Favorito IA {{ partido.prediccion_timba.prob_local|int }}%">★</span>
                         {% endif %}
                     </td>
 
                     <!-- Marcador -->
                     <td class="score-cell">
                         <div class="score-box {% if is_live %}score-live{% elif is_finished %}score-final{% endif %}">
-                            <span class="score-home">{{ home_score }}</span>
-                            <span class="score-separator">-</span>
-                            <span class="score-away">{{ away_score }}</span>
+                            <span>{{ home_score }}</span>
+                            <span class="text-muted opacity-50">-</span>
+                            <span>{{ away_score }}</span>
                         </div>
                     </td>
 
                     <!-- Equipo Visitante -->
                     <td class="team-cell team-away">
                         {% if partido.prediccion_timba and partido.prediccion_timba.prob_visitante|default(0) > 55 %}
-                            <span class="pred-badge pred-fav" title="Favorito {{ partido.prediccion_timba.prob_visitante|int }}%">★</span>
+                            <span class="badge bg-warning text-dark me-1" title="Favorito IA {{ partido.prediccion_timba.prob_visitante|int }}%">★</span>
                         {% endif %}
                         <span class="team-name">{{ away_team }}</span>
                     </td>
 
                     <!-- Mini Stats -->
-                    <td class="stats-cell d-none d-md-table-cell">
+                    <td class="stats-cell d-none d-md-table-cell text-center">
                         {% if partido.prediccion_timba and partido.prediccion_timba.over_25 is defined %}
-                            <span class="mini-stat" title="Over 2.5: {{ partido.prediccion_timba.over_25|int }}%">
-                                O{{ partido.prediccion_timba.over_25|int }}
+                            <span class="badge bg-dark border border-secondary" title="Over 2.5: {{ partido.prediccion_timba.over_25|int }}%">
+                                O2.5: {{ partido.prediccion_timba.over_25|int }}%
                             </span>
                         {% elif partido.prediccion_timba %}
-                            <span class="mini-stat" title="Prob Local">
-                                {{ partido.prediccion_timba.prob_local|int }}%
+                            <span class="badge bg-dark border border-secondary" title="Prob Local">
+                                1: {{ partido.prediccion_timba.prob_local|int }}%
                             </span>
                         {% endif %}
                     </td>
@@ -151,24 +150,24 @@
                 {% if partido.prediccion_timba and mostrar_prediccion_inline and is_live %}
                 <tr class="pred-row">
                     <td colspan="5">
-                        <div class="pred-inline">
-                            <span class="pred-item">
+                        <div class="pred-inline py-1">
+                            <span class="pred-item text-info">
                                 <b>1:</b> {{ partido.prediccion_timba.prob_local|default(0)|int }}%
                             </span>
-                            <span class="pred-item">
+                            <span class="pred-item text-warning">
                                 <b>X:</b> {{ partido.prediccion_timba.prob_empate|default(0)|int }}%
                             </span>
-                            <span class="pred-item">
+                            <span class="pred-item text-danger">
                                 <b>2:</b> {{ partido.prediccion_timba.prob_visitante|default(0)|int }}%
                             </span>
                             {% if partido.prediccion_timba.over_25 is defined %}
-                            <span class="pred-divider">|</span>
-                            <span class="pred-item">
+                            <span class="text-muted">|</span>
+                            <span class="pred-item text-success">
                                 <b>O2.5:</b> {{ partido.prediccion_timba.over_25|int }}%
                             </span>
                             {% endif %}
                             {% if partido.prediccion_timba.xg_local is defined %}
-                            <span class="pred-item">
+                            <span class="pred-item text-secondary">
                                 <b>xG:</b> {{ partido.prediccion_timba.xg_local }}-{{ partido.prediccion_timba.xg_visitante }}
                             </span>
                             {% endif %}
@@ -184,27 +183,23 @@
             {% endif %}
         {% endmacro %}
 
-        {# ============================================================ #}
-        {# SECCIÓN 1: EN VIVO AHORA                                     #}
-        {# ============================================================ #}
+        {# SECCIÓN 1: EN VIVO AHORA #}
         {% if partidos_live %}
-            <div class="seccion-header d-flex align-items-center gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2 mb-2">
                 <span class="live-dot"></span>
                 <span class="text-white fw-bold">EN VIVO AHORA</span>
                 <span class="badge bg-danger">{{ partidos_live|length }}</span>
             </div>
             {{ render_partidos(partidos_live, true) }}
         {% else %}
-            <div class="alert alert-secondary text-center py-3 mb-3">
-                <i class="bi bi-broadcast me-2"></i>No hay partidos en vivo en este momento
+            <div class="alert alert-dark text-center py-3 mb-3">
+                <i class="bi bi-broadcast me-2 text-muted"></i>No hay partidos en juego en este momento
             </div>
         {% endif %}
 
-        {# ============================================================ #}
-        {# SECCIÓN 2: PRÓXIMOS HOY                                      #}
-        {# ============================================================ #}
+        {# SECCIÓN 2: PRÓXIMOS HOY #}
         {% if partidos_proximos %}
-            <div class="seccion-header d-flex align-items-center gap-2 mt-4 mb-2">
+            <div class="d-flex align-items-center gap-2 mt-4 mb-2">
                 <i class="bi bi-clock text-warning"></i>
                 <span class="text-white fw-bold">PRÓXIMOS HOY</span>
                 <span class="badge bg-secondary">{{ partidos_proximos|length }}</span>
@@ -212,32 +207,29 @@
             {{ render_partidos(partidos_proximos, false) }}
         {% endif %}
 
-        <!-- Footer con auto-refresh -->
-        <div class="refresh-info text-center mt-3">
-            <small>
-                <i class="bi bi-arrow-repeat spin"></i>
-                Actualización automática cada <span id="countdown">30</span>s
-            </small>
+        <!-- Auto-refresh info -->
+        <div class="text-center mt-3 text-muted small">
+            <i class="bi bi-arrow-repeat spin me-1"></i>
+            Actualización automática en <span id="countdown" class="fw-bold text-info">30</span>s
         </div>
 
-        <!-- Metadata para scripts (sin usar dobles llaves en JS) -->
         <div id="liveMeta" data-has-partidos="{{ (partidos|length > 0)|lower }}" style="display:none;"></div>
 
     {% else %}
         <!-- Sin partidos -->
-        <div class="no-matches">
-            <div class="no-matches-icon">
-                <i class="bi bi-calendar-x"></i>
-            </div>
-            <h3>No hay partidos en vivo</h3>
-            <p>No se encontraron partidos en este momento.</p>
-            <div class="no-matches-actions">
-                <a href="/fixtures" class="btn btn-promiedos">
-                    <i class="bi bi-calendar3"></i> Ver Fixtures
-                </a>
-                <button class="btn btn-outline-light" onclick="location.reload()">
-                    <i class="bi bi-arrow-clockwise"></i> Recargar
-                </button>
+        <div class="card border-0 text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-calendar-x display-1 text-muted mb-3 d-block"></i>
+                <h4 class="fw-bold">No hay partidos en vivo</h4>
+                <p class="text-muted small mb-4">No se registran partidos activos en este instante</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="/fixtures" class="btn btn-primary btn-sm">
+                        <i class="bi bi-calendar3"></i> Ver Fixtures
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Recargar
+                    </button>
+                </div>
             </div>
         </div>
     {% endif %}
@@ -247,37 +239,17 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
-    // Mostrar hora actual
     function updateClock() {
         const now = new Date();
-        document.getElementById('updateTime').textContent =
-            now.toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'});
+        const el = document.getElementById('updateTime');
+        if (el) el.textContent = now.toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'});
     }
     updateClock();
 
-    // Convertir horas UTC a local
-    document.querySelectorAll('.utc-time').forEach(function(el) {
-        const utc = el.dataset.utc;
-        if (utc) {
-            const date = new Date(utc);
-            const display = el.dataset.display;
-            if (display === 'time') {
-                el.textContent = date.toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'});
-            } else {
-                el.textContent = date.toLocaleString('es-AR', {
-                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                });
-            }
-        }
-    });
-
     const hasPartidos = document.getElementById('liveMeta')?.dataset?.hasPartidos === 'true';
     if (hasPartidos) {
-        // Countdown y auto-refresh cada 30 segundos
         let seconds = 30;
         const countdownEl = document.getElementById('countdown');
-
         const interval = setInterval(function() {
             seconds--;
             if (countdownEl) countdownEl.textContent = seconds;

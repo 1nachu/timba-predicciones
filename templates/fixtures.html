@@ -1,37 +1,67 @@
 {% extends "base.html" %}
 
-{% block title %}Próximos Partidos - Timba Predictor{% endblock %}
+{% block title %}Próximos Partidos — Timba Predictor{% endblock %}
 {% block og_title %}Próximos Partidos — Timba Predictor{% endblock %}
 {% block og_description %}Fixture con predicciones automáticas para Premier League, La Liga, Liga Argentina y más.{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h1 class="display-5 fw-bold">
-            <i class="bi bi-calendar3 text-success"></i> Próximos Partidos
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-7">
+        <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-calendar3 text-success"></i>
+            <span>Próximos Partidos</span>
         </h1>
-        <p class="lead text-muted">Análisis automático de la fecha venidera</p>
+        <p class="text-muted small mb-0">Análisis matemático y probabilidades calculadas para la fecha venidera</p>
     </div>
-    <div class="col-md-4">
-        <!-- Selector de Liga -->
-        <label class="form-label">Seleccionar Liga</label>
-        <select class="form-select" onchange="window.location.href='/fixtures?liga_id='+this.value">
-            {% for id, liga in todas_las_ligas.items() %}
-            <option value="{{ id }}" {% if id == liga_id %}selected{% endif %}>
-                {{ liga.nombre }}
-            </option>
-            {% endfor %}
-        </select>
+    <div class="col-md-5">
+        <div class="d-flex align-items-center gap-2 justify-content-md-end">
+            <label class="form-label mb-0 text-muted small text-nowrap d-none d-sm-inline">Liga:</label>
+            <select class="form-select form-select-sm" onchange="window.location.href='/fixtures?liga_id='+this.value">
+                {% for id, liga in todas_las_ligas.items() %}
+                <option value="{{ id }}" {% if id == liga_id %}selected{% endif %}>
+                    {% if 'Argentina' in liga.nombre %}🇦🇷
+                    {% elif 'Premier' in liga.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
+                    {% elif 'La Liga' in liga.nombre or 'España' in liga.nombre %}🇪🇸
+                    {% elif 'Serie' in liga.nombre or 'Italia' in liga.nombre %}🇮🇹
+                    {% elif 'Bundesliga' in liga.nombre or 'Alemania' in liga.nombre %}🇩🇪
+                    {% elif 'Ligue' in liga.nombre or 'Francia' in liga.nombre %}🇫🇷
+                    {% elif 'Primeira' in liga.nombre or 'Portugal' in liga.nombre %}🇵🇹
+                    {% elif 'Eredivisie' in liga.nombre or 'Países Bajos' in liga.nombre %}🇳🇱
+                    {% elif 'Champions' in liga.nombre %}🏆
+                    {% endif %}
+                    {{ liga.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
 </div>
 
-<!-- Liga Actual -->
-<div class="alert alert-dark d-flex justify-content-between align-items-center mb-4">
-    <span>
-        <i class="bi bi-trophy"></i>
-        <strong>{{ liga_actual.nombre }}</strong>
-    </span>
-    <span class="badge bg-primary">{{ partidos|length }} partidos</span>
+<!-- Barra de Liga Actual -->
+<div class="card mb-4 border-0" style="background: linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%); border-left: 4px solid var(--accent-emerald) !important;">
+    <div class="card-body py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fs-4">
+                {% if 'Argentina' in liga_actual.nombre %}🇦🇷
+                {% elif 'Premier' in liga_actual.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
+                {% elif 'La Liga' in liga_actual.nombre or 'España' in liga_actual.nombre %}🇪🇸
+                {% elif 'Serie' in liga_actual.nombre or 'Italia' in liga_actual.nombre %}🇮🇹
+                {% elif 'Bundesliga' in liga_actual.nombre or 'Alemania' in liga_actual.nombre %}🇩🇪
+                {% elif 'Ligue' in liga_actual.nombre or 'Francia' in liga_actual.nombre %}🇫🇷
+                {% elif 'Primeira' in liga_actual.nombre or 'Portugal' in liga_actual.nombre %}🇵🇹
+                {% elif 'Eredivisie' in liga_actual.nombre or 'Países Bajos' in liga_actual.nombre %}🇳🇱
+                {% elif 'Champions' in liga_actual.nombre %}🏆
+                {% else %}⚽{% endif %}
+            </span>
+            <div>
+                <strong class="fs-6 d-block">{{ liga_actual.nombre }}</strong>
+                <span class="text-muted small">Temporada Oficial</span>
+            </div>
+        </div>
+        <span class="badge bg-primary fs-6 px-3 py-2">
+            <i class="bi bi-calendar-event me-1"></i> {{ partidos|length }} partidos
+        </span>
+    </div>
 </div>
 
 <!-- ============================================================ -->
@@ -42,8 +72,8 @@
         {% for partido in partidos %}
         <div class="card mb-3 border-0 shadow-sm">
             <div class="card-header bg-dark py-2 d-flex justify-content-between align-items-center">
-                <small class="text-muted">
-                    <i class="bi bi-calendar3 me-1"></i>
+                <small class="text-muted d-flex align-items-center gap-1">
+                    <i class="bi bi-clock"></i>
                     {% if partido.fecha_utc %}
                         <span class="utc-time" data-utc="{{ partido.fecha_utc }}" data-display="datetime">{{ partido.fecha }}</span>
                     {% else %}
@@ -51,59 +81,61 @@
                     {% endif %}
                 </small>
                 {% if partido.recomendacion %}
-                    <span class="badge bg-success">{{ partido.recomendacion }}</span>
+                    <span class="badge bg-success">
+                        <i class="bi bi-lightning-charge-fill"></i> {{ partido.recomendacion }}
+                    </span>
                 {% endif %}
             </div>
             <div class="card-body">
                 <!-- Equipos -->
-                <div class="row text-center mb-3">
+                <div class="row align-items-center text-center mb-3 g-2">
                     <div class="col-5">
-                        <span class="fw-bold">{{ partido.local }}</span>
+                        <span class="fw-bold text-truncate d-block">{{ partido.local }}</span>
                     </div>
                     <div class="col-2">
-                        <span class="text-muted">vs</span>
+                        <span class="badge bg-secondary">vs</span>
                     </div>
                     <div class="col-5">
-                        <span class="fw-bold">{{ partido.visitante }}</span>
+                        <span class="fw-bold text-truncate d-block">{{ partido.visitante }}</span>
                     </div>
                 </div>
                 
                 <!-- Barra de predicción móvil -->
                 {% if partido.prediccion %}
                 <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1 small">
-                        <span class="text-primary fw-bold">1: {{ partido.prediccion.local|int }}%</span>
-                        <span class="text-secondary">X: {{ partido.prediccion.empate|int }}%</span>
-                        <span class="text-danger fw-bold">2: {{ partido.prediccion.visitante|int }}%</span>
+                    <div class="d-flex justify-content-between mb-1 small fw-bold">
+                        <span class="text-info">1: {{ partido.prediccion.local|int }}%</span>
+                        <span class="text-warning">X: {{ partido.prediccion.empate|int }}%</span>
+                        <span class="text-danger">2: {{ partido.prediccion.visitante|int }}%</span>
                     </div>
-                    <div class="progress" style="height: 12px;">
+                    <div class="progress" style="height: 8px;">
                         <div class="progress-bar bg-primary" data-width="{{ partido.prediccion.local }}"></div>
-                        <div class="progress-bar bg-secondary" data-width="{{ partido.prediccion.empate }}"></div>
+                        <div class="progress-bar bg-warning" data-width="{{ partido.prediccion.empate }}"></div>
                         <div class="progress-bar bg-danger" data-width="{{ partido.prediccion.visitante }}"></div>
                     </div>
                 </div>
                 {% else %}
                 <div class="text-center mb-3">
-                    <span class="badge bg-dark text-muted">Sin datos de predicción</span>
+                    <span class="badge bg-dark text-muted">Sin datos históricos suficientes</span>
                 </div>
                 {% endif %}
                 
                 <!-- Botón analizar -->
                 <div class="d-grid">
                     <a href="{{ url_for('predict', local=partido.local, visitante=partido.visitante, liga_id=liga_id) }}" 
-                       class="btn btn-primary btn-sm">
-                        <i class="bi bi-magic"></i> Analizar partido
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-magic"></i> Analizar Partido Completo
                     </a>
                 </div>
             </div>
         </div>
         {% endfor %}
     {% else %}
-        <div class="card">
+        <div class="card border-0">
             <div class="card-body text-center py-5">
                 <i class="bi bi-calendar-x display-1 text-muted mb-3 d-block"></i>
-                <h5>No hay partidos próximos</h5>
-                <p class="text-muted">Intenta seleccionar otra liga o vuelve más tarde</p>
+                <h5>No hay partidos programados</h5>
+                <p class="text-muted small">Intenta seleccionar otra liga en el menú superior</p>
             </div>
         </div>
     {% endif %}
@@ -112,18 +144,18 @@
 <!-- ============================================================ -->
 <!-- VISTA DESKTOP: Tabla (oculta en móviles) -->
 <!-- ============================================================ -->
-<div class="card d-none d-md-block">
+<div class="card d-none d-md-block border-0 shadow">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="bg-dark">
+                <thead>
                     <tr>
-                        <th class="py-3 ps-4" style="width: 100px;">Fecha</th>
-                        <th class="py-3 text-end" style="width: 20%;">Local</th>
-                        <th class="py-3 text-center" style="width: 180px;">Predicción</th>
-                        <th class="py-3" style="width: 20%;">Visitante</th>
-                        <th class="py-3 text-center" style="width: 80px;">Tip</th>
-                        <th class="py-3 text-center" style="width: 140px;">Acción</th>
+                        <th class="ps-4" style="width: 140px;">Fecha / Hora</th>
+                        <th class="text-end" style="width: 22%;">Equipo Local</th>
+                        <th class="text-center" style="width: 200px;">Distribución 1X2</th>
+                        <th class="text-start" style="width: 22%;">Equipo Visitante</th>
+                        <th class="text-center" style="width: 120px;">Recomendación</th>
+                        <th class="text-center pe-4" style="width: 130px;">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -137,54 +169,56 @@
                                     {{ partido.fecha }}
                                 {% endif %}
                             </td>
+                            
                             <td class="text-end fw-bold">
                                 {{ partido.local }}
                             </td>
+                            
                             <td class="text-center">
                                 {% if partido.prediccion %}
-                                <div class="progress" style="height: 28px;">
-                                    <div class="progress-bar bg-primary" 
+                                <div class="progress" style="height: 24px;" title="1: {{ partido.prediccion.local }}% | X: {{ partido.prediccion.empate }}% | 2: {{ partido.prediccion.visitante }}%">
+                                    <div class="progress-bar bg-primary d-flex align-items-center justify-content-center fw-bold" 
                                          data-width="{{ partido.prediccion.local }}"
-                                         data-bs-toggle="tooltip" 
-                                         title="Local: {{ partido.prediccion.local }}%">
-                                        {% if partido.prediccion.local >= 15 %}{{ partido.prediccion.local|int }}%{% endif %}
+                                         style="font-size: 11px;">
+                                        {% if partido.prediccion.local >= 20 %}{{ partido.prediccion.local|int }}%{% endif %}
                                     </div>
-                                    <div class="progress-bar bg-secondary" 
+                                    <div class="progress-bar bg-warning d-flex align-items-center justify-content-center fw-bold text-dark" 
                                          data-width="{{ partido.prediccion.empate }}"
-                                         data-bs-toggle="tooltip" 
-                                         title="Empate: {{ partido.prediccion.empate }}%">
-                                        {% if partido.prediccion.empate >= 15 %}{{ partido.prediccion.empate|int }}%{% endif %}
+                                         style="font-size: 11px;">
+                                        {% if partido.prediccion.empate >= 20 %}{{ partido.prediccion.empate|int }}%{% endif %}
                                     </div>
-                                    <div class="progress-bar bg-danger" 
+                                    <div class="progress-bar bg-danger d-flex align-items-center justify-content-center fw-bold" 
                                          data-width="{{ partido.prediccion.visitante }}"
-                                         data-bs-toggle="tooltip" 
-                                         title="Visitante: {{ partido.prediccion.visitante }}%">
-                                        {% if partido.prediccion.visitante >= 15 %}{{ partido.prediccion.visitante|int }}%{% endif %}
+                                         style="font-size: 11px;">
+                                        {% if partido.prediccion.visitante >= 20 %}{{ partido.prediccion.visitante|int }}%{% endif %}
                                     </div>
                                 </div>
                                 {% else %}
-                                <span class="badge bg-dark text-muted">Sin datos</span>
+                                <span class="badge bg-secondary text-muted">Sin datos</span>
                                 {% endif %}
                             </td>
-                            <td class="fw-bold">
+                            
+                            <td class="text-start fw-bold">
                                 {{ partido.visitante }}
                             </td>
+                            
                             <td class="text-center">
                                 {% if partido.recomendacion %}
-                                <span class="badge bg-success">{{ partido.recomendacion }}</span>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-lightning-charge-fill"></i> {{ partido.recomendacion }}
+                                </span>
                                 {% elif partido.error %}
-                                <span class="badge bg-warning text-dark" 
-                                      data-bs-toggle="tooltip" 
-                                      title="{{ partido.error }}">
+                                <span class="badge bg-warning" title="{{ partido.error }}">
                                     <i class="bi bi-exclamation-triangle"></i>
                                 </span>
                                 {% else %}
                                 <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
-                            <td class="text-center">
+                            
+                            <td class="text-center pe-4">
                                 <a href="{{ url_for('predict', local=partido.local, visitante=partido.visitante, liga_id=liga_id) }}" 
-                                   class="btn btn-primary btn-sm">
+                                   class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-magic"></i> Analizar
                                 </a>
                             </td>
@@ -195,7 +229,7 @@
                             <td colspan="6" class="text-center py-5">
                                 <i class="bi bi-calendar-x display-1 text-muted mb-3 d-block"></i>
                                 <h5>No hay partidos próximos</h5>
-                                <p class="text-muted">Intenta seleccionar otra liga o vuelve más tarde</p>
+                                <p class="text-muted small">Selecciona otra liga en el menú para ver su fixture</p>
                             </td>
                         </tr>
                     {% endif %}
@@ -206,34 +240,22 @@
 </div>
 
 <!-- Leyenda -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card bg-dark">
-            <div class="card-body py-2">
-                <!-- Leyenda Desktop -->
-                <div class="d-none d-md-block">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> 
-                        <strong>Leyenda:</strong>
-                        <span class="badge bg-primary ms-2">Local</span>
-                        <span class="badge bg-secondary ms-1">Empate</span>
-                        <span class="badge bg-danger ms-1">Visitante</span>
-                        <span class="ms-3">|</span>
-                        <span class="ms-2"><strong>1</strong> = Victoria Local</span>
-                        <span class="ms-2"><strong>2</strong> = Victoria Visitante</span>
-                        <span class="ms-2"><strong>1X</strong> = Local o Empate</span>
-                        <span class="ms-2"><strong>X2</strong> = Empate o Visitante</span>
-                    </small>
-                </div>
-                <!-- Leyenda Móvil (simplificada) -->
-                <div class="d-block d-md-none text-center">
-                    <small class="text-muted">
-                        <span class="badge bg-primary">1</span> Local
-                        <span class="badge bg-secondary ms-2">X</span> Empate
-                        <span class="badge bg-danger ms-2">2</span> Visitante
-                    </small>
-                </div>
-            </div>
+<div class="card bg-dark border-0 mt-4">
+    <div class="card-body py-3">
+        <div class="d-none d-md-flex align-items-center justify-content-center gap-3 small text-muted flex-wrap">
+            <span class="d-flex align-items-center gap-1"><i class="bi bi-info-circle text-info"></i> <strong>Leyenda:</strong></span>
+            <span class="badge bg-primary">1</span> Local
+            <span class="badge bg-warning">X</span> Empate
+            <span class="badge bg-danger">2</span> Visitante
+            <span class="text-muted">|</span>
+            <span><strong>1X</strong>: Local o Empate</span>
+            <span><strong>X2</strong>: Empate o Visitante</span>
+            <span><strong>12</strong>: Local o Visitante</span>
+        </div>
+        <div class="d-block d-md-none text-center small text-muted">
+            <span class="badge bg-primary">1</span> Local
+            <span class="badge bg-warning ms-2">X</span> Empate
+            <span class="badge bg-danger ms-2">2</span> Visitante
         </div>
     </div>
 </div>

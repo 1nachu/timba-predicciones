@@ -1,32 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Predicción Manual - Timba Predictor{% endblock %}
-{% block og_title %}{{ seleccion_local or 'Predicción' }} vs {{ seleccion_visita or 'Partido' }} — Predicción Timba{% endblock %}
+{% block title %}Predicción Manual — Timba Predictor{% endblock %}
+{% block og_title %}{{ seleccion_local or 'Predicción' }} vs {{ seleccion_visita or 'Partido' }} — Timba Predictor{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
+<div class="row align-items-center mb-4">
     <div class="col-12">
-        <h1 class="display-5 fw-bold">
-            <i class="bi bi-magic text-primary"></i> Predicción Manual
+        <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-magic text-primary"></i>
+            <span>Predicción Manual</span>
         </h1>
-        <p class="lead text-muted">Selecciona dos equipos y obtén análisis detallado</p>
+        <p class="text-muted small mb-0">Selecciona dos equipos para simular probabilidades mediante distribución de Poisson y xG</p>
     </div>
 </div>
 
-<!-- Formulario de Predicción -->
+<!-- Matchup Selector Form -->
 <div class="row justify-content-center mb-4">
-    <div class="col-lg-10">
-        <div class="card p-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-lg p-3 p-md-4" style="background: linear-gradient(135deg, rgba(19, 29, 51, 0.95) 0%, rgba(11, 17, 30, 0.98) 100%);">
             <form method="POST" action="/predict">
                 <input type="hidden" name="liga_id" value="{{ liga_id }}">
                 
                 <!-- Selector de Liga -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Liga</label>
-                        <select name="liga_id" class="form-select" onchange="window.location.href='/predict?liga_id='+this.value">
+                <div class="row mb-3">
+                    <div class="col-12 col-md-6 mx-auto">
+                        <label class="form-label text-center d-block mb-1">
+                            <i class="bi bi-trophy text-warning me-1"></i> Liga / Competición
+                        </label>
+                        <select name="liga_id" class="form-select form-select-sm" onchange="window.location.href='/predict?liga_id='+this.value">
                             {% for id, liga in todas_las_ligas.items() %}
                             <option value="{{ id }}" {% if id == liga_id %}selected{% endif %}>
+                                {% if 'Argentina' in liga.nombre %}🇦🇷
+                                {% elif 'Premier' in liga.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
+                                {% elif 'La Liga' in liga.nombre or 'España' in liga.nombre %}🇪🇸
+                                {% elif 'Serie' in liga.nombre or 'Italia' in liga.nombre %}🇮🇹
+                                {% elif 'Bundesliga' in liga.nombre or 'Alemania' in liga.nombre %}🇩🇪
+                                {% elif 'Ligue' in liga.nombre or 'Francia' in liga.nombre %}🇫🇷
+                                {% elif 'Primeira' in liga.nombre or 'Portugal' in liga.nombre %}🇵🇹
+                                {% elif 'Eredivisie' in liga.nombre or 'Países Bajos' in liga.nombre %}🇳🇱
+                                {% elif 'Champions' in liga.nombre %}🏆
+                                {% endif %}
                                 {{ liga.nombre }}
                             </option>
                             {% endfor %}
@@ -34,40 +47,48 @@
                     </div>
                 </div>
                 
-                <!-- Selector de Equipos -->
-                <div class="row g-3 align-items-end">
+                <!-- Matchup Head-to-Head Selector -->
+                <div class="row g-3 align-items-center justify-content-center my-2">
                     <div class="col-md-5">
-                        <label class="form-label">🏠 Equipo Local</label>
-                        <select name="local" class="form-select form-select-lg" required>
-                            <option value="">Seleccionar...</option>
-                            {% for equipo in equipos %}
-                            <option value="{{ equipo }}" {% if equipo == seleccion_local %}selected{% endif %}>
-                                {{ equipo }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="p-3 rounded border" style="background: rgba(6, 182, 212, 0.04); border-color: rgba(6, 182, 212, 0.3) !important;">
+                            <label class="form-label text-info d-flex align-items-center gap-1 mb-2">
+                                <i class="bi bi-house-fill"></i> <span>Equipo Local</span>
+                            </label>
+                            <select name="local" class="form-select" required>
+                                <option value="">Seleccionar local...</option>
+                                {% for equipo in equipos %}
+                                <option value="{{ equipo }}" {% if equipo == seleccion_local %}selected{% endif %}>
+                                    {{ equipo }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     
-                    <div class="col-md-2 text-center">
-                        <span class="badge bg-secondary fs-4 py-3 px-4">VS</span>
+                    <div class="col-md-2 text-center my-2 my-md-0">
+                        <span class="badge bg-secondary fs-5 py-2 px-3 rounded-pill shadow-sm border border-secondary">VS</span>
                     </div>
                     
                     <div class="col-md-5">
-                        <label class="form-label">✈️ Equipo Visitante</label>
-                        <select name="visitante" class="form-select form-select-lg" required>
-                            <option value="">Seleccionar...</option>
-                            {% for equipo in equipos %}
-                            <option value="{{ equipo }}" {% if equipo == seleccion_visita %}selected{% endif %}>
-                                {{ equipo }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="p-3 rounded border" style="background: rgba(244, 63, 94, 0.04); border-color: rgba(244, 63, 94, 0.3) !important;">
+                            <label class="form-label text-danger d-flex align-items-center gap-1 mb-2">
+                                <i class="bi bi-airplane-fill"></i> <span>Equipo Visitante</span>
+                            </label>
+                            <select name="visitante" class="form-select" required>
+                                <option value="">Seleccionar visitante...</option>
+                                {% for equipo in equipos %}
+                                <option value="{{ equipo }}" {% if equipo == seleccion_visita %}selected{% endif %}>
+                                    {{ equipo }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="d-grid mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-lightning-charge"></i> Analizar Partido
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                        <i class="bi bi-lightning-charge-fill"></i> Simular Predicción
                     </button>
                 </div>
             </form>
@@ -76,278 +97,313 @@
 </div>
 
 {% if prediction %}
-<!-- Resultados de Predicción -->
-<div class="row g-4 mb-4">
-    <!-- Probabilidades 1X2 -->
+<!-- Header del Encuentro Analizado -->
+<div class="card border-0 mb-4" style="background: linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, rgba(19, 29, 51, 0.8) 50%, rgba(244, 63, 94, 0.15) 100%);">
+    <div class="card-body text-center py-3">
+        <h4 class="fw-bold mb-0">
+            <span class="text-info">{{ seleccion_local }}</span>
+            <span class="text-muted mx-2">vs</span>
+            <span class="text-danger">{{ seleccion_visita }}</span>
+        </h4>
+        <small class="text-muted">{{ liga_actual.nombre or 'Análisis Estadístico' }}</small>
+    </div>
+</div>
+
+<!-- Probabilidades 1X2 -->
+<div class="row g-3 mb-4">
+    <!-- Victoria Local -->
     <div class="col-md-4">
-        <div class="card h-100 text-center p-4 border-primary">
-            <h5 class="text-muted mb-2">{{ seleccion_local }}</h5>
-            <div class="display-3 fw-bold text-primary">
+        <div class="card h-100 text-center p-4 border-primary shadow">
+            <span class="badge bg-info align-self-center mb-2">1 · LOCAL</span>
+            <h6 class="text-secondary mb-1 text-truncate">{{ seleccion_local }}</h6>
+            <div class="display-4 fw-bold text-info my-2">
                 {{ (prediction['Prob_Local'] * 100)|round(1) }}%
             </div>
-            <small class="text-muted">Victoria Local</small>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-primary" data-width="{{ prediction['Prob_Local'] * 100 }}"></div>
+            </div>
         </div>
     </div>
+    
+    <!-- Empate -->
     <div class="col-md-4">
-        <div class="card h-100 text-center p-4">
-            <h5 class="text-muted mb-2">Empate</h5>
-            <div class="display-3 fw-bold text-secondary">
+        <div class="card h-100 text-center p-4 shadow">
+            <span class="badge bg-warning align-self-center mb-2 text-dark">X · EMPATE</span>
+            <h6 class="text-secondary mb-1">Empate</h6>
+            <div class="display-4 fw-bold text-warning my-2">
                 {{ (prediction['Prob_Empate'] * 100)|round(1) }}%
             </div>
-            <small class="text-muted">Probabilidad</small>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-warning" data-width="{{ prediction['Prob_Empate'] * 100 }}"></div>
+            </div>
         </div>
     </div>
+    
+    <!-- Victoria Visitante -->
     <div class="col-md-4">
-        <div class="card h-100 text-center p-4 border-danger">
-            <h5 class="text-muted mb-2">{{ seleccion_visita }}</h5>
-            <div class="display-3 fw-bold text-danger">
+        <div class="card h-100 text-center p-4 border-danger shadow">
+            <span class="badge bg-danger align-self-center mb-2">2 · VISITANTE</span>
+            <h6 class="text-secondary mb-1 text-truncate">{{ seleccion_visita }}</h6>
+            <div class="display-4 fw-bold text-danger my-2">
                 {{ (prediction['Prob_Vis'] * 100)|round(1) }}%
             </div>
-            <small class="text-muted">Victoria Visitante</small>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-danger" data-width="{{ prediction['Prob_Vis'] * 100 }}"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4 mb-4">
+<div class="row g-3 mb-4">
     <!-- Goles Esperados (xG) -->
     <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <h5 class="mb-4"><i class="bi bi-bullseye text-warning"></i> Goles Esperados (xG)</h5>
+        <div class="card p-4 h-100 border-0 shadow">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-bullseye text-warning"></i>
+                <span>Goles Esperados (xG)</span>
+            </h5>
             
             <div class="mb-3">
-                <div class="d-flex justify-content-between mb-1">
-                    <span>{{ seleccion_local }}</span>
-                    <span class="fw-bold">{{ prediction['Goles_Esp_Local']|round(2) }}</span>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold text-info">{{ seleccion_local }}</span>
+                    <span class="badge bg-dark fs-6">{{ prediction['Goles_Esp_Local']|round(2) }} xG</span>
                 </div>
-                <div class="progress">
+                <div class="progress" style="height: 8px;">
                     <div class="progress-bar bg-primary" 
                          data-width="{{ [((prediction['Goles_Esp_Local'] / 4) * 100), 100]|min }}">
                     </div>
                 </div>
             </div>
             
-            <div class="mb-3">
-                <div class="d-flex justify-content-between mb-1">
-                    <span>{{ seleccion_visita }}</span>
-                    <span class="fw-bold">{{ prediction['Goles_Esp_Vis']|round(2) }}</span>
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold text-danger">{{ seleccion_visita }}</span>
+                    <span class="badge bg-dark fs-6">{{ prediction['Goles_Esp_Vis']|round(2) }} xG</span>
                 </div>
-                <div class="progress">
+                <div class="progress" style="height: 8px;">
                     <div class="progress-bar bg-danger" 
                          data-width="{{ [((prediction['Goles_Esp_Vis'] / 4) * 100), 100]|min }}">
                     </div>
                 </div>
             </div>
             
-            <hr>
+            <hr class="border-secondary my-3">
             
-            <div class="row text-center">
+            <!-- Mercados de Goles -->
+            <div class="row text-center g-2">
                 <div class="col-4">
-                    <small class="text-muted d-block">Over 1.5</small>
-                    <span class="fw-bold">{{ (prediction['Over_15'] * 100)|round(1) }}%</span>
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">Over 1.5</small>
+                        <span class="fw-bold fs-5 text-primary">{{ (prediction['Over_15'] * 100)|round(1) }}%</span>
+                    </div>
                 </div>
                 <div class="col-4">
-                    <small class="text-muted d-block">Over 2.5</small>
-                    <span class="fw-bold">{{ (prediction['Over_25'] * 100)|round(1) }}%</span>
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">Over 2.5</small>
+                        <span class="fw-bold fs-5 text-success">{{ (prediction['Over_25'] * 100)|round(1) }}%</span>
+                    </div>
                 </div>
                 <div class="col-4">
-                    <small class="text-muted d-block">Under 3.5</small>
-                    <span class="fw-bold">{{ (prediction['Under_35'] * 100)|round(1) }}%</span>
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">Under 3.5</small>
+                        <span class="fw-bold fs-5 text-info">{{ (prediction['Under_35'] * 100)|round(1) }}%</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Marcadores Probables -->
+    <!-- Marcadores Más Probables & Doble Oportunidad -->
     <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <h5 class="mb-4"><i class="bi bi-list-ol text-info"></i> Marcadores Más Probables</h5>
+        <div class="card p-4 h-100 border-0 shadow">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-list-ol text-info"></i>
+                <span>Marcadores Más Probables</span>
+            </h5>
             
             {% if prediction['Top_3_Marcadores'] %}
-            <ul class="list-group list-group-flush bg-transparent">
+            <div class="d-flex flex-column gap-2 mb-3">
                 {% for marcador in prediction['Top_3_Marcadores'] %}
-                <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
-                    <span class="fs-5 fw-bold">{{ marcador['marcador'] }}</span>
-                    <span class="badge bg-secondary fs-6">{{ (marcador['prob'] * 100)|round(1) }}%</span>
-                </li>
+                <div class="d-flex justify-content-between align-items-center p-2 rounded bg-dark border border-secondary">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary">#{{ loop.index }}</span>
+                        <span class="fs-5 fw-bold font-monospace">{{ marcador['marcador'] }}</span>
+                    </div>
+                    <span class="badge bg-primary fs-6">{{ (marcador['prob'] * 100)|round(1) }}%</span>
+                </div>
                 {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-muted">No hay marcadores disponibles</p>
+            </div>
             {% endif %}
             
-            <hr>
+            <hr class="border-secondary my-3">
             
             <!-- Doble Oportunidad -->
-            <div class="row text-center mt-3">
+            <div class="row text-center g-2">
                 <div class="col-4">
-                    <small class="text-muted d-block">1X</small>
-                    <span class="fw-bold text-success">{{ (prediction['Prob_1X'] * 100)|round(1) }}%</span>
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">1X (Local o Empate)</small>
+                        <span class="fw-bold fs-5 text-success">{{ (prediction['Prob_1X'] * 100)|round(1) }}%</span>
+                    </div>
                 </div>
                 <div class="col-4">
-                    <small class="text-muted d-block">X2</small>
-                    <span class="fw-bold text-info">{{ (prediction['Prob_X2'] * 100)|round(1) }}%</span>
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">X2 (Empate o Visita)</small>
+                        <span class="fw-bold fs-5 text-info">{{ (prediction['Prob_X2'] * 100)|round(1) }}%</span>
+                    </div>
                 </div>
                 <div class="col-4">
-                    <small class="text-muted d-block">12</small>
-                    <span class="fw-bold text-warning">{{ (prediction['Prob_12'] * 100)|round(1) }}%</span>
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">12 (Cualquiera)</small>
+                        <span class="fw-bold fs-5 text-warning">{{ (prediction['Prob_12'] * 100)|round(1) }}%</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Córners (si hay datos) -->
+<!-- Telemetría de Córners (si hay datos) -->
 {% if prediction['Corners_Lambda_Total'] > 0 %}
-<div class="row g-4 mb-4">
-    <div class="col-12">
-        <div class="card p-4">
-            <h5 class="mb-4"><i class="bi bi-flag text-success"></i> Predicción de Córners</h5>
-            <div class="row text-center">
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Total Esperado</small>
-                    <span class="fs-4 fw-bold">{{ prediction['Corners_Lambda_Total']|round(1) }}</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Over 8.5</small>
-                    <span class="fs-4 fw-bold">{{ (prediction['Over_85'] * 100)|round(1) }}%</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Over 9.5</small>
-                    <span class="fs-4 fw-bold">{{ (prediction['Over_95'] * 100)|round(1) }}%</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Local +Córners</small>
-                    <span class="fs-4 fw-bold">{{ (prediction['Prob_Local_Mas_Corners'] * 100)|round(1) }}%</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Tarjetas (si hay datos) -->
-{% if prediction.get('Tarjetas_Am_Total', 0) > 0 %}
-<div class="row g-4 mb-4">
-    <div class="col-12">
-        <div class="card p-4">
-            <h5 class="mb-4"><i class="bi bi-card-heading text-warning"></i> Predicción de Tarjetas</h5>
-            
-            <!-- Tarjetas esperadas por equipo -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>{{ seleccion_local }}</span>
-                        <div>
-                            <span class="badge bg-warning text-dark me-1" title="Amarillas esperadas">
-                                🟨 {{ prediction['Tarjetas_Am_Local']|round(1) }}
-                            </span>
-                            {% if prediction['Tarjetas_Ro_Local'] > 0.05 %}
-                            <span class="badge bg-danger" title="Rojas esperadas">
-                                🟥 {{ prediction['Tarjetas_Ro_Local']|round(2) }}
-                            </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="progress" style="height: 12px;">
-                        <div class="progress-bar bg-warning" 
-                             data-width="{{ [((prediction['Tarjetas_Am_Local'] / 3) * 100), 100]|min }}"></div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>{{ seleccion_visita }}</span>
-                        <div>
-                            <span class="badge bg-warning text-dark me-1" title="Amarillas esperadas">
-                                🟨 {{ prediction['Tarjetas_Am_Vis']|round(1) }}
-                            </span>
-                            {% if prediction['Tarjetas_Ro_Vis'] > 0.05 %}
-                            <span class="badge bg-danger" title="Rojas esperadas">
-                                🟥 {{ prediction['Tarjetas_Ro_Vis']|round(2) }}
-                            </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="progress" style="height: 12px;">
-                        <div class="progress-bar bg-warning" 
-                             data-width="{{ [((prediction['Tarjetas_Am_Vis'] / 3) * 100), 100]|min }}"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <hr>
-            
-            <!-- Mercados Over/Under Tarjetas -->
-            <div class="row text-center">
-                <div class="col-6 col-md-2">
-                    <small class="text-muted d-block">Total Esp.</small>
-                    <span class="fs-5 fw-bold">🟨 {{ prediction['Tarjetas_Am_Total']|round(1) }}</span>
-                </div>
-                <div class="col-6 col-md-2">
-                    <small class="text-muted d-block">Over 2.5</small>
-                    <span class="fs-5 fw-bold {% if prediction['Over_25_Cards'] > 0.6 %}text-success{% endif %}">
-                        {{ (prediction['Over_25_Cards'] * 100)|round(0) }}%
-                    </span>
-                </div>
-                <div class="col-6 col-md-2">
-                    <small class="text-muted d-block">Over 3.5</small>
-                    <span class="fs-5 fw-bold {% if prediction['Over_35_Cards'] > 0.6 %}text-success{% endif %}">
-                        {{ (prediction['Over_35_Cards'] * 100)|round(0) }}%
-                    </span>
-                </div>
-                <div class="col-6 col-md-2">
-                    <small class="text-muted d-block">Over 4.5</small>
-                    <span class="fs-5 fw-bold {% if prediction['Over_45_Cards'] > 0.6 %}text-success{% endif %}">
-                        {{ (prediction['Over_45_Cards'] * 100)|round(0) }}%
-                    </span>
-                </div>
-                <div class="col-6 col-md-2">
-                    <small class="text-muted d-block">Under 5.5</small>
-                    <span class="fs-5 fw-bold {% if prediction['Under_55_Cards'] > 0.7 %}text-success{% endif %}">
-                        {{ (prediction['Under_55_Cards'] * 100)|round(0) }}%
-                    </span>
-                </div>
-                <div class="col-6 col-md-2">
-                    <small class="text-muted d-block">🟥 Roja</small>
-                    <span class="fs-5 fw-bold {% if prediction['Prob_Red_Card'] > 0.15 %}text-danger{% endif %}">
-                        {{ (prediction['Prob_Red_Card'] * 100)|round(0) }}%
-                    </span>
-                </div>
-            </div>
-            
-            <!-- ¿Quién recibe más tarjetas? -->
-            <hr>
-            <div class="row text-center">
-                <div class="col-12 mb-2">
-                    <small class="text-muted">¿Quién recibirá más tarjetas?</small>
-                </div>
-                <div class="col-6">
-                    <span class="badge bg-primary fs-6 px-3 py-2">
-                        {{ seleccion_local }}: {{ (prediction['Prob_Local_Mas_Cards'] * 100)|round(0) }}%
-                    </span>
-                </div>
-                <div class="col-6">
-                    <span class="badge bg-danger fs-6 px-3 py-2">
-                        {{ seleccion_visita }}: {{ (prediction['Prob_Vis_Mas_Cards'] * 100)|round(0) }}%
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{% endif %}
-
-{% if recomendaciones %}
-<!-- Semáforo de Recomendaciones -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-lightbulb text-warning"></i> Recomendaciones de Apuesta</h5>
-                <div class="small">
-                    <span class="badge bg-secondary me-1">⚽ Goles</span>
-                    <span class="badge bg-secondary me-1">🚩 Córners</span>
+        <div class="card p-4 border-0 shadow">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-flag text-success"></i>
+                <span>Telemetría de Córners</span>
+            </h5>
+            <div class="row text-center g-2">
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">Total Esperado</small>
+                        <span class="fs-4 fw-bold text-success">{{ prediction['Corners_Lambda_Total']|round(1) }}</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">Over 8.5 Córners</small>
+                        <span class="fs-4 fw-bold text-primary">{{ (prediction['Over_85'] * 100)|round(1) }}%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">Over 9.5 Córners</small>
+                        <span class="fs-4 fw-bold text-info">{{ (prediction['Over_95'] * 100)|round(1) }}%</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block mb-1">Local +Córners</small>
+                        <span class="fs-4 fw-bold text-warning">{{ (prediction['Prob_Local_Mas_Corners'] * 100)|round(1) }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Telemetría de Tarjetas (si hay datos) -->
+{% if prediction.get('Tarjetas_Am_Total', 0) > 0 %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card p-4 border-0 shadow">
+            <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-card-heading text-warning"></i>
+                <span>Telemetría de Tarjetas</span>
+            </h5>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="p-3 rounded bg-dark border border-secondary">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold text-info">{{ seleccion_local }}</span>
+                            <div>
+                                <span class="badge bg-warning text-dark me-1">🟨 {{ prediction['Tarjetas_Am_Local']|round(1) }}</span>
+                                {% if prediction['Tarjetas_Ro_Local'] > 0.05 %}
+                                <span class="badge bg-danger">🟥 {{ prediction['Tarjetas_Ro_Local']|round(2) }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" data-width="{{ [((prediction['Tarjetas_Am_Local'] / 3) * 100), 100]|min }}"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 rounded bg-dark border border-secondary">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold text-danger">{{ seleccion_visita }}</span>
+                            <div>
+                                <span class="badge bg-warning text-dark me-1">🟨 {{ prediction['Tarjetas_Am_Vis']|round(1) }}</span>
+                                {% if prediction['Tarjetas_Ro_Vis'] > 0.05 %}
+                                <span class="badge bg-danger">🟥 {{ prediction['Tarjetas_Ro_Vis']|round(2) }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" data-width="{{ [((prediction['Tarjetas_Am_Vis'] / 3) * 100), 100]|min }}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mercados Over/Under Tarjetas -->
+            <div class="row text-center g-2">
+                <div class="col-4 col-md-2">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block">Total Esp.</small>
+                        <span class="fw-bold fs-6">🟨 {{ prediction['Tarjetas_Am_Total']|round(1) }}</span>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block">Over 2.5</small>
+                        <span class="fw-bold fs-6 text-success">{{ (prediction['Over_25_Cards'] * 100)|round(0) }}%</span>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block">Over 3.5</small>
+                        <span class="fw-bold fs-6 text-info">{{ (prediction['Over_35_Cards'] * 100)|round(0) }}%</span>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block">Over 4.5</small>
+                        <span class="fw-bold fs-6 text-warning">{{ (prediction['Over_45_Cards'] * 100)|round(0) }}%</span>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block">Under 5.5</small>
+                        <span class="fw-bold fs-6 text-primary">{{ (prediction['Under_55_Cards'] * 100)|round(0) }}%</span>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2">
+                    <div class="p-2 rounded bg-dark border border-secondary">
+                        <small class="text-muted d-block">🟥 Expulsión</small>
+                        <span class="fw-bold fs-6 text-danger">{{ (prediction['Prob_Red_Card'] * 100)|round(0) }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Semáforo de Recomendaciones IA -->
+{% if recomendaciones %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-lightbulb text-warning"></i>
+                    <span>Recomendaciones del Algoritmo</span>
+                </h5>
+                <div class="d-flex gap-1">
+                    <span class="badge bg-secondary">⚽ Goles</span>
+                    <span class="badge bg-secondary">🚩 Córners</span>
                     <span class="badge bg-secondary">🟨 Tarjetas</span>
                 </div>
             </div>
@@ -357,16 +413,16 @@
                     <div class="col-md-6 col-lg-4">
                         <div class="alert alert-{{ reco.class }} d-flex align-items-center mb-0 h-100">
                             <div class="me-3 text-center" style="min-width: 45px;">
-                                <span class="fs-4 d-block">{{ reco.emoji|default('⚽') }}</span>
+                                <span class="fs-3 d-block">{{ reco.emoji|default('⚽') }}</span>
                                 <span class="fs-5">{{ reco.icon }}</span>
                             </div>
                             <div class="flex-grow-1">
                                 <strong>{{ reco.corto }}</strong>
                                 <div class="small text-muted">{{ reco.texto }}</div>
-                                <div class="progress mt-1" style="height: 6px;">
+                                <div class="progress mt-2" style="height: 6px;">
                                     <div class="progress-bar bg-{{ reco.class }}" data-width="{{ reco.prob }}"></div>
                                 </div>
-                                <small class="fw-bold">{{ reco.prob }}%</small>
+                                <small class="fw-bold d-block mt-1">{{ reco.prob }}% confianza</small>
                             </div>
                         </div>
                     </div>
@@ -378,13 +434,14 @@
 </div>
 {% endif %}
 
+{% endif %}
+
 {% if not prediction and not equipos %}
-<!-- Estado Vacío -->
-<div class="card text-center py-5">
+<div class="card text-center py-5 border-0">
     <div class="card-body">
         <i class="bi bi-database-x display-1 text-muted mb-3"></i>
         <h4>No hay datos disponibles</h4>
-        <p class="text-muted">Selecciona una liga diferente o verifica tu conexión a internet</p>
+        <p class="text-muted small">Selecciona una liga diferente en el menú superior</p>
     </div>
 </div>
 {% endif %}

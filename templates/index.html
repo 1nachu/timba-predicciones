@@ -1,47 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Partidos de Hoy - Timba Predictor{% endblock %}
+{% block title %}Partidos de Hoy — Timba Predictor{% endblock %}
 
 {% block content %}
 <!-- Header: PARTIDOS DE HOY -->
-<div class="partidos-header">
+<div class="partidos-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div class="partidos-title">
         <i class="bi bi-calendar-event"></i>
-        PARTIDOS DE HOY
+        <span>PARTIDOS DE HOY</span>
         <span class="badge bg-success ms-2">{{ stats.total_partidos_hoy }}</span>
     </div>
+    {% if stats.last_update %}
+    <div class="text-muted small d-flex align-items-center gap-1">
+        <i class="bi bi-clock"></i> <span>Actualizado: {{ stats.last_update }}</span>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Tabs: TODOS / VIVO -->
 <div class="partidos-tabs">
-    <button class="tab-btn active">TODOS</button>
-    <a href="/live" class="tab-btn">EN VIVO <i class="bi bi-broadcast text-danger"></i></a>
+    <a href="/" class="tab-btn active">
+        <i class="bi bi-grid-fill"></i> TODOS <span class="badge bg-secondary ms-1">{{ stats.total_partidos_hoy }}</span>
+    </a>
+    <a href="/live" class="tab-btn">
+        <i class="bi bi-broadcast text-danger"></i> EN VIVO
+    </a>
+    <a href="/fixtures" class="tab-btn">
+        <i class="bi bi-calendar3"></i> PRÓXIMOS DÍAS
+    </a>
 </div>
-
-<!-- Descripción -->
-<p class="text-muted small mb-3">Partidos programados para hoy con predicciones Timba</p>
 
 {% if stats.partidos_hoy %}
     <!-- Ligas con partidos de hoy -->
     {% for liga_id, liga_data in stats.partidos_hoy.items() %}
-    <div class="liga-bloque mb-3">
+    <div class="liga-bloque mb-4">
         <!-- Header de Liga -->
         <div class="liga-header">
             <span class="flag">
                 {% if 'Argentina' in liga_data.nombre %}🇦🇷
                 {% elif 'Premier' in liga_data.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
-                {% elif 'La Liga' in liga_data.nombre %}🇪🇸
-                {% elif 'Serie' in liga_data.nombre %}🇮🇹
-                {% elif 'Bundesliga' in liga_data.nombre %}🇩🇪
-                {% elif 'Ligue' in liga_data.nombre %}🇫🇷
-                {% elif 'Primeira' in liga_data.nombre %}🇵🇹
-                {% elif 'Eredivisie' in liga_data.nombre %}🇳🇱
+                {% elif 'La Liga' in liga_data.nombre or 'España' in liga_data.nombre %}🇪🇸
+                {% elif 'Serie' in liga_data.nombre or 'Italia' in liga_data.nombre %}🇮🇹
+                {% elif 'Bundesliga' in liga_data.nombre or 'Alemania' in liga_data.nombre %}🇩🇪
+                {% elif 'Ligue' in liga_data.nombre or 'Francia' in liga_data.nombre %}🇫🇷
+                {% elif 'Primeira' in liga_data.nombre or 'Portugal' in liga_data.nombre %}🇵🇹
+                {% elif 'Eredivisie' in liga_data.nombre or 'Países Bajos' in liga_data.nombre %}🇳🇱
                 {% elif 'Champions' in liga_data.nombre %}🏆
                 {% else %}⚽{% endif %}
             </span>
             <span class="liga-name">{{ liga_data.nombre }}</span>
             <div class="liga-actions">
-                <a href="/fixtures?liga_id={{ liga_id }}" title="Ver fixture completo"><i class="bi bi-calendar3"></i></a>
+                <a href="/fixtures?liga_id={{ liga_id }}" title="Ver fixture completo de esta liga" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-calendar3 me-1"></i> Fixture
+                </a>
             </div>
         </div>
         
@@ -58,6 +69,7 @@
                             <span class="hora">{{ partido.hora }}</span>
                         {% endif %}
                     </div>
+                    
                     <div class="partido-equipos">
                         <div class="partido-equipo local">
                             <span class="nombre">{{ partido.local }}</span>
@@ -67,9 +79,12 @@
                             <span class="nombre">{{ partido.visitante }}</span>
                         </div>
                     </div>
+                    
                     {% if partido.recomendacion and partido.recomendacion != '—' %}
                     <div class="partido-apuesta">
-                        <span class="badge bg-success">{{ partido.recomendacion }}</span>
+                        <span class="badge bg-success shadow-sm">
+                            <i class="bi bi-lightning-charge-fill"></i> {{ partido.recomendacion }}
+                        </span>
                     </div>
                     {% endif %}
                 </div>
@@ -78,19 +93,25 @@
                 {% if partido.prediccion %}
                 <div class="partido-prediccion">
                     <div class="pred-probs">
-                        <span class="pred-item local">1: {{ partido.prediccion.local|int }}%</span>
-                        <span class="pred-item empate">X: {{ partido.prediccion.empate|int }}%</span>
-                        <span class="pred-item visitante">2: {{ partido.prediccion.visitante|int }}%</span>
+                        <span class="pred-item local">
+                            <i class="bi bi-house-fill me-1"></i>1: {{ partido.prediccion.local|int }}%
+                        </span>
+                        <span class="pred-item empate">
+                            <i class="bi bi-dash-lg me-1"></i>X: {{ partido.prediccion.empate|int }}%
+                        </span>
+                        <span class="pred-item visitante">
+                            <i class="bi bi-airplane-fill me-1"></i>2: {{ partido.prediccion.visitante|int }}%
+                        </span>
                     </div>
                     <div class="pred-bar">
-                        <div class="pred-bar-local" data-width="{{ partido.prediccion.local }}"></div>
-                        <div class="pred-bar-empate" data-width="{{ partido.prediccion.empate }}"></div>
-                        <div class="pred-bar-visitante" data-width="{{ partido.prediccion.visitante }}"></div>
+                        <div class="pred-bar-local" data-width="{{ partido.prediccion.local }}" title="Local: {{ partido.prediccion.local }}%"></div>
+                        <div class="pred-bar-empate" data-width="{{ partido.prediccion.empate }}" title="Empate: {{ partido.prediccion.empate }}%"></div>
+                        <div class="pred-bar-visitante" data-width="{{ partido.prediccion.visitante }}" title="Visitante: {{ partido.prediccion.visitante }}%"></div>
                     </div>
                 </div>
                 {% else %}
-                <div class="partido-prediccion">
-                    <span class="text-muted small">Sin datos históricos</span>
+                <div class="partido-prediccion text-center">
+                    <span class="text-muted small">Haz clic para analizar probabilidades</span>
                 </div>
                 {% endif %}
             </div>
@@ -100,51 +121,60 @@
     {% endfor %}
 {% else %}
     <!-- No hay partidos hoy -->
-    <div class="alert alert-secondary text-center py-4">
-        <i class="bi bi-calendar-x display-4 d-block mb-3"></i>
-        <h5>No hay partidos programados para hoy</h5>
-        <p class="text-muted mb-3">Consultá el fixture de cada liga para ver próximos encuentros</p>
-        <div class="d-flex justify-content-center gap-2 flex-wrap">
-            {% for id, liga in stats.ligas.items() %}
-            <a href="/fixtures?liga_id={{ id }}" class="btn btn-sm btn-outline-light">
-                {% if 'Argentina' in liga.nombre %}🇦🇷
-                {% elif 'Premier' in liga.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
-                {% elif 'La Liga' in liga.nombre %}🇪🇸
-                {% elif 'Serie' in liga.nombre %}🇮🇹
-                {% elif 'Bundesliga' in liga.nombre %}🇩🇪
-                {% elif 'Ligue' in liga.nombre %}🇫🇷
-                {% elif 'Primeira' in liga.nombre %}🇵🇹
-                {% elif 'Eredivisie' in liga.nombre %}🇳🇱
-                {% else %}⚽{% endif %}
-                {{ liga.nombre.split('(')[0] }}
-            </a>
-            {% endfor %}
+    <div class="card border-0 mb-4 p-4 text-center">
+        <div class="card-body py-4">
+            <div class="mb-3">
+                <i class="bi bi-calendar-x display-4 text-muted"></i>
+            </div>
+            <h4 class="fw-bold mb-2">No hay partidos programados para hoy</h4>
+            <p class="text-muted mb-4">Selecciona una liga para consultar los próximos encuentros y predicciones detalladas:</p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap max-w-lg mx-auto">
+                {% for id, liga in stats.ligas.items() %}
+                <a href="/fixtures?liga_id={{ id }}" class="btn btn-sm btn-outline-secondary">
+                    {% if 'Argentina' in liga.nombre %}🇦🇷
+                    {% elif 'Premier' in liga.nombre %}🏴󠁧󠁢󠁥󠁮󠁧󠁿
+                    {% elif 'La Liga' in liga.nombre or 'España' in liga.nombre %}🇪🇸
+                    {% elif 'Serie' in liga.nombre or 'Italia' in liga.nombre %}🇮🇹
+                    {% elif 'Bundesliga' in liga.nombre or 'Alemania' in liga.nombre %}🇩🇪
+                    {% elif 'Ligue' in liga.nombre or 'Francia' in liga.nombre %}🇫🇷
+                    {% elif 'Primeira' in liga.nombre or 'Portugal' in liga.nombre %}🇵🇹
+                    {% elif 'Eredivisie' in liga.nombre or 'Países Bajos' in liga.nombre %}🇳🇱
+                    {% elif 'Champions' in liga.nombre %}🏆
+                    {% else %}⚽{% endif %}
+                    {{ liga.nombre.split('(')[0] }}
+                </a>
+                {% endfor %}
+            </div>
         </div>
     </div>
 {% endif %}
 
 <!-- Quick Actions -->
-<div class="row g-3 mt-4">
+<div class="row g-3 mt-2">
     <div class="col-md-6">
-        <div class="card">
+        <div class="card h-100 border-0 bg-dark p-2">
             <div class="card-body text-center py-4">
-                <i class="bi bi-broadcast display-4 text-danger mb-2"></i>
-                <h5>Partidos en Vivo</h5>
-                <p class="text-muted small mb-3">Seguimiento en tiempo real</p>
-                <a href="/live" class="btn btn-outline-danger">
-                    <i class="bi bi-play-circle"></i> Ver en Vivo
+                <div class="mb-2">
+                    <i class="bi bi-broadcast display-5 text-danger"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Partidos en Vivo</h5>
+                <p class="text-muted small mb-3">Seguimiento en tiempo real con estadísticas y marcador minuto a minuto</p>
+                <a href="/live" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-play-circle"></i> Ir al En Vivo
                 </a>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card">
+        <div class="card h-100 border-0 bg-dark p-2">
             <div class="card-body text-center py-4">
-                <i class="bi bi-graph-up display-4 text-success mb-2"></i>
-                <h5>Historial</h5>
-                <p class="text-muted small mb-3">Análisis de predicciones pasadas</p>
-                <a href="/history" class="btn btn-outline-success">
-                    <i class="bi bi-bar-chart"></i> Ver Historial
+                <div class="mb-2">
+                    <i class="bi bi-graph-up display-5 text-success"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Auditoría & Historial</h5>
+                <p class="text-muted small mb-3">Comprobación de tasa de acierto y rendimiento histórico del modelo matemático</p>
+                <a href="/history" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-bar-chart"></i> Ver Auditoría
                 </a>
             </div>
         </div>

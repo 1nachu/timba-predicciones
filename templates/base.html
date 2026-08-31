@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>{% block title %}Timba Predictor{% endblock %}</title>
+    <title>{% block title %}Timba Predictor — Análisis y Predicciones de Fútbol{% endblock %}</title>
 
-    <meta name="description" content="Predicciones matemáticas de fútbol gratis. Análisis estadístico y probabilidades para la Liga Argentina, Premier League, La Liga y más. Proyecto Timba.">
+    <meta name="description" content="Predicciones matemáticas de fútbol con modelos de Poisson, xG y probabilidades 1X2. Liga Argentina, Premier League, La Liga, Champions League y más.">
 
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.png') }}">
@@ -14,7 +14,7 @@
     <!-- SEO: Canonical URL -->
     <link rel="canonical" href="https://futbol-predicciones.xyz{{ request.path }}">
 
-    <!-- Open Graph / WhatsApp / Twitter -->
+    <!-- Open Graph / Social -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://futbol-predicciones.xyz{{ request.path }}">
     <meta property="og:site_name" content="Timba Predictor">
@@ -31,25 +31,27 @@
     <meta name="twitter:description" content="{% block twitter_description %}Probabilidades calculadas con Poisson para 8 ligas. Gratis y sin registro.{% endblock %}">
     <meta name="twitter:image" content="https://futbol-predicciones.xyz{{ url_for('static', filename='og_image.png') }}">
     
-    <!-- Preload fuentes para evitar FOIT -->
+    <!-- Preload fuentes -->
     <link rel="preload" href="{{ url_for('static', filename='fonts/bootstrap-icons.woff2') }}" as="font" type="font/woff2" crossorigin>
     
-    <!-- CSS: Carga síncrona para evitar CLS en mobile -->
+    <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-minimal.css') }}">
     
-    <!-- JS con defer para no bloquear renderizado -->
+    <!-- JS con defer -->
     <script defer src="{{ url_for('static', filename='htmx.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
 </head>
 <body hx-boost="true">
 
-    <!-- Navbar Superior - Estilo Promiedos -->
+    <!-- Navbar Superior -->
     <nav class="navbar navbar-promiedos">
         <div class="container-fluid px-3">
             <a class="navbar-brand" href="/">
+                <span class="live-dot me-1"></span>
                 <span class="brand-text">TIMBA</span>
+                <span class="brand-badge d-none d-sm-inline">PRO</span>
             </a>
             <div class="navbar-nav-center d-none d-md-flex">
                 <a href="/" class="nav-link-top {% if request.endpoint == 'index' %}active{% endif %}">
@@ -70,10 +72,10 @@
             </div>
             <div class="navbar-actions d-none d-md-flex">
                 <div class="dropdown">
-                    <a href="#" class="nav-link-top dropdown-toggle" id="donateDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-cash-coin"></i> DONAR
+                    <a href="#" class="btn btn-outline-success btn-sm dropdown-toggle" id="donateDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-cash-coin"></i> Apoyar
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="donateDropdown">
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="donateDropdown">
                         <li>
                             <a class="dropdown-item" href="https://cafecito.app/timba_arg" target="_blank" rel="noopener">
                                 🇦🇷 Cafecito App
@@ -96,103 +98,76 @@
         </div>
     </nav>
 
-    <!-- Mobile Nav -->
+    <!-- Mobile Nav (Inferior) -->
     <div class="mobile-nav d-md-none" role="navigation" aria-label="Navegación móvil">
         <a href="/" class="mobile-nav-item {% if request.endpoint == 'index' %}active{% endif %}" aria-label="Inicio">
             <i class="bi bi-house-fill" aria-hidden="true"></i>
+            <span>Inicio</span>
         </a>
         <a href="/fixtures" class="mobile-nav-item {% if request.endpoint == 'fixtures' %}active{% endif %}" aria-label="Fixture">
             <i class="bi bi-calendar3" aria-hidden="true"></i>
+            <span>Fixture</span>
         </a>
         <a href="/live" class="mobile-nav-item {% if request.endpoint == 'live' %}active{% endif %}" aria-label="En Vivo">
             <i class="bi bi-broadcast" aria-hidden="true"></i>
+            <span>En Vivo</span>
         </a>
         <a href="/predict" class="mobile-nav-item {% if request.endpoint == 'predict' %}active{% endif %}" aria-label="Predicción">
             <i class="bi bi-magic" aria-hidden="true"></i>
+            <span>Predecir</span>
         </a>
         <a href="/history" class="mobile-nav-item {% if request.endpoint == 'history' %}active{% endif %}" aria-label="Historial">
             <i class="bi bi-graph-up" aria-hidden="true"></i>
+            <span>Historial</span>
         </a>
         <a href="#" class="mobile-nav-item" data-bs-toggle="modal" data-bs-target="#mobiledonateModal" aria-label="Donar">
             <i class="bi bi-cash-coin" aria-hidden="true"></i>
+            <span>Apoyar</span>
         </a>
     </div>
 
     <!-- Layout Principal: Sidebar + Content -->
     <div class="main-layout">
         
-        <!-- Sidebar Izquierdo - Ligas -->
+        <!-- Sidebar Izquierdo -->
         <aside class="sidebar d-none d-lg-block">
             <div class="sidebar-section">
                 <div class="sidebar-header">
-                    <i class="bi bi-star-fill"></i> DESTACADO
+                    <i class="bi bi-star-fill"></i> DESTACADOS
                 </div>
-                <a href="/fixtures?liga_id=10" class="sidebar-item">
+                <a href="/fixtures?liga_id=10" class="sidebar-item {% if request.args.get('liga_id') == '10' %}active{% endif %}">
                     <span class="flag">🇦🇷</span> Liga Profesional
+                </a>
+                <a href="/fixtures?liga_id=8" class="sidebar-item {% if request.args.get('liga_id') == '8' %}active{% endif %}">
+                    <span class="flag">🏆</span> Champions League
+                </a>
+                <a href="/fixtures?liga_id=1" class="sidebar-item {% if request.args.get('liga_id') == '1' or (request.endpoint == 'fixtures' and not request.args.get('liga_id')) %}active{% endif %}">
+                    <span class="flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span> Premier League
+                </a>
+                <a href="/fixtures?liga_id=2" class="sidebar-item {% if request.args.get('liga_id') == '2' %}active{% endif %}">
+                    <span class="flag">🇪🇸</span> La Liga
                 </a>
             </div>
             
             <div class="sidebar-section">
                 <div class="sidebar-header">
-                    <span>🏆</span> EUROPA
+                    <i class="bi bi-trophy-fill"></i> LIGAS EUROPEAS
                 </div>
-                <a href="/fixtures?liga_id=8" class="sidebar-item">Champions League</a>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🇦🇷</span> ARGENTINA
-                </div>
-                <a href="/fixtures?liga_id=10" class="sidebar-item">Liga Profesional</a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span> INGLATERRA
-                </div>
-                <a href="/fixtures?liga_id=1" class="sidebar-item">Premier League</a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🇪🇸</span> ESPAÑA
-                </div>
-                <a href="/fixtures?liga_id=2" class="sidebar-item">La Liga</a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🇮🇹</span> ITALIA
-                </div>
-                <a href="/fixtures?liga_id=3" class="sidebar-item">Serie A</a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🇩🇪</span> ALEMANIA
-                </div>
-                <a href="/fixtures?liga_id=4" class="sidebar-item">Bundesliga</a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🇫🇷</span> FRANCIA
-                </div>
-                <a href="/fixtures?liga_id=5" class="sidebar-item">Ligue 1</a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🇵🇹</span> PORTUGAL
-                </div>
-                <a href="/fixtures?liga_id=6" class="sidebar-item">Primeira Liga</a>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-header">
-                    <span class="flag">🇳🇱</span> PAÍSES BAJOS
-                </div>
-                <a href="/fixtures?liga_id=7" class="sidebar-item">Eredivisie</a>
+                <a href="/fixtures?liga_id=3" class="sidebar-item {% if request.args.get('liga_id') == '3' %}active{% endif %}">
+                    <span class="flag">🇮🇹</span> Serie A
+                </a>
+                <a href="/fixtures?liga_id=4" class="sidebar-item {% if request.args.get('liga_id') == '4' %}active{% endif %}">
+                    <span class="flag">🇩🇪</span> Bundesliga
+                </a>
+                <a href="/fixtures?liga_id=5" class="sidebar-item {% if request.args.get('liga_id') == '5' %}active{% endif %}">
+                    <span class="flag">🇫🇷</span> Ligue 1
+                </a>
+                <a href="/fixtures?liga_id=6" class="sidebar-item {% if request.args.get('liga_id') == '6' %}active{% endif %}">
+                    <span class="flag">🇵🇹</span> Primeira Liga
+                </a>
+                <a href="/fixtures?liga_id=7" class="sidebar-item {% if request.args.get('liga_id') == '7' %}active{% endif %}">
+                    <span class="flag">🇳🇱</span> Eredivisie
+                </a>
             </div>
         </aside>
 
@@ -202,8 +177,8 @@
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show mb-2" role="alert">
-                        {{ message }}
+                    <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show mb-3" role="alert">
+                        <i class="bi bi-info-circle me-1"></i> {{ message }}
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                     </div>
                     {% endfor %}
@@ -211,7 +186,7 @@
             {% endwith %}
             
             {% if error %}
-            <div class="alert alert-danger text-center py-4">
+            <div class="alert alert-danger text-center py-4 my-4">
                 <h4><i class="bi bi-exclamation-triangle"></i> {{ error }}</h4>
                 <a href="/" class="btn btn-primary mt-2">Volver al Inicio</a>
             </div>
@@ -223,27 +198,30 @@
 
     <!-- Footer -->
     <footer class="text-center py-3 text-muted small border-top border-secondary mt-4">
-        Desarrollado por <strong>Timba Team</strong> &copy; 2026
+        Desarrollado por <strong>Timba Team</strong> &copy; {{ current_year or 2026 }} · Modelo Poisson & IA Predictiva
     </footer>
 
+    <!-- Bitcoin Modal -->
     <div class="modal fade" id="bitcoinModal" tabindex="-1" aria-labelledby="bitcoinModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="bitcoinModalLabel">Donar con Bitcoin (BTC)</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <h5 class="modal-title d-flex align-items-center gap-2" id="bitcoinModalLabel">
+                        <i class="bi bi-coin text-warning"></i> Donar con Bitcoin (BTC)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <img src="{{ url_for('static', filename='btc_qr.png') }}" alt="QR Bitcoin" width="200" class="img-fluid">
-                    <div class="mt-3 d-flex align-items-center justify-content-center gap-2 flex-wrap">
-                        <code id="btcAddress" style="word-break: break-all; flex: 1; min-width: 200px;">bc1phgvsg3mgrvp3jtukj7uh8aadsm8xa520u4gdk3lrdjkk5pzxnjest3439j</code>
+                <div class="modal-body text-center p-4">
+                    <img src="{{ url_for('static', filename='btc_qr.png') }}" alt="QR Bitcoin" width="180" class="img-fluid rounded border border-secondary p-2 mb-3 bg-white">
+                    <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                        <code id="btcAddress" class="p-2 rounded bg-dark border border-secondary text-info text-break" style="font-size: 11.5px; flex: 1;">bc1phgvsg3mgrvp3jtukj7uh8aadsm8xa520u4gdk3lrdjkk5pzxnjest3439j</code>
                         <button type="button" class="btn btn-copy" id="copyBtcBtn" title="Copiar dirección">
-                            <i class="bi bi-clipboard-data"></i>
+                            <i class="bi bi-clipboard-data"></i> Copiar
                         </button>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -251,21 +229,21 @@
 
     <!-- Modal Donaciones Móvil -->
     <div class="modal fade" id="mobiledonateModal" tabindex="-1" aria-labelledby="mobiledonateModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="mobiledonateModalLabel">Apoyar el Proyecto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-3">
                     <div class="d-grid gap-2">
-                        <a href="https://cafecito.app/timba_arg" target="_blank" rel="noopener" class="btn btn-outline-success btn-sm">
+                        <a href="https://cafecito.app/timba_arg" target="_blank" rel="noopener" class="btn btn-outline-success">
                             🇦🇷 Cafecito App
                         </a>
-                        <a href="https://buymeacoffee.com/timba_global" target="_blank" rel="noopener" class="btn btn-outline-success btn-sm">
+                        <a href="https://buymeacoffee.com/timba_global" target="_blank" rel="noopener" class="btn btn-outline-success">
                             🌍 Buy Me a Coffee
                         </a>
-                        <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#bitcoinModal" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#bitcoinModal" data-bs-dismiss="modal">
                             ₿ Bitcoin / Crypto
                         </button>
                     </div>
@@ -299,16 +277,6 @@
                     el.classList.add('utc-converted');
                 } catch (e) { }
             });
-            
-            // Toggle sidebar en móvil
-            root.querySelectorAll('.sidebar-header').forEach(function(header) {
-                if (!header.dataset.listenerAttached) {
-                    header.dataset.listenerAttached = 'true';
-                    header.addEventListener('click', function() {
-                        this.parentElement.classList.toggle('collapsed');
-                    });
-                }
-            });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -318,15 +286,14 @@
             const copyBtcBtn = document.getElementById('copyBtcBtn');
             if (copyBtcBtn) {
                 copyBtcBtn.addEventListener('click', function() {
-                    const btcAddress = document.getElementById('btcAddress').textContent;
+                    const btcAddress = document.getElementById('btcAddress').textContent.trim();
                     navigator.clipboard.writeText(btcAddress).then(function() {
-                        const icon = copyBtcBtn.querySelector('i');
-                        const originalClass = icon.className;
-                        icon.className = 'bi bi-check2-all';
+                        const originalHTML = copyBtcBtn.innerHTML;
+                        copyBtcBtn.innerHTML = '<i class="bi bi-check2-all"></i> ¡Copiado!';
                         copyBtcBtn.classList.add('copied');
                         
                         setTimeout(function() {
-                            icon.className = originalClass;
+                            copyBtcBtn.innerHTML = originalHTML;
                             copyBtcBtn.classList.remove('copied');
                         }, 2000);
                     }).catch(function(err) {
