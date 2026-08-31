@@ -310,19 +310,20 @@ async def cmd_predecir(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     local, visitante, specified_liga = parsed
 
-    # Buscar en las ligas
+    # Buscar en las ligas: primero domésticas (1, 2, 3, 4, 5, 6, 7, 10) y luego Champions (8)
     pred = None
     encontrado_en_liga = None
-    ligas_a_buscar = [specified_liga] if specified_liga and specified_liga in LIGAS else list(LIGAS.keys())
+    ligas_a_buscar = [specified_liga] if specified_liga and specified_liga in LIGAS else [1, 2, 3, 4, 5, 6, 7, 10, 8]
 
     for lid in ligas_a_buscar:
         try:
             p = predecir_partido_cached(lid, local, visitante)
             if p:
                 pred = p
-                encontrado_en_liga = LIGAS[lid].get('nombre', f"Liga {lid}")
+                encontrado_en_liga = LIGAS.get(lid, {}).get('nombre', f"Liga {lid}")
                 break
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Error evaluando liga {lid}: {e}")
             continue
 
     if not pred:
@@ -410,7 +411,7 @@ async def cmd_inplay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     visitante = params['visitante']
     
     pred_prematch = None
-    for lid in LIGAS:
+    for lid in [1, 2, 3, 4, 5, 6, 7, 10, 8]:
         try:
             p = predecir_partido_cached(lid, local, visitante)
             if p:

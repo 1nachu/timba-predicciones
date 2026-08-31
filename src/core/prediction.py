@@ -30,12 +30,12 @@ from utils.markets import calcular_mercados_adicionales
 CSV_A_LIGA_ID = {
     "E0": 1,    # Premier League
     "SP1": 2,   # La Liga
-    "D1": 3,    # Bundesliga
-    "I1": 4,    # Serie A
+    "I1": 3,    # Serie A
+    "D1": 4,    # Bundesliga
     "F1": 5,    # Ligue 1
     "P1": 6,    # Primeira Liga
     "N1": 7,    # Eredivisie
-    "B1": 8,    # First Division A (Bélgica)
+    "CL": 8,    # Champions League
     "ARG": 10,  # Liga Profesional Argentina
 }
 

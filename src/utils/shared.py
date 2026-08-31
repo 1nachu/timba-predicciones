@@ -106,103 +106,105 @@ CURRENT_SEASON = "2627"  # 2026-27
 # Ligas con fuentes de datos confiables (7 europeas + Argentina)
 ALIAS_TEAMS = {
     # --- PREMIER LEAGUE (E0) ---
-    "Manchester United": "Man United", "Man Utd": "Man United", "Manchester United FC": "Manchester United",
-    "Manchester City": "Man City", "Manchester City FC": "Man City",
-    "Arsenal FC": "Arsenal",
-    "Chelsea FC": "Chelsea",
-    "Liverpool FC": "Liverpool",
-    "Aston Villa FC": "Aston Villa",
-    "Tottenham Hotspur": "Tottenham", "Spurs": "Tottenham",
+    "Manchester United": "Man United", "Man Utd": "Man United", "Manchester United FC": "Man United", "Man U": "Man United",
+    "Manchester City": "Man City", "Manchester City FC": "Man City", "City": "Man City", "Man City FC": "Man City",
+    "Arsenal FC": "Arsenal", "The Gunners": "Arsenal",
+    "Chelsea FC": "Chelsea", "The Blues": "Chelsea",
+    "Liverpool FC": "Liverpool", "The Reds": "Liverpool",
+    "Aston Villa FC": "Aston Villa", "Villa": "Aston Villa",
+    "Tottenham Hotspur": "Tottenham", "Spurs": "Tottenham", "Tottenham Hotspur FC": "Tottenham",
     "Wolverhampton Wanderers": "Wolves", "Wolverhampton": "Wolves",
-    "Nottingham Forest": "Nott'm Forest",
-    "Brighton & Hove Albion": "Brighton",
-    "Newcastle United": "Newcastle",
-    "West Ham United": "West Ham",
+    "Nottingham Forest": "Nott'm Forest", "Nottingham": "Nott'm Forest",
+    "Brighton & Hove Albion": "Brighton", "Brighton & Hove": "Brighton", "Brighton and Hove Albion": "Brighton",
+    "Newcastle United": "Newcastle", "Newcastle Utd": "Newcastle",
+    "West Ham United": "West Ham", "West Ham Utd": "West Ham",
     "Sheffield United": "Sheffield United",
     "AFC Bournemouth": "Bournemouth",
     "Leicester City": "Leicester",
     "Ipswich Town": "Ipswich",
 
     # --- LA LIGA (SP1) ---
-    "Real Madrid CF": "Real Madrid",
-    "FC Barcelona": "Barcelona",
-    "Atleti": "Ath Madrid", "Atletico Madrid": "Ath Madrid", "Atlético de Madrid": "Ath Madrid", "Atletico de Madrid": "Ath Madrid", "Club Atlético de Madrid": "Ath Madrid",
-    "Athletic Club": "Ath Bilbao", "Athletic Bilbao": "Ath Bilbao",
+    "Real Madrid CF": "Real Madrid", "Real Madrid": "Real Madrid", "Madrid": "Real Madrid", "El Real": "Real Madrid",
+    "FC Barcelona": "Barcelona", "Barcelona": "Barcelona", "Barca": "Barcelona", "Barça": "Barcelona",
+    "Atleti": "Ath Madrid", "Atletico Madrid": "Ath Madrid", "Atlético Madrid": "Ath Madrid", "Atlético de Madrid": "Ath Madrid", "Atletico de Madrid": "Ath Madrid", "Club Atlético de Madrid": "Ath Madrid", "Atletico": "Ath Madrid",
+    "Athletic Club": "Ath Bilbao", "Athletic Bilbao": "Ath Bilbao", "Bilbao": "Ath Bilbao", "Athletic": "Ath Bilbao",
     "Real Betis": "Betis", "Real Betis Balompié": "Betis",
     "Celta de Vigo": "Celta", "RC Celta": "Celta",
     "RCD Mallorca": "Mallorca",
-    "Rayo Vallecano": "Vallecano",
-    "Real Sociedad": "Sociedad",
+    "Rayo Vallecano": "Vallecano", "Rayo": "Vallecano",
+    "Real Sociedad": "Sociedad", "La Real": "Sociedad",
     "Deportivo Alavés": "Alaves", "Alavés": "Alaves", "Deportivo Alaves": "Alaves",
-    "RCD Espanyol de Barcelona": "Espanol", "Espanyol": "Espanol",
-    "Villarreal CF": "Villarreal",
+    "RCD Espanyol de Barcelona": "Espanol", "Espanyol": "Espanol", "Espanol": "Espanol",
+    "Villarreal CF": "Villarreal", "Villareal": "Villarreal",
     "CA Osasuna": "Osasuna",
     "Getafe CF": "Getafe",
     "UD Las Palmas": "Las Palmas",
+    "Valencia CF": "Valencia", "Valencia": "Valencia",
+    "Sevilla FC": "Sevilla", "Sevilla": "Sevilla",
 
     # --- BUNDESLIGA (D1) ---
-    "Bayer 04 Leverkusen": "Leverkusen", "Bayer Leverkusen": "Leverkusen",
-    "Borussia Dortmund": "Dortmund",
-    "Borussia Monchengladbach": "M'gladbach", "Borussia Mönchengladbach": "M'gladbach",
-    "Eintracht Frankfurt": "Ein Frankfurt",
-    "Bayern Munich": "Bayern Munich", "FC Bayern München": "Bayern Munich", "Bayern München": "Bayern Munich",
-    "VfB Stuttgart": "Stuttgart",
-    "VfL Wolfsburg": "Wolfsburg",
-    "Mainz 05": "Mainz", "1. FSV Mainz 05": "Mainz",
-    "SV Werder Bremen": "Werder Bremen",
-    "Sport-Club Freiburg": "Freiburg", "SC Freiburg": "Freiburg",
-    "RB Leipzig": "RB Leipzig", "RasenBallsport Leipzig": "RB Leipzig",
-    "1. FC Union Berlin": "Union Berlin",
-    "FC Augsburg": "Augsburg",
-    "TSG 1899 Hoffenheim": "Hoffenheim", "TSG Hoffenheim": "Hoffenheim",
+    "Bayer 04 Leverkusen": "Leverkusen", "Bayer Leverkusen": "Leverkusen", "Leverkusen": "Leverkusen",
+    "Borussia Dortmund": "Dortmund", "Dortmund": "Dortmund", "BVB": "Dortmund",
+    "Borussia Monchengladbach": "M'gladbach", "Borussia Mönchengladbach": "M'gladbach", "Gladbach": "M'gladbach",
+    "Eintracht Frankfurt": "Ein Frankfurt", "Frankfurt": "Ein Frankfurt",
+    "Bayern Munich": "Bayern Munich", "FC Bayern München": "Bayern Munich", "Bayern München": "Bayern Munich", "Bayern": "Bayern Munich", "FC Bayern": "Bayern Munich",
+    "VfB Stuttgart": "Stuttgart", "Stuttgart": "Stuttgart",
+    "VfL Wolfsburg": "Wolfsburg", "Wolfsburg": "Wolfsburg",
+    "Mainz 05": "Mainz", "1. FSV Mainz 05": "Mainz", "Mainz": "Mainz",
+    "SV Werder Bremen": "Werder Bremen", "Werder": "Werder Bremen", "Bremen": "Werder Bremen",
+    "Sport-Club Freiburg": "Freiburg", "SC Freiburg": "Freiburg", "Freiburg": "Freiburg",
+    "RB Leipzig": "RB Leipzig", "RasenBallsport Leipzig": "RB Leipzig", "Leipzig": "RB Leipzig",
+    "1. FC Union Berlin": "Union Berlin", "Union Berlin": "Union Berlin",
+    "FC Augsburg": "Augsburg", "Augsburg": "Augsburg",
+    "TSG 1899 Hoffenheim": "Hoffenheim", "TSG Hoffenheim": "Hoffenheim", "Hoffenheim": "Hoffenheim",
 
     # --- SERIE A (I1) ---
-    "Internazionale": "Inter", "Inter Milan": "Inter", "FC Internazionale Milano": "Inter",
-    "AC Milan": "Milan",
-    "AS Roma": "Roma",
-    "Hellas Verona": "Verona", "Hellas Verona FC": "Verona",
-    "SSC Napoli": "Napoli",
-    "Juventus FC": "Juventus",
-    "SS Lazio": "Lazio",
-    "ACF Fiorentina": "Fiorentina",
-    "Atalanta BC": "Atalanta",
-    "Bologna FC 1909": "Bologna",
-    "Torino FC": "Torino",
+    "Internazionale": "Inter", "Inter Milan": "Inter", "FC Internazionale Milano": "Inter", "Inter": "Inter",
+    "AC Milan": "Milan", "Milan": "Milan",
+    "AS Roma": "Roma", "Roma": "Roma",
+    "Hellas Verona": "Verona", "Hellas Verona FC": "Verona", "Verona": "Verona",
+    "SSC Napoli": "Napoli", "Napoli": "Napoli",
+    "Juventus FC": "Juventus", "Juventus": "Juventus", "Juve": "Juventus",
+    "SS Lazio": "Lazio", "Lazio": "Lazio",
+    "ACF Fiorentina": "Fiorentina", "Fiorentina": "Fiorentina",
+    "Atalanta BC": "Atalanta", "Atalanta": "Atalanta",
+    "Bologna FC 1909": "Bologna", "Bologna": "Bologna",
+    "Torino FC": "Torino", "Torino": "Torino",
 
     # --- LIGUE 1 (F1) ---
-    "Paris Saint-Germain FC": "Paris SG", "Paris Saint-Germain": "Paris SG", "Paris SG": "Paris SG", "PSG": "Paris SG",
-    "Olympique de Marseille": "Marseille", "Olympique Marseille": "Marseille",
-    "Olympique Lyonnais": "Lyon", "Olympique Lyon": "Lyon",
-    "AS Monaco FC": "Monaco", "AS Monaco": "Monaco",
-    "Stade Rennais FC": "Rennes", "Stade Rennais": "Rennes",
-    "RC Lens": "Lens",
+    "Paris Saint-Germain FC": "Paris SG", "Paris Saint-Germain": "Paris SG", "Paris SG": "Paris SG", "PSG": "Paris SG", "Paris": "Paris SG",
+    "Olympique de Marseille": "Marseille", "Olympique Marseille": "Marseille", "Marseille": "Marseille", "OM": "Marseille",
+    "Olympique Lyonnais": "Lyon", "Olympique Lyon": "Lyon", "Lyon": "Lyon", "OL": "Lyon",
+    "AS Monaco FC": "Monaco", "AS Monaco": "Monaco", "Monaco": "Monaco",
+    "Stade Rennais FC": "Rennes", "Stade Rennais": "Rennes", "Rennes": "Rennes",
+    "RC Lens": "Lens", "Lens": "Lens",
     "Havre Athletic Club": "Le Havre", "Le Havre AC": "Le Havre",
-    "Stade Brestois 29": "Brest",
-    "LOSC Lille": "Lille", "Lille OSC": "Lille",
-    "OGC Nice": "Nice",
-    "RC Strasbourg Alsace": "Strasbourg",
+    "Stade Brestois 29": "Brest", "Brest": "Brest",
+    "LOSC Lille": "Lille", "Lille OSC": "Lille", "Lille": "Lille",
+    "OGC Nice": "Nice", "Nice": "Nice",
+    "RC Strasbourg Alsace": "Strasbourg", "Strasbourg": "Strasbourg",
 
     # --- EREDIVISIE (N1) ---
-    "AFC Ajax": "Ajax",
+    "AFC Ajax": "Ajax", "Ajax": "Ajax",
     "PSV": "PSV Eindhoven", "PSV Eindhoven": "PSV Eindhoven",
-    "AZ": "AZ Alkmaar",
-    "FC Twente": "Twente",
-    "FC Utrecht": "Utrecht",
+    "AZ": "AZ Alkmaar", "AZ Alkmaar": "AZ Alkmaar",
+    "FC Twente": "Twente", "Twente": "Twente",
+    "FC Utrecht": "Utrecht", "Utrecht": "Utrecht",
     "FC Groningen": "Groningen",
     "FC Volendam": "Volendam",
     "PEC Zwolle": "Zwolle",
-    "Feyenoord Rotterdam": "Feyenoord",
-    "sc Heerenveen": "Heerenveen", "SC Heerenveen": "Heerenveen",
+    "Feyenoord Rotterdam": "Feyenoord", "Feyenoord": "Feyenoord",
+    "sc Heerenveen": "Heerenveen", "SC Heerenveen": "Heerenveen", "Heerenveen": "Heerenveen",
     "Heracles Almelo": "Heracles",
     "N.E.C. Nijmegen": "Nijmegen", "NEC Nijmegen": "Nijmegen", "NEC": "Nijmegen",
     "Fortuna Sittard": "For Sittard",
     "Excelsior Rotterdam": "Excelsior",
 
     # --- PRIMEIRA LIGA (P1) ---
-    "FC Porto": "Porto",
-    "Sporting CP": "Sp Lisbon", "Sporting Lisbon": "Sp Lisbon", "Sporting": "Sp Lisbon",
+    "FC Porto": "Porto", "Porto": "Porto",
+    "Sporting CP": "Sp Lisbon", "Sporting Lisbon": "Sp Lisbon", "Sporting": "Sp Lisbon", "Sporting de Portugal": "Sp Lisbon",
     "SL Benfica": "Benfica", "Benfica": "Benfica",
-    "SC Braga": "Braga", "Sporting Braga": "Braga",
+    "SC Braga": "Braga", "Sporting Braga": "Braga", "Braga": "Braga",
     "Vitória SC": "Guimaraes", "Vitória Guimarães": "Guimaraes",
     "Gil Vicente FC": "Gil Vicente",
     "CD Santa Clara": "Santa Clara",
@@ -216,28 +218,34 @@ ALIAS_TEAMS = {
     "Estrela Amadora": "Estrela",
 
     # --- LIGA PROFESIONAL ARGENTINA (ARG) ---
-    # Mapeo: Promiedos/API-Football → football-data.co.uk
-    "Argentinos Juniors": "Argentinos Jrs",
+    "Boca Juniors": "Boca Juniors", "Boca": "Boca Juniors", "Boca Jrs": "Boca Juniors", "Club Atlético Boca Juniors": "Boca Juniors",
+    "River Plate": "River Plate", "River": "River Plate", "Club Atlético River Plate": "River Plate",
+    "Racing Club": "Racing Club", "Racing": "Racing Club", "Racing de Avellaneda": "Racing Club",
+    "Independiente": "Independiente", "CA Independiente": "Independiente", "Rojo": "Independiente",
+    "San Lorenzo": "San Lorenzo", "San Lorenzo de Almagro": "San Lorenzo", "CASLA": "San Lorenzo",
+    "Argentinos Juniors": "Argentinos Jrs", "Argentinos": "Argentinos Jrs", "Argentinos Jrs": "Argentinos Jrs",
     "Arsenal de Sarandí": "Arsenal Sarandi", "Arsenal Sarandi": "Arsenal Sarandi",
     "Atlético Rafaela": "Atl. Rafaela", "Atletico Rafaela": "Atl. Rafaela",
-    "Atlético Tucumán": "Atl. Tucuman", "Atletico Tucuman": "Atl. Tucuman",
+    "Atlético Tucumán": "Atl. Tucuman", "Atletico Tucuman": "Atl. Tucuman", "Atl Tucuman": "Atl. Tucuman",
     "Central Córdoba": "Central Cordoba", "Central Cordoba SdE": "Central Cordoba",
     "Colón de Santa Fe": "Colon Santa Fe", "Colon": "Colon Santa Fe", "Colón": "Colon Santa Fe",
     "Deportivo Riestra": "Dep. Riestra", "Riestra": "Dep. Riestra",
-    "Estudiantes de La Plata": "Estudiantes L.P.", "Estudiantes LP": "Estudiantes L.P.", "Estudiantes": "Estudiantes L.P.",
-    "Gimnasia La Plata": "Gimnasia L.P.", "Gimnasia LP": "Gimnasia L.P.", "Gimnasia y Esgrima LP": "Gimnasia L.P.",
+    "Estudiantes de La Plata": "Estudiantes L.P.", "Estudiantes LP": "Estudiantes L.P.", "Estudiantes": "Estudiantes L.P.", "Pincha": "Estudiantes L.P.",
+    "Gimnasia La Plata": "Gimnasia L.P.", "Gimnasia LP": "Gimnasia L.P.", "Gimnasia y Esgrima LP": "Gimnasia L.P.", "Lobo": "Gimnasia L.P.",
     "Gimnasia de Mendoza": "Gimnasia Mendoza", "Gimnasia y Esgrima de Mendoza": "Gimnasia Mendoza",
-    "Huracán": "Huracan",
-    "Independiente Rivadavia": "Ind. Rivadavia",
-    "Lanús": "Lanus",
-    "Newell's Old Boys": "Newells Old Boys", "Newells": "Newells Old Boys",
+    "Huracán": "Huracan", "Huracan": "Huracan", "Globo": "Huracan",
+    "Independiente Rivadavia": "Ind. Rivadavia", "Ind Rivadavia": "Ind. Rivadavia",
+    "Lanús": "Lanus", "Lanus": "Lanus", "Granate": "Lanus",
+    "Newell's Old Boys": "Newells Old Boys", "Newells": "Newells Old Boys", "Newell's": "Newells Old Boys", "NOB": "Newells Old Boys",
+    "Rosario Central": "Rosario Central", "Central": "Rosario Central", "Canalla": "Rosario Central",
     "San Martín de San Juan": "San Martin S.J.", "San Martin SJ": "San Martin S.J.",
     "San Martín de Tucumán": "San Martin T.", "San Martin Tucuman": "San Martin T.",
     "Sarmiento de Junín": "Sarmiento Junin", "Sarmiento": "Sarmiento Junin",
     "Talleres de Córdoba": "Talleres Cordoba", "Talleres": "Talleres Cordoba",
     "Unión de Santa Fe": "Union de Santa Fe", "Union": "Union de Santa Fe", "Unión": "Union de Santa Fe",
-    "Vélez Sarsfield": "Velez Sarsfield", "Velez": "Velez Sarsfield",
+    "Vélez Sarsfield": "Velez Sarsfield", "Velez": "Velez Sarsfield", "Vélez": "Velez Sarsfield", "Fortín": "Velez Sarsfield",
 }
+
 
 
 # ========== MAPEOS PARA CHAMPIONS LEAGUE ==========
@@ -456,41 +464,49 @@ def descargar_csv_safe(url_or_list, timeout: int = 15, usecols: Optional[list] =
 
 def emparejar_equipo(nombre_fixture: str, equipos_validos: list) -> str:
     """
-    Empareja el nombre del equipo con el más similar en la BD.
+    Empareja el nombre de un equipo desde el fixture/usuario con los nombres de la BD.
     
-    Estrategia (en orden):
-    1. Buscar en ALIAS_TEAMS (mapeo exacto)
-    2. Fuzzy matching con difflib (cutoff=0.6)
-    3. Retornar nombre original si no hay match
-    
-    Args:
-        nombre_fixture: Nombre del equipo desde fixture/API
-        equipos_validos: Lista de nombres válidos en datos históricos
-    
-    Returns:
-        Nombre normalizado o el original si no hay match
+    Estrategia de resolución:
+    1. Coincidencia exacta (case-insensitive)
+    2. Búsqueda en ALIAS_TEAMS (case-insensitive)
+    3. Substring match específico (por palabra completa o longitud >= 4)
+    4. Fuzzy matching con difflib estricto (case-insensitive, cutoff=0.72)
+    5. Retornar nombre original si no hay match
     """
     if not nombre_fixture or not equipos_validos:
         return nombre_fixture
+        
+    nombre_limpio = str(nombre_fixture).strip()
+    nombre_lower = nombre_limpio.lower()
     
-    # Paso 1: Buscar en ALIAS_TEAMS
-    if nombre_fixture in ALIAS_TEAMS:
-        nombre_normalizado = ALIAS_TEAMS[nombre_fixture]
-        if nombre_normalizado in equipos_validos:
-            return nombre_normalizado
-    
-    # Paso 2: Buscar alias inverso
-    for alias_key, alias_value in ALIAS_TEAMS.items():
-        if nombre_fixture.lower() == alias_value.lower():
-            if alias_value in equipos_validos:
-                return alias_value
-    
-    # Paso 3: Fuzzy matching
-    coincidencias = get_close_matches(nombre_fixture, equipos_validos, n=1, cutoff=0.6)
+    # Paso 1: Coincidencia exacta case-insensitive
+    for eq in equipos_validos:
+        if eq.lower() == nombre_lower:
+            return eq
+            
+    # Paso 2: Búsqueda en ALIAS_TEAMS (case-insensitive en claves)
+    for alias_k, alias_v in ALIAS_TEAMS.items():
+        if alias_k.lower() == nombre_lower:
+            for eq in equipos_validos:
+                if eq.lower() == alias_v.lower() or alias_v in equipos_validos:
+                    return alias_v if alias_v in equipos_validos else eq
+                    
+    # Paso 3: Substring match específico (ej: "boca" en "Boca Juniors", "chelsea" en "Chelsea")
+    for eq in equipos_validos:
+        eq_lower = eq.lower()
+        words = eq_lower.split()
+        if nombre_lower in words or any(w.startswith(nombre_lower) for w in words if len(nombre_lower) >= 3):
+            return eq
+        if len(nombre_lower) >= 5 and (nombre_lower in eq_lower or eq_lower in nombre_lower):
+            return eq
+            
+    # Paso 4: Fuzzy matching estricto case-insensitive (cutoff=0.72)
+    eq_map = {eq.lower(): eq for eq in equipos_validos}
+    coincidencias = get_close_matches(nombre_lower, list(eq_map.keys()), n=1, cutoff=0.72)
     if coincidencias:
-        return coincidencias[0]
-    
-    return nombre_fixture
+        return eq_map[coincidencias[0]]
+        
+    return nombre_limpio
 
 
 def encontrar_equipo_similar(nombre: str, equipos_validos: list, n: int = 5) -> list:
