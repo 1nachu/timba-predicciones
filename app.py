@@ -11,14 +11,12 @@ Autor: Timba Team
 
 import os
 import sys
-from typing import Optional
 from datetime import datetime
 
 # Inyectar 'src/' al sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
 from flask import Flask, render_template, request, send_from_directory, url_for
-from flask_caching import Cache
 from dotenv import load_dotenv
 
 from timba_core import (
@@ -39,6 +37,7 @@ from utils.markets import (
     PREDICCION_UMBRAL_GANA,
     PREDICCION_UMBRAL_DOBLE,
 )
+from web.cache import cache
 from services import (
     determinar_resultado_real,
     determinar_prediccion_ia,
@@ -52,6 +51,12 @@ from services import (
     cargar_dashboard_cache,
     obtener_last_update,
 )
+from services.prediction_service import (
+    cargar_datos_liga_cached,
+    obtener_fixtures_cached,
+    predecir_partido_cached,
+    cargar_datos_liga,
+)
 
 load_dotenv()
 
@@ -64,7 +69,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 2592000  # 30 días para estáticos
 FLASK_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'flask_cache')
 os.makedirs(FLASK_CACHE_DIR, exist_ok=True)
 
-cache = Cache(app, config={
+cache.init_app(app, config={
     'CACHE_TYPE': 'FileSystemCache',
     'CACHE_DIR': FLASK_CACHE_DIR,
     'CACHE_DEFAULT_TIMEOUT': 600,
@@ -102,78 +107,6 @@ def _handle_url_build_error(error, endpoint, values):
     raise error
 
 app.url_build_error_handlers.append(_handle_url_build_error)
-
-
-# ============================================================
-# FUNCIONES CACHEADAS (MEMOIZADAS)
-# ============================================================
-
-@cache.memoize(timeout=3600)
-def cargar_datos_liga_cached(liga_id: int):
-    """Carga desde BD local (con fallback a CSV) y calcula fuerzas. Memoizado: 1h."""
-    liga_info = LIGAS.get(liga_id)
-    if not liga_info:
-        return {}, 0, 0, []
-    
-    codigo = liga_info.get('codigo')
-    url = liga_info.get('url')
-    if not codigo and not url:
-        return {}, 0, 0, []
-    
-    try:
-        from timba_core import _get_cached_historical_data
-        df = _get_cached_historical_data(codigo or 'ALL', 3, url or '')
-        if df is None or df.empty:
-            return {}, 0, 0, []
-        fuerzas, media_local, media_vis = calcular_fuerzas(df)
-        equipos = sorted(list(fuerzas.keys()))
-        return fuerzas, media_local, media_vis, equipos
-    except Exception:
-        return {}, 0, 0, []
-
-
-@cache.memoize(timeout=1800)
-def obtener_fixtures_cached(liga_id: int):
-    """Obtiene próximos partidos cacheados por 30 minutos."""
-    fixture_data = URLS_FIXTURE.get(liga_id, {})
-    url_fixture = fixture_data.get('url')
-    if not url_fixture:
-        return []
-    try:
-        return obtener_proximos_partidos(url_fixture)
-    except Exception:
-        return []
-
-
-@cache.memoize(timeout=3600)
-def predecir_partido_cached(liga_id: int, local_nombre: str, visitante_nombre: str):
-    """Calcula y cachea la predicción entre dos equipos por 1 hora."""
-    if liga_id == 8:
-        cache_todas = {
-            lid: cargar_datos_liga_cached(lid)
-            for lid in LIGAS
-            if LIGAS[lid].get('url') is not None
-        }
-        return predecir_partido_champions(local_nombre, visitante_nombre, cache_todas)
-
-    fuerzas, media_local, media_vis, equipos_validos = cargar_datos_liga_cached(liga_id)
-    if not fuerzas or not equipos_validos:
-        return None
-
-    try:
-        local_match = emparejar_equipo(local_nombre, equipos_validos)
-        vis_match = emparejar_equipo(visitante_nombre, equipos_validos)
-        if local_match in fuerzas and vis_match in fuerzas:
-            return predecir_partido(local_match, vis_match, fuerzas, media_local, media_vis)
-    except Exception:
-        pass
-    return None
-
-
-def cargar_datos_liga(liga_id):
-    """Wrapper de conveniencia."""
-    fuerzas, media_local, media_vis, equipos = cargar_datos_liga_cached(liga_id)
-    return None, fuerzas, media_local, media_vis, equipos
 
 
 # ============================================================

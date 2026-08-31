@@ -5,8 +5,9 @@ Formulario y cálculo de predicciones manuales entre equipos.
 """
 
 from flask import Blueprint, render_template, request, flash, current_app
-from timba_core import LIGAS, CHAMPIONS_EQUIPO_LIGA, emparejar_equipo
+from timba_core import LIGAS, CHAMPIONS_EQUIPO_LIGA, emparejar_equipo, predecir_partido
 from utils.markets import generar_recomendaciones, evaluar_value_bets
+from services.prediction_service import cargar_datos_liga, predecir_partido_cached
 
 predict_bp = Blueprint('predict', __name__)
 
@@ -14,7 +15,6 @@ predict_bp = Blueprint('predict', __name__)
 @predict_bp.route('/predict', methods=['GET', 'POST'], endpoint='predict')
 def predict():
     """Formulario de predicción manual con normalización y mercados."""
-    from app import cargar_datos_liga, predecir_partido_cached, predecir_partido
     
     liga_id = int(request.args.get('liga_id', request.form.get('liga_id', 1)))
     

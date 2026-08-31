@@ -6,10 +6,11 @@ Endpoints REST JSON para consumo de predicciones, fixtures, marcadores en vivo y
 
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
-from timba_core import LIGAS, URLS_FIXTURE, emparejar_equipo
+from timba_core import LIGAS, URLS_FIXTURE, emparejar_equipo, predecir_partido
 from utils.markets import generar_recomendaciones, evaluar_value_bets, obtener_mejor_recomendacion
 from services.fixtures_service import obtener_partidos_locales, enriquecer_partidos_con_prediccion, ordenar_partidos_por_liga
 from services.audit_service import obtener_historial_audit
+from services.prediction_service import predecir_partido_cached, cargar_datos_liga, obtener_fixtures_cached
 
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
 
@@ -52,7 +53,6 @@ def predict_match():
         - odds_draw (float, opcional): Cuota empate
         - odds_away (float, opcional): Cuota visitante
     """
-    from app import predecir_partido_cached, cargar_datos_liga, predecir_partido
     
     liga_id = request.args.get('liga_id', type=int)
     local = request.args.get('local', type=str)
@@ -189,7 +189,6 @@ def get_value_bets():
     Escanea y retorna oportunidades de Value Betting (EV > 3%)
     para los próximos fixtures o partidos disponibles.
     """
-    from app import obtener_fixtures_cached, predecir_partido_cached
     min_ev = request.args.get('min_ev', 0.03, type=float)
     detected_value_bets = []
     

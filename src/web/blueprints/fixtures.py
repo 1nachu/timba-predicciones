@@ -7,6 +7,7 @@ Calendario y próximos partidos por liga con predicciones automáticas.
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from timba_core import LIGAS
 from utils.markets import obtener_mejor_recomendacion
+from services.prediction_service import obtener_fixtures_cached, predecir_partido_cached
 
 fixtures_bp = Blueprint('fixtures', __name__)
 
@@ -14,7 +15,6 @@ fixtures_bp = Blueprint('fixtures', __name__)
 @fixtures_bp.route('/fixtures', endpoint='fixtures')
 def fixtures():
     """Calendario de próximos partidos con predicciones automáticas."""
-    from app import obtener_fixtures_cached, predecir_partido_cached
     
     liga_id = int(request.args.get('liga_id', 1))
     liga_info = LIGAS.get(liga_id)

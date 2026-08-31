@@ -153,6 +153,9 @@ def obtener_partidos_locales() -> list:
         """)
         rows_live = cursor.fetchall()
 
+        inicio_hoy = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
+        fin_hoy = inicio_hoy + timedelta(days=1)
+
         cursor.execute("""
             SELECT data, 'proximos' as seccion FROM match_snapshots 
             WHERE status IN ('TIMED', 'SCHEDULED')
@@ -161,8 +164,8 @@ def obtener_partidos_locales() -> list:
             ORDER BY json_extract(data, '$.utcDate') ASC
             LIMIT 30
         """, (
-            datetime(ahora.year, ahora.month, ahora.day, 0, 0, 0).isoformat(),
-            datetime(ahora.year, ahora.month, ahora.day + 1, 0, 0, 0).isoformat()
+            inicio_hoy.isoformat(),
+            fin_hoy.isoformat()
         ))
         rows_proximos = cursor.fetchall()
         rows = rows_live + rows_proximos
