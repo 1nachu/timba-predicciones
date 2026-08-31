@@ -474,3 +474,157 @@ def obtener_h2h(local: str, visitante: str, df: pd.DataFrame) -> List[Dict]:
         logger.warning(f"Error ordenando H2H por fecha: {e}")
         
     return h2h
+
+
+def predecir_partido_en_vivo(
+    local: str,
+    visitante: str,
+    fuerzas: Dict,
+    media_liga_local: float,
+    media_liga_visitante: float,
+    home_score: int = 0,
+    away_score: int = 0,
+    minute: Optional[int] = None,
+    red_cards_home: int = 0,
+    red_cards_away: int = 0,
+    pred_prematch: Optional[Dict] = None
+) -> Optional[Dict]:
+    """
+    Predice probabilidades dinámicas en tiempo real (In-Play) para un partido en curso.
+    
+    Ajusta las tasas de gol esperado remanente considerando:
+    1. Minuto actual del partido (tiempo restante: (90 - min)/90)
+    2. Marcador actual (goles ya convertidos por cada equipo)
+    3. Jugadores expulsados (penalización ofensiva -28% y vulnerabilidad defensiva +18% por tarjeta roja)
+    4. Probabilidad del próximo gol y marcadores finales proyectados.
+    
+    Retorna un diccionario estructurado separado de la predicción pre-partido.
+    """
+    # 1. Obtener lambda base inicial para 90 minutos
+    if pred_prematch and 'xG_Local' in pred_prematch and 'xG_Vis' in pred_prematch:
+        lambda_h_base = float(pred_prematch['xG_Local'])
+        lambda_a_base = float(pred_prematch['xG_Vis'])
+    elif local in fuerzas and visitante in fuerzas:
+        f_loc = fuerzas[local]
+        f_vis = fuerzas[visitante]
+        lambda_h_base = f_loc['Ataque_Casa'] * f_vis['Defensa_Fuera'] * media_liga_local
+        lambda_a_base = f_vis['Ataque_Fuera'] * f_loc['Defensa_Casa'] * media_liga_visitante
+    else:
+        lambda_h_base = 1.35
+        lambda_a_base = 1.05
+
+    # 2. Fracción de tiempo restante
+    minuto_val = 0
+    if minute is not None:
+        try:
+            minuto_val = int(str(minute).replace("'", "").replace("+", "").split()[0])
+        except (ValueError, IndexError):
+            minuto_val = 45 if str(minute).upper() in ['HT', 'ET', 'PAUSED', 'HALFTIME'] else 0
+
+    if minuto_val >= 90:
+        fraccion_tiempo = 0.04  # Tiempo de descuento ~3-4 min
+    elif minuto_val <= 0:
+        fraccion_tiempo = 1.0
+    else:
+        fraccion_tiempo = max(0.02, (90.0 - minuto_val) / 90.0)
+
+    # 3. Factor de ajuste por expulsiones (tarjetas rojas)
+    factor_roja_h = max(0.10, (1.0 - 0.28 * min(red_cards_home, 3)) * (1.0 + 0.18 * min(red_cards_away, 3)))
+    factor_roja_a = max(0.10, (1.0 - 0.28 * min(red_cards_away, 3)) * (1.0 + 0.18 * min(red_cards_home, 3)))
+
+    # 4. Goles esperados remanentes (desde el minuto actual hasta el pitido final)
+    lambda_h_rem = max(0.01, lambda_h_base * fraccion_tiempo * factor_roja_h)
+    lambda_a_rem = max(0.01, lambda_a_base * fraccion_tiempo * factor_roja_a)
+
+    # 5. Matriz de probabilidades de goles restantes
+    max_rem = 7
+    k = np.arange(max_rem + 1)
+    prob_h_rem = poisson.pmf(k, lambda_h_rem)
+    prob_a_rem = poisson.pmf(k, lambda_a_rem)
+    matriz_rem = np.outer(prob_h_rem, prob_a_rem)
+    
+    total_mat = np.sum(matriz_rem)
+    if total_mat > 0:
+        matriz_rem /= total_mat
+
+    # 6. Acumular probabilidades según marcador final proyectado
+    prob_local = 0.0
+    prob_empate = 0.0
+    prob_visitante = 0.0
+    marcadores_dict = {}
+
+    for i in range(max_rem + 1):
+        for j in range(max_rem + 1):
+            p = float(matriz_rem[i, j])
+            final_h = home_score + i
+            final_a = away_score + j
+            
+            if final_h > final_a:
+                prob_local += p
+            elif final_h == final_a:
+                prob_empate += p
+            else:
+                prob_visitante += p
+                
+            marcador_str = f"{final_h}-{final_a}"
+            marcadores_dict[marcador_str] = marcadores_dict.get(marcador_str, 0.0) + p
+
+    total_outcomes = prob_local + prob_empate + prob_visitante
+    if total_outcomes > 0:
+        prob_local /= total_outcomes
+        prob_empate /= total_outcomes
+        prob_visitante /= total_outcomes
+
+    top_marcadores = sorted(marcadores_dict.items(), key=lambda x: x[1], reverse=True)[:3]
+    top_3_finales = [{'marcador': m[0], 'prob': round(m[1] * 100, 1)} for m in top_marcadores]
+
+    # 7. Mercado: Probabilidad del Próximo Gol
+    sum_lambda = lambda_h_rem + lambda_a_rem
+    prob_no_more = float(np.exp(-sum_lambda))
+    prob_any_goal = max(0.0, 1.0 - prob_no_more)
+    
+    prob_next_h = float((lambda_h_rem / sum_lambda) * prob_any_goal) if sum_lambda > 0 else 0.0
+    prob_next_a = float((lambda_a_rem / sum_lambda) * prob_any_goal) if sum_lambda > 0 else 0.0
+
+    # 8. Estado táctico / Badge descriptivo
+    diff = home_score - away_score
+    if red_cards_home > red_cards_away:
+        estado_tactico = f"🟥 {local} con {11 - red_cards_home} jugadores"
+    elif red_cards_away > red_cards_home:
+        estado_tactico = f"🟥 {visitante} con {11 - red_cards_away} jugadores"
+    elif diff > 0:
+        estado_tactico = f"🏠 {local} lidera (+{diff})"
+    elif diff < 0:
+        estado_tactico = f"🚀 {visitante} lidera (+{abs(diff)})"
+    elif minuto_val >= 75:
+        estado_tactico = "⏳ Empate en tramo decisivo"
+    else:
+        estado_tactico = "⚖️ Partido equilibrado"
+
+    return {
+        'is_live': True,
+        'minuto': minuto_val,
+        'marcador_actual': f"{home_score}-{away_score}",
+        'goles_local': home_score,
+        'goles_vis': away_score,
+        'rojas_local': red_cards_home,
+        'rojas_vis': red_cards_away,
+        'tiempo_restante_pct': round(fraccion_tiempo * 100, 1),
+        'xG_restante_local': round(lambda_h_rem, 2),
+        'xG_restante_vis': round(lambda_a_rem, 2),
+        'xG_total_esperado': round(home_score + away_score + lambda_h_rem + lambda_a_rem, 2),
+        'prob_local': round(prob_local * 100, 1),
+        'prob_empate': round(prob_empate * 100, 1),
+        'prob_visitante': round(prob_visitante * 100, 1),
+        'prob_1x': round((prob_local + prob_empate) * 100, 1),
+        'prob_x2': round((prob_empate + prob_visitante) * 100, 1),
+        'prob_12': round((prob_local + prob_visitante) * 100, 1),
+        'proximo_gol': {
+            'local': round(prob_next_h * 100, 1),
+            'visitante': round(prob_next_a * 100, 1),
+            'sin_mas_goles': round(prob_no_more * 100, 1),
+        },
+        'top_marcadores_finales': top_3_finales,
+        'estado_tactico': estado_tactico
+    }
+

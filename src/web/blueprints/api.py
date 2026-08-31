@@ -77,28 +77,58 @@ def predict_match():
     if request.args.get('odds_away'):
         cuotas['B365A'] = request.args.get('odds_away', type=float)
         
+    from timba_core import predecir_partido_en_vivo
+
     value_bets = evaluar_value_bets(pred, cuotas) if cuotas else []
     recomendaciones = generar_recomendaciones(pred)
+
+    # Predicción Live In-Play opcional
+    is_live = request.args.get('live', 'false').lower() in ['true', '1'] or request.args.get('minute') is not None
+    pred_live = None
+    if is_live:
+        h_score = request.args.get('home_score', 0, type=int)
+        a_score = request.args.get('away_score', 0, type=int)
+        minute = request.args.get('minute', 0, type=int)
+        red_h = request.args.get('red_cards_home', 0, type=int)
+        red_a = request.args.get('red_cards_away', 0, type=int)
+        
+        pred_live = predecir_partido_en_vivo(
+            local, visitante, {}, 0.0, 0.0,
+            home_score=h_score, away_score=a_score,
+            minute=minute, red_cards_home=red_h, red_cards_away=red_a,
+            pred_prematch=pred
+        )
+
+    prob_pre = {
+        'local': round(pred.get('Prob_Local', 0) * 100, 2),
+        'empate': round(pred.get('Prob_Empate', 0) * 100, 2),
+        'visitante': round(pred.get('Prob_Vis', 0) * 100, 2),
+        'doble_oportunidad': {
+            '1X': round(pred.get('Prob_1X', 0) * 100, 2),
+            'X2': round(pred.get('Prob_X2', 0) * 100, 2),
+            '12': round(pred.get('Prob_12', 0) * 100, 2)
+        }
+    }
+    xg_pre = {
+        'local': round(pred.get('xG_Local', 0), 2),
+        'visitante': round(pred.get('xG_Vis', 0), 2),
+        'total': round(pred.get('xG_Local', 0) + pred.get('xG_Vis', 0), 2)
+    }
 
     return jsonify({
         'local': local,
         'visitante': visitante,
         'liga_id': liga_id,
-        'probabilidades': {
-            'local': round(pred.get('Prob_Local', 0) * 100, 2),
-            'empate': round(pred.get('Prob_Empate', 0) * 100, 2),
-            'visitante': round(pred.get('Prob_Vis', 0) * 100, 2),
-            'doble_oportunidad': {
-                '1X': round(pred.get('Prob_1X', 0) * 100, 2),
-                'X2': round(pred.get('Prob_X2', 0) * 100, 2),
-                '12': round(pred.get('Prob_12', 0) * 100, 2)
-            }
+        'prediccion_prematch': {
+            'probabilidades': prob_pre,
+            'goles_esperados': xg_pre,
+            'top_marcadores': pred.get('Top_3_Marcadores', []),
+            'recomendaciones': recomendaciones,
+            'value_bets': value_bets
         },
-        'goles_esperados': {
-            'local': round(pred.get('xG_Local', 0), 2),
-            'visitante': round(pred.get('xG_Vis', 0), 2),
-            'total': round(pred.get('xG_Local', 0) + pred.get('xG_Vis', 0), 2)
-        },
+        'prediccion_live': pred_live,
+        'probabilidades': prob_pre,
+        'goles_esperados': xg_pre,
         'mercados': {
             'over_15': round(pred.get('Over_15', 0) * 100, 2),
             'over_25': round(pred.get('Over_25', 0) * 100, 2),

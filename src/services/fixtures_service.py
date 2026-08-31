@@ -11,7 +11,14 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 from utils.shared import get_db_connection, LIVE_SCORES_DB_PATH, emparejar_equipo
-from timba_core import LIGAS, predecir_partido, predecir_partido_champions, calcular_fuerzas, descargar_csv_safe
+from timba_core import (
+    LIGAS,
+    predecir_partido,
+    predecir_partido_champions,
+    predecir_partido_en_vivo,
+    calcular_fuerzas,
+    descargar_csv_safe
+)
 
 try:
     from team_normalization import TeamNormalizer
@@ -174,10 +181,16 @@ def obtener_partidos_locales() -> list:
             try:
                 snap = json.loads(row[0])
                 seccion = row[1]
+                h_score = int(snap.get('home_score', 0) if snap.get('home_score') is not None else 0)
+                a_score = int(snap.get('away_score', 0) if snap.get('away_score') is not None else 0)
                 partido = {
                     'home': snap['home_team'],
                     'away': snap['away_team'],
-                    'score': f"{snap['home_score']}-{snap['away_score']}",
+                    'home_score': h_score,
+                    'away_score': a_score,
+                    'red_cards_home': int(snap.get('red_cards_home', 0)),
+                    'red_cards_away': int(snap.get('red_cards_away', 0)),
+                    'score': f"{h_score}-{a_score}",
                     'status': 'EN VIVO' if snap['status'] == 'LIVE' else snap['status'],
                     'minute': snap.get('minute', ''),
                     'competition': {
@@ -201,9 +214,16 @@ def obtener_partidos_locales() -> list:
 
 
 def enriquecer_partidos_con_prediccion(partidos: list, cache_service=None) -> list:
-    """Enriquece cada partido con probabilidades del motor Timba."""
+    """
+    Enriquece cada partido con probabilidades del motor Timba.
+    Separa explícitamente:
+    - prediccion_prematch: Probabilidades y xG pre-partido.
+    - prediccion_live: Probabilidades dinámicas In-Play ajustadas por marcador, minuto y tarjetas rojas.
+    """
     global _cache_fuerzas
     for partido in partidos:
+        partido['prediccion_prematch'] = None
+        partido['prediccion_live'] = None
         partido['prediccion_timba'] = None
         try:
             comp = partido.get('competition', {})
@@ -212,16 +232,38 @@ def enriquecer_partidos_con_prediccion(partidos: list, cache_service=None) -> li
                 continue
             liga_id = API_TO_LIGA_ID[api_code]
 
+            status = str(partido.get('status', '')).upper()
+            is_live = status in ['IN_PLAY', 'LIVE', 'EN VIVO', 'PAUSED', 'HALFTIME']
+            
+            # Goles y eventos
+            h_score = int(partido.get('home_score', 0))
+            a_score = int(partido.get('away_score', 0))
+            minute = partido.get('minute', 0)
+            red_h = int(partido.get('red_cards_home', 0))
+            red_a = int(partido.get('red_cards_away', 0))
+
             if api_code == 'CL':
                 if cache_service:
                     cache_todas = {lid: cache_service.cargar_datos_liga_cached(lid) for lid in LIGAS if LIGAS[lid].get('url')}
                     pred = predecir_partido_champions(partido['homeTeam']['name'], partido['awayTeam']['name'], cache_todas)
                     if pred:
-                        partido['prediccion_timba'] = {
+                        pred_pre = {
                             'prob_local': round(pred.get('Prob_Local', 0) * 100, 1),
                             'prob_empate': round(pred.get('Prob_Empate', 0) * 100, 1),
                             'prob_visitante': round(pred.get('Prob_Vis', 0) * 100, 1),
+                            'xg_local': round(pred.get('xG_Local', 0), 2),
+                            'xg_vis': round(pred.get('xG_Vis', 0), 2),
                         }
+                        partido['prediccion_prematch'] = pred_pre
+                        if is_live:
+                            partido['prediccion_live'] = predecir_partido_en_vivo(
+                                partido['homeTeam']['name'], partido['awayTeam']['name'],
+                                {}, 0.0, 0.0,
+                                home_score=h_score, away_score=a_score,
+                                minute=minute, red_cards_home=red_h, red_cards_away=red_a,
+                                pred_prematch=pred
+                            )
+                        partido['prediccion_timba'] = partido['prediccion_live'] if is_live else pred_pre
                 continue
 
             if liga_id not in _cache_fuerzas:
@@ -247,13 +289,31 @@ def enriquecer_partidos_con_prediccion(partidos: list, cache_service=None) -> li
             if local_norm in cache['fuerzas'] and vis_norm in cache['fuerzas']:
                 pred = predecir_partido(local_norm, vis_norm, cache['fuerzas'], cache['ml'], cache['mv'])
                 if pred:
-                    partido['prediccion_timba'] = {
+                    pred_pre = {
                         'prob_local': round(pred.get('Prob_Local', 0) * 100, 1),
                         'prob_empate': round(pred.get('Prob_Empate', 0) * 100, 1),
                         'prob_visitante': round(pred.get('Prob_Vis', 0) * 100, 1),
+                        'prob_1x': round(pred.get('Prob_1X', 0) * 100, 1),
+                        'prob_x2': round(pred.get('Prob_X2', 0) * 100, 1),
+                        'prob_12': round(pred.get('Prob_12', 0) * 100, 1),
+                        'xg_local': round(pred.get('xG_Local', 0), 2),
+                        'xg_vis': round(pred.get('xG_Vis', 0), 2),
                         'local_normalizado': local_norm,
                         'visitante_normalizado': vis_norm
                     }
-        except Exception:
+                    partido['prediccion_prematch'] = pred_pre
+
+                    if is_live:
+                        partido['prediccion_live'] = predecir_partido_en_vivo(
+                            local_norm, vis_norm,
+                            cache['fuerzas'], cache['ml'], cache['mv'],
+                            home_score=h_score, away_score=a_score,
+                            minute=minute, red_cards_home=red_h, red_cards_away=red_a,
+                            pred_prematch=pred
+                        )
+
+                    partido['prediccion_timba'] = partido.get('prediccion_live') or pred_pre
+        except Exception as e:
+            logger.debug(f"Error enriqueciendo partido: {e}")
             continue
     return partidos

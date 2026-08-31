@@ -151,30 +151,38 @@
                     </td>
                 </tr>
 
-                {# Predicción detallada solo para partidos en vivo #}
-                {% if partido.prediccion_timba and mostrar_prediccion_inline and is_live %}
+                {# Predicción detallada: In-Play Dinámica y Pre-match Separadas #}
+                {% if mostrar_prediccion_inline and is_live and (partido.prediccion_live or partido.prediccion_prematch or partido.prediccion_timba) %}
                 <tr class="pred-row">
                     <td colspan="5">
-                        <div class="pred-inline py-1">
-                            <span class="pred-item text-info">
-                                <b>1:</b> {{ partido.prediccion_timba.prob_local|default(0)|int }}%
-                            </span>
-                            <span class="pred-item text-warning">
-                                <b>X:</b> {{ partido.prediccion_timba.prob_empate|default(0)|int }}%
-                            </span>
-                            <span class="pred-item text-danger">
-                                <b>2:</b> {{ partido.prediccion_timba.prob_visitante|default(0)|int }}%
-                            </span>
-                            {% if partido.prediccion_timba.over_25 is defined %}
-                            <span class="text-muted">|</span>
-                            <span class="pred-item text-success">
-                                <b>O2.5:</b> {{ partido.prediccion_timba.over_25|int }}%
-                            </span>
+                        <div class="pred-inline py-1 d-flex flex-wrap align-items-center gap-2">
+                            {% if partido.prediccion_live %}
+                                <span class="badge bg-danger text-white"><i class="bi bi-lightning-charge-fill"></i> EN VIVO ({{ partido.prediccion_live.minuto }}')</span>
+                                <span class="pred-item text-info"><b>1:</b> {{ partido.prediccion_live.prob_local }}%</span>
+                                <span class="pred-item text-warning"><b>X:</b> {{ partido.prediccion_live.prob_empate }}%</span>
+                                <span class="pred-item text-danger"><b>2:</b> {{ partido.prediccion_live.prob_visitante }}%</span>
+                                <span class="text-muted small">|</span>
+                                <span class="text-secondary small" title="Goles esperados restantes">
+                                    xG rem: <b>{{ partido.prediccion_live.xG_restante_local }}-{{ partido.prediccion_live.xG_restante_vis }}</b>
+                                </span>
+                                {% if partido.prediccion_live.proximo_gol %}
+                                <span class="badge bg-dark border border-secondary text-info small" title="Próximo Gol">
+                                    Próx. gol: <b>{{ partido.prediccion_live.proximo_gol.local }}% Local / {{ partido.prediccion_live.proximo_gol.visitante }}% Vis</b>
+                                </span>
+                                {% endif %}
+                                <span class="badge bg-secondary opacity-75 small">{{ partido.prediccion_live.estado_tactico }}</span>
                             {% endif %}
-                            {% if partido.prediccion_timba.xg_local is defined %}
-                            <span class="pred-item text-secondary">
-                                <b>xG:</b> {{ partido.prediccion_timba.xg_local }}-{{ partido.prediccion_timba.xg_visitante }}
-                            </span>
+
+                            {% if partido.prediccion_prematch %}
+                                <div class="w-100 mt-1 d-flex align-items-center gap-2 text-muted small border-top border-secondary pt-1">
+                                    <span class="badge bg-dark border border-secondary text-muted">PRE-MATCH</span>
+                                    <span><b>1:</b> {{ partido.prediccion_prematch.prob_local }}%</span>
+                                    <span><b>X:</b> {{ partido.prediccion_prematch.prob_empate }}%</span>
+                                    <span><b>2:</b> {{ partido.prediccion_prematch.prob_visitante }}%</span>
+                                    {% if partido.prediccion_prematch.xg_local is defined %}
+                                    <span>xG inicial: {{ partido.prediccion_prematch.xg_local }}-{{ partido.prediccion_prematch.xg_vis }}</span>
+                                    {% endif %}
+                                </div>
                             {% endif %}
                         </div>
                     </td>
