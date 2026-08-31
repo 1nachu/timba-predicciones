@@ -269,7 +269,7 @@ def obtener_proximos_partidos(fixture_url: str) -> List[Dict]:
 
                 fecha = 'Próximo'
                 if col_fecha:
-                    fecha_dt = pd.to_datetime(fila[col_fecha], errors='coerce')
+                    fecha_dt = pd.to_datetime(fila[col_fecha], dayfirst=True, format='mixed', errors='coerce')
                     if pd.notna(fecha_dt) and ahora < fecha_dt < ahora_plus_7:
                         fecha = fecha_dt.strftime('%Y-%m-%d %H:%M')
                         partidos.append({'local': local, 'visitante': visita, 'fecha': fecha})

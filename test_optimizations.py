@@ -57,7 +57,8 @@ def test_columnas_selectivas():
     ahorro_memoria = (1 - len(df_selectivo.columns) / len(df_completo.columns)) * 100
     print(f"\n🎯 Ahorro de memoria: {ahorro_memoria:.1f}%")
     
-    return df_selectivo
+    assert len(df_selectivo) > 0
+    assert len(df_selectivo.columns) == len(columnas)
 
 
 def test_calcular_fuerzas_con_gc():
@@ -86,7 +87,8 @@ def test_calcular_fuerzas_con_gc():
     print(f"   ✓ Media goles visitante: {media_vis:.2f}")
     print(f"   ✓ gc.collect() ejecutado automáticamente")
     
-    return fuerzas
+    assert len(fuerzas) > 0
+    assert media_local > 0
 
 
 def test_velocidad_cache():

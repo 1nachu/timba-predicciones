@@ -46,7 +46,7 @@ def calcular_fuerzas(df: pd.DataFrame) -> Tuple[Dict, float, float]:
     OPTIMIZADO: Totalmente vectorizado con GroupBy y NumPy para máximo rendimiento.
     """
     df = df.copy()
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, format='mixed', errors='coerce')
     df = df.sort_values('Date').reset_index(drop=True)
     
     promedio_goles_local_liga = float(df['FTHG'].mean()) if len(df) > 0 else 0.0
@@ -406,7 +406,7 @@ def obtener_h2h(local: str, visitante: str, df: pd.DataFrame) -> List[Dict]:
             logger.debug(f"Error parseando H2H (visitante): {e}")
             
     try:
-        h2h.sort(key=lambda x: pd.to_datetime(x['Fecha']), reverse=True)
+        h2h.sort(key=lambda x: pd.to_datetime(x['Fecha'], dayfirst=True, format='mixed', errors='coerce'), reverse=True)
     except Exception as e:
         logger.warning(f"Error ordenando H2H por fecha: {e}")
         

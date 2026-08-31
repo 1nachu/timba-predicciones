@@ -73,6 +73,21 @@ def test_predict_same_team_warning(client):
     assert 'Debes seleccionar dos equipos diferentes' in html or 'warning' in html
 
 
+from unittest.mock import patch
+
+
+@pytest.fixture(autouse=True)
+def mock_external_network_calls():
+    """Mock external scraping calls to keep test suite fast and deterministic."""
+    sample_fixtures = [
+        {'local': 'Arsenal', 'visitante': 'Chelsea', 'fecha': '2026-09-01 16:00', 'fecha_utc': '2026-09-01T19:00:00Z'},
+        {'local': 'Real Madrid', 'visitante': 'Barcelona', 'fecha': '2026-09-02 20:00', 'fecha_utc': '2026-09-02T23:00:00Z'},
+        {'local': 'Boca Juniors', 'visitante': 'River Plate', 'fecha': '2026-09-03 18:00', 'fecha_utc': '2026-09-03T21:00:00Z'}
+    ]
+    with patch('app.obtener_proximos_partidos', return_value=sample_fixtures):
+        yield
+
+
 def test_fixtures_all_supported_leagues(client):
     for liga_id in [1, 2, 3, 4, 5, 6, 7, 8, 10]:
         res = client.get(f'/fixtures?liga_id={liga_id}')
