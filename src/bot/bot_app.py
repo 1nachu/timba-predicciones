@@ -1,20 +1,24 @@
 """
 Telegram Bot Application Setup
 ===============================
-Inicializa y ejecuta el bot de Telegram con todos sus comandos y manejadores.
+Inicializa y ejecuta el bot de Telegram con todos sus comandos, manejadores y error handler global.
 """
 
 import os
 import logging
+import traceback
 from typing import Optional
 from dotenv import load_dotenv
+from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     ApplicationBuilder,
     CommandHandler,
     CallbackQueryHandler,
     MessageHandler,
-    filters
+    filters,
+    ContextTypes
 )
 
 from bot.handlers import (
@@ -30,6 +34,22 @@ from bot.handlers import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Manejador global de errores para capturar y registrar excepciones sin tirar el bot."""
+    logger.error(f"Excepción no controlada procesando actualización {update}: {context.error}")
+    
+    # Notificar al usuario si la actualización fue un mensaje
+    if isinstance(update, Update) and update.effective_message:
+        try:
+            await update.effective_message.reply_text(
+                "⚠️ <b>Ocurrió un error inesperado al procesar tu solicitud.</b>\n"
+                "Por favor intenta nuevamente o usa /help.",
+                parse_mode=ParseMode.HTML
+            )
+        except Exception:
+            pass
 
 
 def create_bot_application(token: str) -> Application:
@@ -53,18 +73,23 @@ def create_bot_application(token: str) -> Application:
     app.add_handler(CallbackQueryHandler(handle_callback_query))
 
     # Mensajes de texto directos (ej: si escribe "Arsenal vs Chelsea" directamente)
-    async def text_direct_prediction(update, context):
-        text = update.message.text.strip()
+    async def text_direct_prediction(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        text = update.message.text.strip() if update.message and update.message.text else ""
+        if not text:
+            return
         if " vs " in text.lower() or " - " in text:
             context.args = text.split()
             await cmd_predecir(update, context)
         else:
             await update.message.reply_text(
                 "💡 <i>¿Deseas predecir un partido?</i> Escribe: <code>Arsenal vs Chelsea</code> o usa /help",
-                parse_mode="HTML"
+                parse_mode=ParseMode.HTML
             )
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_direct_prediction))
+
+    # Error Handler Global
+    app.add_error_handler(global_error_handler)
 
     return app
 

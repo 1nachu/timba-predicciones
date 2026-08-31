@@ -1,14 +1,16 @@
 """
 Telegram Bot Handlers
 =====================
-Manejadores de comandos, mensajes interactivos y callback queries.
+Manejadores de comandos, mensajes interactivos y callback queries con manejo robusto de errores.
 """
 
 import logging
 import re
-from typing import Optional, Tuple
+import html
+from typing import Optional, Tuple, List, Dict, Any
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from timba_core import (
@@ -22,7 +24,11 @@ from timba_core import (
 )
 from utils.markets import evaluar_value_bets, generar_recomendaciones
 from services.prediction_service import cargar_datos_liga_cached, predecir_partido_cached
-from services.fixtures_service import obtener_partidos_locales, enriquecer_partidos_con_prediccion
+from services.fixtures_service import (
+    obtener_partidos_locales,
+    enriquecer_partidos_con_prediccion,
+    API_TO_LIGA_ID
+)
 from bot.formatters import (
     format_welcome_message,
     format_leagues_list,
@@ -52,6 +58,43 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
+
+
+async def safe_edit_message(query, text: str, reply_markup: Optional[InlineKeyboardMarkup] = None):
+    """Edita el mensaje evitando excepciones si el contenido no ha cambiado."""
+    try:
+        await query.edit_message_text(
+            text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=reply_markup
+        )
+    except BadRequest as e:
+        if "Message is not modified" in str(e):
+            pass
+        else:
+            logger.warning(f"Error editando mensaje: {e}")
+    except Exception as e:
+        logger.error(f"Error inesperado editando mensaje: {e}")
+
+
+def filtrar_partidos_por_liga(partidos: List[Dict[str, Any]], liga_id: Optional[int]) -> List[Dict[str, Any]]:
+    """Filtra la lista de partidos por el ID de liga interna."""
+    if not liga_id or liga_id not in LIGAS:
+        return partidos
+
+    resultado = []
+    for p in partidos:
+        comp = p.get('competition', {})
+        code = comp.get('code', '') if isinstance(comp, dict) else ''
+        p_liga_id = API_TO_LIGA_ID.get(code)
+        
+        # Coincidencia por código de API o por nombre
+        if p_liga_id == liga_id:
+            resultado.append(p)
+        elif str(liga_id) in str(p.get('liga_id', '')):
+            resultado.append(p)
+            
+    return resultado
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -112,74 +155,87 @@ async def cmd_ligas(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_live(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manejador de /live."""
-    partidos = obtener_partidos_locales()
-    partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
-    partidos_live = [p for p in partidos_enriquecidos if p.get('seccion') == 'live' or p.get('status') in ['LIVE', 'EN VIVO', 'IN_PLAY', 'PAUSED']]
-    
-    text = format_live_matches_summary(partidos_live)
-    keyboard = [
-        [InlineKeyboardButton("🔄 Actualizar En Vivo", callback_data="menu_live")],
-        [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
-    ]
-    await update.message.reply_text(
-        text,
-        parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    try:
+        partidos = obtener_partidos_locales()
+        partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
+        partidos_live = [p for p in partidos_enriquecidos if p.get('seccion') == 'live' or p.get('status') in ['LIVE', 'EN VIVO', 'IN_PLAY', 'PAUSED']]
+        
+        text = format_live_matches_summary(partidos_live)
+        keyboard = [
+            [InlineKeyboardButton("🔄 Actualizar En Vivo", callback_data="menu_live")],
+            [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
+        ]
+        await update.message.reply_text(
+            text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    except Exception as e:
+        logger.error(f"Error en cmd_live: {e}")
+        await update.message.reply_text("⚠️ Ocurrió un error al obtener partidos en vivo.", parse_mode=ParseMode.HTML)
 
 
 async def cmd_proximos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manejador de /proximos [liga_id]."""
-    liga_id = None
-    if context.args and len(context.args) > 0:
-        try:
-            liga_id = int(context.args[0])
-        except ValueError:
-            pass
+    try:
+        liga_id = None
+        if context.args and len(context.args) > 0:
+            try:
+                liga_id = int(context.args[0])
+            except ValueError:
+                pass
 
-    partidos = obtener_partidos_locales()
-    partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
-    proximos = [p for p in partidos_enriquecidos if p.get('seccion') != 'live' and p.get('status') not in ['LIVE', 'EN VIVO']]
+        partidos = obtener_partidos_locales()
+        partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
+        proximos = [p for p in partidos_enriquecidos if p.get('seccion') != 'live' and p.get('status') not in ['LIVE', 'EN VIVO']]
 
-    if liga_id and liga_id in LIGAS:
-        liga_nombre = LIGAS[liga_id].get('nombre', f"Liga {liga_id}")
-    else:
-        liga_nombre = "Todas las Ligas"
+        if liga_id and liga_id in LIGAS:
+            liga_nombre = LIGAS[liga_id].get('nombre', f"Liga {liga_id}")
+            proximos = filtrar_partidos_por_liga(proximos, liga_id)
+        else:
+            liga_nombre = "Todas las Ligas"
 
-    text = format_upcoming_fixtures(proximos, liga_nombre)
-    keyboard = [
-        [InlineKeyboardButton("🔄 Actualizar", callback_data="menu_fixtures")],
-        [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
-    ]
-    await update.message.reply_text(
-        text,
-        parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+        text = format_upcoming_fixtures(proximos, liga_nombre)
+        keyboard = [
+            [InlineKeyboardButton("🔄 Actualizar", callback_data="menu_fixtures")],
+            [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
+        ]
+        await update.message.reply_text(
+            text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    except Exception as e:
+        logger.error(f"Error en cmd_proximos: {e}")
+        await update.message.reply_text("⚠️ Ocurrió un error al obtener los próximos partidos.", parse_mode=ParseMode.HTML)
 
 
 async def cmd_valuebets(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manejador de /valuebets."""
-    partidos = obtener_partidos_locales()
-    partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
-    
-    value_bets = []
-    for p in partidos_enriquecidos:
-        pred = p.get('prediccion_prematch')
-        cuotas = p.get('cuotas', {})
-        if pred and cuotas:
-            vb_list = evaluar_value_bets(pred, cuotas)
-            value_bets.extend(vb_list)
+    try:
+        partidos = obtener_partidos_locales()
+        partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
+        
+        value_bets = []
+        for p in partidos_enriquecidos:
+            pred = p.get('prediccion_prematch')
+            cuotas = p.get('cuotas', {})
+            if pred and cuotas:
+                vb_list = evaluar_value_bets(pred, cuotas)
+                value_bets.extend(vb_list)
 
-    text = format_value_bets_summary(value_bets)
-    keyboard = [
-        [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
-    ]
-    await update.message.reply_text(
-        text,
-        parse_mode=ParseMode.HTML,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+        text = format_value_bets_summary(value_bets)
+        keyboard = [
+            [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
+        ]
+        await update.message.reply_text(
+            text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    except Exception as e:
+        logger.error(f"Error en cmd_valuebets: {e}")
+        await update.message.reply_text("⚠️ Ocurrió un error al analizar apuestas de valor.", parse_mode=ParseMode.HTML)
 
 
 def parse_prediction_args(args_str: str) -> Optional[Tuple[str, str, Optional[int]]]:
@@ -188,13 +244,11 @@ def parse_prediction_args(args_str: str) -> Optional[Tuple[str, str, Optional[in
     if not args_str:
         return None
 
-    # Caso 1: "<local> vs <visitante>"
     if " vs " in args_str.lower():
         parts = re.split(r'\s+vs\s+', args_str, flags=re.IGNORECASE)
         if len(parts) >= 2:
             return parts[0].strip(), parts[1].strip(), None
 
-    # Caso 2: "<local> - <visitante>"
     if " - " in args_str:
         parts = args_str.split(" - ")
         if len(parts) >= 2:
@@ -202,7 +256,6 @@ def parse_prediction_args(args_str: str) -> Optional[Tuple[str, str, Optional[in
 
     tokens = args_str.split()
     if len(tokens) >= 2:
-        # Si el primer token es un dígito de liga
         if tokens[0].isdigit():
             lid = int(tokens[0])
             mid = len(tokens[1:]) // 2
@@ -222,7 +275,6 @@ def parse_prediction_args(args_str: str) -> Optional[Tuple[str, str, Optional[in
 async def cmd_predecir(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Manejador de /predecir <Local> vs <Visitante>."""
     if not context.args:
-        # Mostrar selector interactivo de liga
         keyboard = []
         row = []
         for lid, linfo in LIGAS.items():
@@ -274,8 +326,10 @@ async def cmd_predecir(update: Update, context: ContextTypes.DEFAULT_TYPE):
             continue
 
     if not pred:
+        local_esc = html.escape(str(local))
+        vis_esc = html.escape(str(visitante))
         await update.message.reply_text(
-            f"❌ <b>No se encontraron datos para:</b>\n⚽ <i>{local} vs {visitante}</i>\n\n"
+            f"❌ <b>No se encontraron datos para:</b>\n⚽ <i>{local_esc} vs {vis_esc}</i>\n\n"
             f"Verifica la ortografía de los nombres o revisa /ligas.",
             parse_mode=ParseMode.HTML
         )
@@ -293,11 +347,7 @@ async def cmd_predecir(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def parse_inplay_args(text: str) -> Optional[dict]:
-    """
-    Parsea comando inplay:
-    Ejemplo: 'Barcelona vs Real Madrid 2-1 min 70 rojas 0-1'
-    o: 'Arsenal vs Chelsea 1-0 55'
-    """
+    """Parsea comando inplay."""
     text = text.strip()
     match = re.search(r'^(.*?)\s+vs\s+(.*?)\s+(\d+)[-:](\d+)(.*)$', text, re.IGNORECASE)
     if not match:
@@ -309,13 +359,11 @@ def parse_inplay_args(text: str) -> Optional[dict]:
     g_vis = int(match.group(4))
     rest = match.group(5).strip()
 
-    # Minuto
     minute = 45
     min_match = re.search(r'(?:min|m|minuto)?\s*(\d+)', rest, re.IGNORECASE)
     if min_match:
         minute = int(min_match.group(1))
 
-    # Rojas
     r_loc, r_vis = 0, 0
     rojas_match = re.search(r'rojas?\s*(\d+)[-:](\d+)', rest, re.IGNORECASE)
     if rojas_match:
@@ -361,7 +409,6 @@ async def cmd_inplay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     local = params['local']
     visitante = params['visitante']
     
-    # Buscar predicción prematch base si existe
     pred_prematch = None
     for lid in LIGAS:
         try:
@@ -385,9 +432,9 @@ async def cmd_inplay(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pred_pre_dict = None
     if pred_prematch:
         pred_pre_dict = {
-            'prob_local': round(pred_prematch.get('Prob_Local', 0) * 100, 1),
-            'prob_empate': round(pred_prematch.get('Prob_Empate', 0) * 100, 1),
-            'prob_visitante': round(pred_prematch.get('Prob_Vis', 0) * 100, 1),
+            'prob_local': round(float(pred_prematch.get('Prob_Local', 0)) * 100, 1),
+            'prob_empate': round(float(pred_prematch.get('Prob_Empate', 0)) * 100, 1),
+            'prob_visitante': round(float(pred_prematch.get('Prob_Vis', 0)) * 100, 1),
         }
 
     text = format_live_prediction_card(local, visitante, pred_live, pred_pre_dict)
@@ -402,7 +449,7 @@ async def cmd_inplay(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Maneja todas las interacciones de botones en línea."""
+    """Maneja todas las interacciones de botones en línea de forma segura."""
     query = update.callback_query
     await query.answer()
 
@@ -410,11 +457,8 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 
     if data == "menu_main":
         text = format_welcome_message()
-        await query.edit_message_text(
-            text,
-            parse_mode=ParseMode.HTML,
-            reply_markup=get_main_menu_keyboard()
-        )
+        await safe_edit_message(query, text, get_main_menu_keyboard())
+
     elif data == "menu_live":
         partidos = obtener_partidos_locales()
         partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
@@ -425,11 +469,8 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             [InlineKeyboardButton("🔄 Actualizar En Vivo", callback_data="menu_live")],
             [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
         ]
-        await query.edit_message_text(
-            text,
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await safe_edit_message(query, text, InlineKeyboardMarkup(keyboard))
+
     elif data == "menu_fixtures":
         partidos = obtener_partidos_locales()
         partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
@@ -440,11 +481,8 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             [InlineKeyboardButton("🔄 Actualizar", callback_data="menu_fixtures")],
             [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
         ]
-        await query.edit_message_text(
-            text,
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await safe_edit_message(query, text, InlineKeyboardMarkup(keyboard))
+
     elif data == "menu_valuebets":
         partidos = obtener_partidos_locales()
         partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
@@ -460,11 +498,8 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         keyboard = [
             [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
         ]
-        await query.edit_message_text(
-            text,
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await safe_edit_message(query, text, InlineKeyboardMarkup(keyboard))
+
     elif data == "menu_leagues":
         text = format_leagues_list(LIGAS)
         keyboard = []
@@ -480,28 +515,23 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             keyboard.append(row)
         keyboard.append([InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")])
 
-        await query.edit_message_text(
-            text,
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await safe_edit_message(query, text, InlineKeyboardMarkup(keyboard))
+
     elif data.startswith("fixtures_league:"):
         lid = int(data.split(":")[1])
         liga_nombre = LIGAS.get(lid, {}).get('nombre', f"Liga {lid}")
         partidos = obtener_partidos_locales()
         partidos_enriquecidos = enriquecer_partidos_con_prediccion(partidos)
         proximos = [p for p in partidos_enriquecidos if p.get('seccion') != 'live']
+        proximos_filtrados = filtrar_partidos_por_liga(proximos, lid)
 
-        text = format_upcoming_fixtures(proximos, liga_nombre)
+        text = format_upcoming_fixtures(proximos_filtrados, liga_nombre)
         keyboard = [
             [InlineKeyboardButton("🔙 Ligas", callback_data="menu_leagues")],
             [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
         ]
-        await query.edit_message_text(
-            text,
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await safe_edit_message(query, text, InlineKeyboardMarkup(keyboard))
+
     elif data == "menu_predict_select":
         keyboard = []
         row = []
@@ -516,24 +546,31 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             keyboard.append(row)
         keyboard.append([InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")])
 
-        await query.edit_message_text(
+        await safe_edit_message(
+            query,
             "🔮 <b>Selecciona una liga para predecir:</b>\n\n"
             "O escribe directamente:\n<code>/predecir Arsenal vs Chelsea</code>",
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            InlineKeyboardMarkup(keyboard)
         )
+
     elif data.startswith("pred_league_info:"):
         lid = int(data.split(":")[1])
         linfo = LIGAS.get(lid, {})
-        nombre = linfo.get('nombre', f"Liga {lid}")
+        nombre = html.escape(str(linfo.get('nombre', f"Liga {lid}")))
         flag = linfo.get('flag', '⚽')
         
-        # Cargar equipos de la liga
+        # Cargar equipos de la liga de forma segura (tupla)
         try:
             cache_l = cargar_datos_liga_cached(lid)
-            equipos = cache_l.get('equipos', []) if cache_l else []
-            equipos_str = ", ".join(equipos[:10]) + ("..." if len(equipos) > 10 else "")
-        except Exception:
+            if isinstance(cache_l, tuple) and len(cache_l) == 4:
+                _, _, _, equipos = cache_l
+            elif isinstance(cache_l, dict):
+                equipos = cache_l.get('equipos', [])
+            else:
+                equipos = []
+            equipos_str = html.escape(", ".join(equipos[:10])) + ("..." if len(equipos) > 10 else "")
+        except Exception as e:
+            logger.error(f"Error cargando equipos para liga {lid}: {e}")
             equipos_str = "Equipos cargados en base de datos"
 
         text = (
@@ -546,8 +583,4 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             [InlineKeyboardButton("🔙 Seleccionar Otra Liga", callback_data="menu_predict_select")],
             [InlineKeyboardButton("🔙 Menú Principal", callback_data="menu_main")]
         ]
-        await query.edit_message_text(
-            text,
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await safe_edit_message(query, text, InlineKeyboardMarkup(keyboard))

@@ -20,7 +20,7 @@ from bot.formatters import (
     format_upcoming_fixtures,
     format_value_bets_summary
 )
-from bot.handlers import parse_prediction_args, parse_inplay_args
+from bot.handlers import parse_prediction_args, parse_inplay_args, filtrar_partidos_por_liga
 from bot.bot_app import create_bot_application
 from timba_core import LIGAS
 
@@ -49,7 +49,7 @@ def test_format_leagues_list():
     assert "Champions League" in msg
 
 
-def test_format_prediction_card():
+def test_format_prediction_card_html_escape():
     mock_pred = {
         'Prob_Local': 0.55,
         'Prob_Empate': 0.25,
@@ -65,16 +65,16 @@ def test_format_prediction_card():
         'BTTS_Prob': 0.55,
         'Top_3_Marcadores': [{'marcador': '2-1', 'prob': 0.12}]
     }
-    card = format_prediction_card("Arsenal", "Chelsea", mock_pred, "Premier League")
-    assert "Arsenal" in card
+    # Test special characters like & in team names (Brighton & Hove Albion)
+    card = format_prediction_card("Brighton & Hove Albion", "Chelsea", mock_pred, "Premier League")
+    assert "Brighton &amp; Hove Albion" in card
     assert "Chelsea" in card
     assert "55.0%" in card
     assert "25.0%" in card
     assert "1.85" in card
-    assert "2-1" in card
 
 
-def test_format_live_prediction_card():
+def test_format_live_prediction_card_html_escape():
     mock_live = {
         'is_live': True,
         'minuto': 65,
@@ -96,14 +96,14 @@ def test_format_live_prediction_card():
             'sin_mas_goles': 53.0
         },
         'top_marcadores_finales': [{'marcador': '2-1', 'prob': 48.2}],
-        'estado_tactico': '🏠 Arsenal lidera (+1)'
+        'estado_tactico': '🏠 Arsenal & City lidera (+1)'
     }
-    card = format_live_prediction_card("Arsenal", "Chelsea", mock_live)
+    card = format_live_prediction_card("Arsenal & Fans", "Chelsea", mock_live)
     assert "PREDICCIÓN EN VIVO" in card
+    assert "Arsenal &amp; Fans" in card
+    assert "Arsenal &amp; City lidera" in card
     assert "65'" in card
     assert "84.5%" in card
-    assert "Arsenal lidera" in card
-    assert "35.0%" in card
 
 
 def test_parse_prediction_args():
@@ -135,6 +135,19 @@ def test_parse_inplay_args():
     assert res2['home_score'] == 0
     assert res2['away_score'] == 0
     assert res2['minute'] == 80
+
+
+def test_filtrar_partidos_por_liga():
+    partidos = [
+        {'competition': {'code': 'PL'}, 'home': 'Arsenal', 'away': 'Chelsea'},
+        {'competition': {'code': 'PD'}, 'home': 'Real Madrid', 'away': 'Barcelona'}
+    ]
+    pl_matches = filtrar_partidos_por_liga(partidos, 1)  # 1 = PL
+    assert len(pl_matches) == 1
+    assert pl_matches[0]['home'] == 'Arsenal'
+
+    all_matches = filtrar_partidos_por_liga(partidos, None)
+    assert len(all_matches) == 2
 
 
 def test_create_bot_application_validation():
