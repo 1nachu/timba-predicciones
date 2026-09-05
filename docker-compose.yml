@@ -41,6 +41,25 @@ services:
     networks:
       - timba-network
 
+  live:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: timba-live
+    restart: unless-stopped
+    command: ["python", "run_live.py"]
+    environment:
+      - FOOTBALL_DATA_API_KEY=${FOOTBALL_DATA_API_KEY:-}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      web:
+        condition: service_healthy
+    networks:
+      - timba-network
+
 networks:
   timba-network:
     driver: bridge
