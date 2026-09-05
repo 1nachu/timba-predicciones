@@ -141,6 +141,11 @@ ALIAS_TEAMS = {
     "UD Las Palmas": "Las Palmas",
     "Valencia CF": "Valencia", "Valencia": "Valencia",
     "Sevilla FC": "Sevilla", "Sevilla": "Sevilla",
+    "RC Deportivo": "La Coruna", "RC Deportivo de La Coruña": "La Coruna", "Deportivo La Coruña": "La Coruna", "Deportivo de La Coruña": "La Coruna",
+    "R. Racing Club": "Santander", "Racing Santander": "Santander", "Racing de Santander": "Santander", "Real Racing Club": "Santander",
+    "Málaga CF": "Malaga", "Malaga CF": "Malaga", "Málaga": "Malaga",
+    "Real Valladolid": "Valladolid", "Real Valladolid CF": "Valladolid",
+    "Real Oviedo": "Oviedo", "Elche CF": "Elche", "CD Leganés": "Leganes", "Levante UD": "Levante",
 
     # --- BUNDESLIGA (D1) ---
     "Bayer 04 Leverkusen": "Leverkusen", "Bayer Leverkusen": "Leverkusen", "Leverkusen": "Leverkusen",
@@ -157,6 +162,9 @@ ALIAS_TEAMS = {
     "1. FC Union Berlin": "Union Berlin", "Union Berlin": "Union Berlin",
     "FC Augsburg": "Augsburg", "Augsburg": "Augsburg",
     "TSG 1899 Hoffenheim": "Hoffenheim", "TSG Hoffenheim": "Hoffenheim", "Hoffenheim": "Hoffenheim",
+    "1. FC Köln": "FC Koln", "1. FC Koln": "FC Koln", "FC Köln": "FC Koln", "Köln": "FC Koln", "Koln": "FC Koln",
+    "FC St. Pauli": "St Pauli", "St. Pauli": "St Pauli",
+    "Holstein Kiel": "Holstein Kiel", "Kiel": "Holstein Kiel",
 
     # --- SERIE A (I1) ---
     "Internazionale": "Inter", "Inter Milan": "Inter", "FC Internazionale Milano": "Inter", "Inter": "Inter",
@@ -216,6 +224,7 @@ ALIAS_TEAMS = {
     "FC Arouca": "Arouca",
     "GD Estoril Praia": "Estoril",
     "Estrela Amadora": "Estrela",
+    "Académico": "Academico Viseu", "Académico de Viseu": "Academico Viseu", "Academico": "Academico Viseu",
 
     # --- LIGA PROFESIONAL ARGENTINA (ARG) ---
     "Boca Juniors": "Boca Juniors", "Boca": "Boca Juniors", "Boca Jrs": "Boca Juniors", "Club Atlético Boca Juniors": "Boca Juniors",
