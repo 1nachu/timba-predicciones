@@ -9,6 +9,7 @@ from services.audit_service import (
     determinar_prediccion_ia,
     validar_acierto,
     obtener_historial_audit,
+    sincronizar_resultados_audit,
 )
 from services.fixtures_service import (
     obtener_partidos_locales,

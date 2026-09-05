@@ -53,6 +53,7 @@ from utils.markets import (
     PREDICCION_UMBRAL_GANA,
     PREDICCION_UMBRAL_DOBLE,
 )
+from services.audit_service import sincronizar_resultados_audit
 
 # ========== CONFIGURACIÓN ==========
 # Ruta de salida del JSON
@@ -717,7 +718,8 @@ def ejecutar_actualizacion():
         init_audit_db()
         limpiar_audit_viejo()
         procesar_proximos_n_dias(cache_fuerzas, AUDIT_FUTURE_DAYS)
-        registrar_resultados_desde_csv(cache_fuerzas)
+        actualizados = sincronizar_resultados_audit(DB_PATH)
+        log(f"Auditoría: {actualizados} resultados reales sincronizados", "OK")
     except Exception as e:
         log(f"Error en auditoría de predicciones: {e}", "ERROR")
 
