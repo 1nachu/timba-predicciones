@@ -41,35 +41,16 @@ def history():
     es_demo = False
     try:
         resultados, estadisticas = obtener_historial_audit(liga_id, days_back)
-        if not resultados:
-            raise ValueError('No hay datos de auditoría disponibles')
     except Exception:
         es_demo = True
-        resultados = [
-            {
-                'local': 'Arsenal', 'visitante': 'Chelsea',
-                'goles_local': 2, 'goles_visitante': 1,
-                'resultado_real': 'HOME_WIN', 'prediccion_ia': 'HOME_WIN',
-                'prediccion_texto': 'Local', 'prediccion_prob': 52.3,
-                'prob_local': 52.3, 'prob_empate': 26.1, 'prob_visitante': 21.6,
-                'acierto': True, 'fecha': '2026-01-25', 'error': None
-            },
-            {
-                'local': 'Liverpool', 'visitante': 'Man City',
-                'goles_local': 1, 'goles_visitante': 1,
-                'resultado_real': 'DRAW', 'prediccion_ia': '1X',
-                'prediccion_texto': '1X', 'prediccion_prob': 68.7,
-                'prob_local': 38.5, 'prob_empate': 30.2, 'prob_visitante': 31.3,
-                'acierto': True, 'fecha': '2026-01-24', 'error': None
-            },
-        ]
+        resultados = []
         estadisticas = {
-            'total_partidos': 2,
-            'evaluados': 2,
-            'aciertos': 2,
+            'total_partidos': 0,
+            'evaluados': 0,
+            'aciertos': 0,
             'fallos': 0,
             'sin_prediccion': 0,
-            'precision': 100.0
+            'precision': 0.0
         }
         
     return render_template(

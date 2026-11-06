@@ -75,6 +75,188 @@ def validar_acierto(prediccion_codigo: str, resultado_real: str) -> bool:
     return False
 
 
+def poblar_historial_desde_matches(db_path=DB_PATH, days_back: int = 30) -> int:
+    """
+    Genera y registra retroactivamente en predictions_audit los partidos ya jugados
+    de los últimos `days_back` días presentes en la tabla `matches` (o CSV de la liga)
+    que aún no estén auditados.
+    """
+    from datetime import datetime, timezone
+    from config.leagues import LIGAS, CSV_A_LIGA_ID
+    from core.prediction import calcular_fuerzas, predecir_partido
+    from db_data_provider import DatabaseDataProvider
+
+    conn = get_db_connection(db_path)
+    cursor = conn.cursor()
+
+    # Asegurar que exista la tabla predictions_audit
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS predictions_audit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id TEXT NOT NULL,
+            liga_id INTEGER NOT NULL,
+            liga_nombre TEXT NOT NULL,
+            local TEXT NOT NULL,
+            visitante TEXT NOT NULL,
+            local_csv TEXT NOT NULL,
+            visitante_csv TEXT NOT NULL,
+            fecha_partido TEXT NOT NULL,
+            fecha_solo TEXT NOT NULL,
+            prob_local REAL,
+            prob_empate REAL,
+            prob_visitante REAL,
+            prediccion_1x2 TEXT,
+            prob_over_15 REAL,
+            prob_over_25 REAL,
+            prob_under_35 REAL,
+            prob_btts REAL,
+            prob_1x REAL,
+            prob_x2 REAL,
+            prob_12 REAL,
+            xg_local REAL,
+            xg_visitante REAL,
+            prob_over_85_corners REAL,
+            prob_over_95_corners REAL,
+            prob_over_25_cards REAL,
+            prob_over_35_cards REAL,
+            resultado_real TEXT,
+            goles_local INTEGER,
+            goles_visitante INTEGER,
+            acierto_1x2 INTEGER,
+            acierto_over_15 INTEGER,
+            acierto_over_25 INTEGER,
+            acierto_under_35 INTEGER,
+            acierto_btts INTEGER,
+            acierto_1x INTEGER,
+            acierto_x2 INTEGER,
+            acierto_12 INTEGER,
+            guardado_at TEXT,
+            resultado_registrado_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(match_id)
+        )
+    """)
+
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches'")
+    if not cursor.fetchone():
+        conn.close()
+        return 0
+
+    cursor.execute(
+        """
+        SELECT league_code, date, home_team, away_team, fthg, ftag
+        FROM matches
+        WHERE date >= date('now', ? || ' days')
+          AND fthg IS NOT NULL AND ftag IS NOT NULL
+        ORDER BY date DESC
+        """,
+        (f'-{days_back}',)
+    )
+    partidos_recientes = cursor.fetchall()
+    if not partidos_recientes:
+        conn.close()
+        return 0
+
+    # Verificar cuáles ya están en predictions_audit con resultado_real
+    cursor.execute("SELECT match_id, resultado_real FROM predictions_audit")
+    existentes = {row[0]: row[1] for row in cursor.fetchall()}
+
+    provider = DatabaseDataProvider(db_path=str(db_path))
+    fuerzas_por_liga = {}
+    insertados = 0
+    ahora_iso = datetime.now(timezone.utc).isoformat()
+
+    for league_code, m_date, home_team, away_team, fthg, ftag in partidos_recientes:
+        liga_id = CSV_A_LIGA_ID.get(league_code)
+        if not liga_id or liga_id not in LIGAS:
+            continue
+
+        fecha_solo = str(m_date)[:10]
+        match_id = f"{liga_id}_{home_team}_{away_team}_{fecha_solo}"
+
+        if match_id in existentes and existentes[match_id] is not None:
+            continue
+
+        if league_code not in fuerzas_por_liga:
+            try:
+                df_liga = provider.get_smart_data(league_code, temporadas=3, enrich=False)
+                fuerzas, media_loc, media_vis = calcular_fuerzas(df_liga)
+                fuerzas_por_liga[league_code] = (fuerzas, media_loc, media_vis)
+            except Exception as e:
+                logger.debug(f"No se pudieron calcular fuerzas para {league_code}: {e}")
+                fuerzas_por_liga[league_code] = ({}, 0.0, 0.0)
+
+        fuerzas, media_loc, media_vis = fuerzas_por_liga[league_code]
+        if not fuerzas or home_team not in fuerzas or away_team not in fuerzas:
+            continue
+
+        pred = predecir_partido(home_team, away_team, fuerzas, media_loc, media_vis)
+        if not pred:
+            continue
+
+        prediccion_1x2 = determinar_prediccion_1x2(pred)
+        goles_local = int(fthg)
+        goles_visitante = int(ftag)
+        res_real = determinar_resultado_real(goles_local, goles_visitante)
+        acierto = 1 if validar_acierto(prediccion_1x2, res_real) else 0
+        liga_nombre = LIGAS[liga_id].get('nombre', league_code)
+
+        cursor.execute(
+            """INSERT OR REPLACE INTO predictions_audit (
+                match_id, liga_id, liga_nombre, local, visitante,
+                local_csv, visitante_csv, fecha_partido, fecha_solo,
+                prob_local, prob_empate, prob_visitante,
+                prediccion_1x2, prob_over_15, prob_over_25, prob_under_35,
+                prob_btts, prob_1x, prob_x2, prob_12,
+                xg_local, xg_visitante,
+                prob_over_85_corners, prob_over_95_corners,
+                prob_over_25_cards, prob_over_35_cards,
+                resultado_real, goles_local, goles_visitante, acierto_1x2,
+                guardado_at, resultado_registrado_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                match_id,
+                liga_id,
+                liga_nombre,
+                home_team,
+                away_team,
+                home_team,
+                away_team,
+                f"{fecha_solo}T00:00:00Z",
+                fecha_solo,
+                pred.get('Prob_Local'),
+                pred.get('Prob_Empate'),
+                pred.get('Prob_Vis'),
+                prediccion_1x2,
+                pred.get('Over_15'),
+                pred.get('Over_25'),
+                pred.get('Under_35'),
+                pred.get('BTTS'),
+                pred.get('Prob_1X'),
+                pred.get('Prob_X2'),
+                pred.get('Prob_12'),
+                pred.get('xG_Local'),
+                pred.get('xG_Vis'),
+                pred.get('Over_85'),
+                pred.get('Over_95'),
+                pred.get('Over_25_Cards'),
+                pred.get('Over_35_Cards'),
+                res_real,
+                goles_local,
+                goles_visitante,
+                acierto,
+                ahora_iso,
+                ahora_iso,
+            )
+        )
+        insertados += 1
+
+    conn.commit()
+    conn.close()
+    return insertados
+
+
 def sincronizar_resultados_audit(db_path=DB_PATH) -> int:
     """
     Sincroniza y registra resultados reales en predictions_audit desde múltiples fuentes:
@@ -86,13 +268,20 @@ def sincronizar_resultados_audit(db_path=DB_PATH) -> int:
     from datetime import datetime, timezone
     from config.leagues import LIGAS, URLS_FIXTURE
 
+    # Poblar retroactivamente partidos recientes desde tabla matches si faltan en auditoría
+    actualizados_backfill = 0
+    try:
+        actualizados_backfill = poblar_historial_desde_matches(db_path, days_back=30)
+    except Exception as e:
+        logger.debug(f"Error en backfill de historial desde matches: {e}")
+
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
 
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='predictions_audit'")
     if not cursor.fetchone():
         conn.close()
-        return 0
+        return actualizados_backfill
 
     cursor.execute("PRAGMA table_info(predictions_audit)")
     columnas_existentes = {row[1] for row in cursor.fetchall()}
@@ -114,9 +303,9 @@ def sincronizar_resultados_audit(db_path=DB_PATH) -> int:
     pendientes = cursor.fetchall()
     if not pendientes:
         conn.close()
-        return 0
+        return actualizados_backfill
 
-    actualizados = 0
+    actualizados = actualizados_backfill
 
     # Fuente 1: Feeds de FixtureDownload
     for liga_id, info in URLS_FIXTURE.items():
