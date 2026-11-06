@@ -63,12 +63,33 @@ def test_transformer_columnas_criticas():
     assert 'Temporada' in subset.columns
 
 
-def test_database_league_code_query():
-    provider = DatabaseDataProvider()
+def test_database_league_code_query(tmp_path):
+    db_file = tmp_path / "test_football_data.db"
+    loader = FootballDataLoader(db_type='sqlite', connection_string=f"sqlite:///{db_file}")
+    loader.crear_tablas()
+
+    raw_df = pd.DataFrame({
+        'Date': ['15/08/2025', '16/08/2025'],
+        'HomeTeam': ['Arsenal', 'Chelsea'],
+        'AwayTeam': ['Wolves', 'Man City'],
+        'FTHG': [2, 0],
+        'FTAG': [0, 2],
+        'FTR': ['H', 'A'],
+        'HS': [15, 8],
+        'AS': [5, 12],
+        'HST': [6, 3],
+        'AST': [2, 5],
+        'Temporada': ['2526', '2526'],
+        'league_code': ['E0', 'E0'],
+    })
+    transformed = FootballDataTransformer.transformar(raw_df, 'E0')
+    loader.cargar_datos(transformed)
+
+    provider = DatabaseDataProvider(db_path=str(db_file))
     df_e0 = provider.get_data_from_db('E0', temporadas=1)
     assert df_e0 is not None
-    assert len(df_e0) > 0
-    assert 'league_code' in df_e0.columns or 'HomeTeam' in df_e0.columns
+    assert len(df_e0) == 2
+    assert 'LeagueCode' in df_e0.columns or 'HomeTeam' in df_e0.columns
 
 
 def test_etl_modular_package():

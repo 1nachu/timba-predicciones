@@ -206,8 +206,30 @@ def obtener_historial_audit(liga_id: int, days_back: int, auto_sync: bool = True
         except Exception as e:
             logger.debug(f"Auto-sync de resultados audit falló: {e}")
 
+    if not DB_PATH.exists():
+        return [], {
+            'total_partidos': 0,
+            'evaluados': 0,
+            'aciertos': 0,
+            'fallos': 0,
+            'sin_prediccion': 0,
+            'precision': 0,
+        }
+
     conn = get_db_connection(DB_PATH, readonly=True)
     cursor = conn.cursor()
+
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='predictions_audit'")
+    if not cursor.fetchone():
+        conn.close()
+        return [], {
+            'total_partidos': 0,
+            'evaluados': 0,
+            'aciertos': 0,
+            'fallos': 0,
+            'sin_prediccion': 0,
+            'precision': 0,
+        }
 
     cursor.execute(
         """
