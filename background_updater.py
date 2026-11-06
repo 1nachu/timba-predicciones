@@ -590,19 +590,62 @@ def procesar_proximos_n_dias(cache_fuerzas: dict, dias: int, cache_fixtures: dic
             log(f"Error procesando próximos días para liga {liga_nombre}: {e}", "ERROR")
 
 
+def asegurar_tabla_matches():
+    """
+    Verifica si la tabla 'matches' existe y tiene datos en la BD local.
+    Si no existe o está vacía, dispara automáticamente el pipeline ETL (modo rápido: 3 temporadas).
+    """
+    necesita_etl = False
+    try:
+        if not os.path.exists(DB_PATH):
+            necesita_etl = True
+        else:
+            conn = get_db_connection(DB_PATH, readonly=True)
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches'")
+            if not cursor.fetchone():
+                necesita_etl = True
+            else:
+                cursor.execute("SELECT COUNT(*) FROM matches")
+                total = cursor.fetchone()[0]
+                if total == 0:
+                    necesita_etl = True
+            conn.close()
+    except Exception as e:
+        log(f"Error verificando tabla 'matches': {e}", "WARN")
+        necesita_etl = True
+
+    if necesita_etl:
+        log("Tabla 'matches' no encontrada en BD local. Disparando ETL inicial (3 temporadas por liga)...", "WARN")
+        try:
+            from etl import FootballETLPipeline
+            from timba_core import clear_historical_data_cache
+            pipeline = FootballETLPipeline()
+            exito = pipeline.ejecutar(crear_tablas=True, solo_actual=True)
+            if exito:
+                clear_historical_data_cache()
+                log("ETL inicial completado: tabla 'matches' creada y poblada en BD local", "OK")
+            else:
+                log("El ETL no pudo poblar la BD; se usará fallback a CSV online", "WARN")
+        except Exception as e:
+            log(f"Error ejecutando ETL automático: {e}. Se usará fallback a CSV online", "ERROR")
+
+
 def ejecutar_actualizacion():
     """
     Ejecuta ciclo completo de actualización:
-    1. Descarga CSVs históricos
-    2. Calcula fuerzas
-    3. Obtiene fixtures
-    4. Genera predicciones
-    5. Guarda JSON
+    1. Asegura que la BD histórica (matches) exista (corre ETL si falta)
+    2. Calcula fuerzas desde BD local
+    3. Obtiene fixtures y genera predicciones
+    4. Guarda JSON y audita resultados
     """
     global cache_fuerzas
 
     log("Iniciando actualización de datos...", "START")
     inicio = time.time()
+
+    # PASO 0: Asegurar que la tabla 'matches' exista en la BD local
+    asegurar_tabla_matches()
     
     # PASO 1: Pre-cargar fuerzas de todas las ligas
     log("Paso 1/3: Descargando datos históricos y calculando fuerzas...")

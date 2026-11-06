@@ -76,9 +76,9 @@ class FootballETLPipeline:
                 self.loader.cargar_datos(df_transformado)
                 
                 # Recopilar equipos únicos para esta liga
-                if 'HomeTeam' in df_raw.columns:
-                    equipos_home = set(df_raw['HomeTeam'].dropna().unique())
-                    equipos_away = set(df_raw['AwayTeam'].dropna().unique())
+                if 'HomeTeam' in df_transformado.columns:
+                    equipos_home = set(df_transformado['HomeTeam'].dropna().unique())
+                    equipos_away = set(df_transformado['AwayTeam'].dropna().unique())
                     equipos_por_liga[liga_codigo] = equipos_home.union(equipos_away)
                 
                 logger.info(f"✓ {LIGAS_CONFIG[liga_codigo]['nombre']} completada\n")
@@ -136,6 +136,7 @@ class FootballETLPipeline:
                 'F1': 'Ligue 1',
                 'P1': 'Primeira Liga',
                 'N1': 'Eredivisie',
+                'ARG': 'Liga Profesional',
             }
             
             # Mapeo de códigos a países
@@ -147,6 +148,7 @@ class FootballETLPipeline:
                 'F1': 'France',
                 'P1': 'Portugal',
                 'N1': 'Netherlands',
+                'ARG': 'Argentina',
             }
             
             for league_code, equipos in equipos_por_liga.items():

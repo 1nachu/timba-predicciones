@@ -109,7 +109,7 @@ class FootballDataTransformer:
                          'HS', 'AS', 'HST', 'AST']
         
         # Columnas opcionales (dependen de la temporada)
-        columnas_opcionales = ['B365H', 'B365D', 'B365A', 'HF', 'AF', 'HR', 'AR', 'HY', 'AY']
+        columnas_opcionales = ['HC', 'AC', 'B365H', 'B365D', 'B365A', 'HF', 'AF', 'HR', 'AR', 'HY', 'AY']
         
         # Construir lista de columnas disponibles
         columnas_disponibles = []
@@ -173,7 +173,7 @@ class FootballDataTransformer:
             logger.info(f"✓ Removidos {removidos} registros sin resultado final o FTR inválido")
         
         # Asegurar tipos de datos correctos
-        columnas_numericas = ['FTHG', 'FTAG', 'HS', 'AS', 'HST', 'AST', 'HF', 'AF', 'HR', 'AR', 'HY', 'AY']
+        columnas_numericas = ['FTHG', 'FTAG', 'HS', 'AS', 'HST', 'AST', 'HC', 'AC', 'HF', 'AF', 'HR', 'AR', 'HY', 'AY']
         for col in columnas_numericas:
             if col in df_validado.columns:
                 df_validado[col] = pd.to_numeric(df_validado[col], errors='coerce')

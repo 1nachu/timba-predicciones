@@ -108,7 +108,9 @@ class DatabaseDataProvider:
             DataFrame con datos históricos o None si no hay datos
         """
         if not self.db_available:
-            return None
+            self.db_available = self.db_full_path.exists()
+            if not self.db_available:
+                return None
         
         try:
             with get_db_connection(self.db_full_path, readonly=True) as conn:
