@@ -44,7 +44,7 @@
 ### 3. Concurrencia SQLite sin Bloqueos (Modo WAL)
 - **Problema previo:** Peticiones web GET disparaban escrituras automáticas generando `OperationalError: database is locked`.
 - **Solución implementada:**
-  - Helper centralizado [`get_db_connection`](src/utils/shared.py) que activa:
+  - Helper centralizado [`get_db_connection`](../src/utils/shared.py) que activa:
     ```sql
     PRAGMA journal_mode = WAL;
     PRAGMA synchronous = NORMAL;
