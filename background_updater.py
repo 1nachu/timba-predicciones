@@ -122,7 +122,8 @@ def cargar_fuerzas_liga(liga_id: int) -> tuple:
     codigo = liga_info.get('codigo')
     url = liga_info.get('url')
     
-    if not codigo and not url:
+    if liga_info.get('es_torneo') or not url:
+        log(f"Liga {liga_id} ({liga_info.get('nombre', codigo)[:30]}...): Torneo inter-liga (usa fuerzas domésticas)", "INFO")
         return {}, 0, 0, []
     
     try:
@@ -167,12 +168,13 @@ def obtener_fixtures_liga(liga_id: int) -> list:
         return []
 
 
-def procesar_partidos_hoy(cache_fuerzas: dict) -> list:
+def procesar_partidos_hoy(cache_fuerzas: dict, cache_fixtures: dict | None = None) -> list:
     """
     Procesa partidos de hoy de todas las ligas y genera predicciones.
     
     Args:
         cache_fuerzas: Dict con fuerzas pre-calculadas por liga_id
+        cache_fixtures: Dict opcional para reutilizar fixtures descargados por liga_id
     
     Returns:
         list: Lista de partidos procesados con predicciones
@@ -190,8 +192,13 @@ def procesar_partidos_hoy(cache_fuerzas: dict) -> list:
         liga_nombre = liga_info.get('nombre', fixture_data.get('liga', f'Liga {liga_id}'))
         
         try:
-            # Obtener fixtures de la liga
-            partidos_raw = obtener_fixtures_liga(liga_id)
+            # Obtener fixtures de la liga (reutilizando caché si está disponible)
+            if cache_fixtures is not None and liga_id in cache_fixtures:
+                partidos_raw = cache_fixtures[liga_id]
+            else:
+                partidos_raw = obtener_fixtures_liga(liga_id)
+                if cache_fixtures is not None:
+                    cache_fixtures[liga_id] = partidos_raw
             
             # Obtener fuerzas desde caché
             fuerzas, media_local, media_vis, equipos_validos = cache_fuerzas.get(
@@ -332,7 +339,7 @@ def guardar_cache(datos: dict):
 
 
 def init_audit_db():
-    """Inicializa la base de datos de auditoría si no existe."""
+    """Inicializa la base de datos de auditoría si no existe y migra columnas faltantes."""
     conn = get_db_connection(DB_PATH)
     cursor = conn.cursor()
 
@@ -376,11 +383,23 @@ def init_audit_db():
             acierto_1x INTEGER,
             acierto_x2 INTEGER,
             acierto_12 INTEGER,
+            guardado_at TEXT,
+            resultado_registrado_at TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(match_id)
         )
     """)
+
+    # Migrar columnas si la tabla fue creada con un esquema anterior
+    cursor.execute("PRAGMA table_info(predictions_audit)")
+    columnas_existentes = {row[1] for row in cursor.fetchall()}
+    for col_name, col_type in [
+        ("guardado_at", "TEXT"),
+        ("resultado_registrado_at", "TEXT"),
+    ]:
+        if col_name not in columnas_existentes:
+            cursor.execute(f"ALTER TABLE predictions_audit ADD COLUMN {col_name} {col_type}")
 
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_audit_fecha ON predictions_audit (fecha_partido)"
@@ -508,7 +527,7 @@ def guardar_prediccion_audit(partido: dict, prediccion: dict, liga_id: int, liga
     conn.close()
 
 
-def procesar_proximos_n_dias(cache_fuerzas: dict, dias: int):
+def procesar_proximos_n_dias(cache_fuerzas: dict, dias: int, cache_fixtures: dict | None = None):
     """Procesa predicciones para los próximos N días y guarda en la auditoría."""
     hoy = datetime.now().date()
     hasta = hoy + timedelta(days=dias)
@@ -518,7 +537,12 @@ def procesar_proximos_n_dias(cache_fuerzas: dict, dias: int):
         liga_nombre = liga_info.get('nombre', f'Liga {liga_id}')
 
         try:
-            partidos_raw = obtener_fixtures_liga(liga_id)
+            if cache_fixtures is not None and liga_id in cache_fixtures:
+                partidos_raw = cache_fixtures[liga_id]
+            else:
+                partidos_raw = obtener_fixtures_liga(liga_id)
+                if cache_fixtures is not None:
+                    cache_fixtures[liga_id] = partidos_raw
             fuerzas, media_local, media_vis, equipos_validos = cache_fuerzas.get(
                 liga_id, ({}, 0, 0, [])
             )
@@ -697,7 +721,8 @@ def ejecutar_actualizacion():
     
     # PASO 2: Procesar partidos de hoy
     log("Paso 2/3: Obteniendo fixtures y generando predicciones...")
-    partidos_hoy = procesar_partidos_hoy(cache_fuerzas)
+    cache_fixtures = {}
+    partidos_hoy = procesar_partidos_hoy(cache_fuerzas, cache_fixtures)
     
     # PASO 3: Agrupar y guardar
     log("Paso 3/3: Guardando cache...")
@@ -717,7 +742,7 @@ def ejecutar_actualizacion():
     try:
         init_audit_db()
         limpiar_audit_viejo()
-        procesar_proximos_n_dias(cache_fuerzas, AUDIT_FUTURE_DAYS)
+        procesar_proximos_n_dias(cache_fuerzas, AUDIT_FUTURE_DAYS, cache_fixtures)
         actualizados = sincronizar_resultados_audit(DB_PATH)
         log(f"Auditoría: {actualizados} resultados reales sincronizados", "OK")
     except Exception as e:

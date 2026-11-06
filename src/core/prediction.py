@@ -23,6 +23,7 @@ except ImportError:
 
 from utils.shared import (
     emparejar_equipo,
+    normalizar_csv,
     CHAMPIONS_EQUIPO_LIGA,
 )
 from utils.markets import calcular_mercados_adicionales
@@ -49,7 +50,10 @@ def calcular_fuerzas(df: pd.DataFrame) -> Tuple[Dict, float, float]:
     Calcula fuerzas ofensivas, defensivas y estadísticas avanzadas por equipo.
     OPTIMIZADO: Totalmente vectorizado con GroupBy y NumPy para máximo rendimiento.
     """
-    df = df.copy()
+    df = normalizar_csv(df.copy())
+    df['FTHG'] = pd.to_numeric(df['FTHG'], errors='coerce')
+    df['FTAG'] = pd.to_numeric(df['FTAG'], errors='coerce')
+    df = df.dropna(subset=['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG'])
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, format='mixed', errors='coerce')
     df = df.sort_values('Date').reset_index(drop=True)
     

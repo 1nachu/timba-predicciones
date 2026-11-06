@@ -89,6 +89,20 @@ def sincronizar_resultados_audit(db_path=DB_PATH) -> int:
     conn = get_db_connection(db_path)
     cursor = conn.cursor()
 
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='predictions_audit'")
+    if not cursor.fetchone():
+        conn.close()
+        return 0
+
+    cursor.execute("PRAGMA table_info(predictions_audit)")
+    columnas_existentes = {row[1] for row in cursor.fetchall()}
+    for col_name, col_type in [
+        ("guardado_at", "TEXT"),
+        ("resultado_registrado_at", "TEXT"),
+    ]:
+        if col_name not in columnas_existentes:
+            cursor.execute(f"ALTER TABLE predictions_audit ADD COLUMN {col_name} {col_type}")
+
     # Obtener predicciones pendientes que ya debieron haberse jugado
     cursor.execute(
         """

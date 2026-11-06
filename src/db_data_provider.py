@@ -25,7 +25,15 @@ from io import StringIO
 
 # ========== IMPORTS DE RUTAS CENTRALIZADAS ==========
 try:
-    from utils.shared import DB_PATH_STR, DB_PATH, API_CACHE_DB_PATH, PROJECT_ROOT, get_db_connection
+    from utils.shared import (
+        DB_PATH_STR,
+        DB_PATH,
+        API_CACHE_DB_PATH,
+        PROJECT_ROOT,
+        get_db_connection,
+        normalizar_csv,
+        descargar_csv_safe,
+    )
     SHARED_AVAILABLE = True
 except ImportError:
     SHARED_AVAILABLE = False
@@ -35,9 +43,12 @@ except ImportError:
     API_CACHE_DB_PATH = Path("data/databases/api_football_cache.db")
     def get_db_connection(p, readonly=False, timeout=10.0):
         return sqlite3.connect(str(p), timeout=timeout)
+    def normalizar_csv(df):
+        df.columns = df.columns.str.strip()
+        return df
+    descargar_csv_safe = None
 
 # Configuración de logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -73,6 +84,15 @@ class DatabaseDataProvider:
             logger.warning(f"⚠️  Base de datos no encontrada: {self.db_full_path}")
             logger.info("Se usarán CSVs online como fallback")
     
+    @staticmethod
+    def _has_matches_table(conn: sqlite3.Connection) -> bool:
+        """Verifica si la tabla 'matches' existe en la base de datos."""
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='matches'"
+        )
+        return cursor.fetchone() is not None
+
     def get_data_from_db(self, liga_codigo: str | None = None, 
                          temporadas: int = 3) -> Optional[pd.DataFrame]:
         """
@@ -90,6 +110,12 @@ class DatabaseDataProvider:
         
         try:
             with get_db_connection(self.db_full_path, readonly=True) as conn:
+                if not self._has_matches_table(conn):
+                    logger.debug(
+                        f"Tabla 'matches' no existe aún en BD local, omitiendo consulta para '{liga_codigo}'"
+                    )
+                    return None
+
                 # Consulta SQL para obtener datos filtrados por liga
                 if liga_codigo and str(liga_codigo).upper() != "ALL":
                     query = """
@@ -181,20 +207,25 @@ class DatabaseDataProvider:
     
     def get_data_from_csv(self, url: str) -> Optional[pd.DataFrame]:
         """
-        Fallback: Descarga datos desde CSV online.
+        Fallback: Descarga datos desde CSV online y normaliza sus columnas.
         
         Args:
             url: URL del CSV
         
         Returns:
-            DataFrame con datos o None si falla
+            DataFrame con datos normalizados o None si falla
         """
         try:
             logger.info(f"Descargando CSV desde: {url}")
+            if descargar_csv_safe is not None:
+                df = descargar_csv_safe(url, timeout=15)
+                return df
+
             response = requests.get(url, timeout=10)
             response.raise_for_status()
             
-            df = pd.read_csv(StringIO(response.text))
+            df = pd.read_csv(StringIO(response.text), on_bad_lines='skip')
+            df = normalizar_csv(df)
             logger.info(f"✓ Descargados {len(df)} registros desde CSV")
             return df
             
@@ -289,6 +320,12 @@ class DatabaseDataProvider:
         
         try:
             with get_db_connection(self.db_full_path, readonly=True) as conn:
+                if not self._has_matches_table(conn):
+                    return {
+                        'available': False,
+                        'message': "Tabla 'matches' no disponible en la base de datos"
+                    }
+
                 stats = {}
                 
                 # Total de registros
@@ -305,33 +342,30 @@ class DatabaseDataProvider:
                        ORDER BY temporada DESC""", 
                     conn
                 )
-            stats['by_season'] = temporadas.to_dict(orient='records')
-            
-            # Rango de fechas
-            fechas = pd.read_sql_query(
-                "SELECT MIN(date) as min_date, MAX(date) as max_date FROM matches",
-                conn
-            )
-            stats['date_range'] = {
-                'min': fechas['min_date'].values[0],
-                'max': fechas['max_date'].values[0]
-            }
-            
-            # Equipos únicos
-            equipos = pd.read_sql_query(
-                """SELECT COUNT(DISTINCT home_team) + 
-                          COUNT(DISTINCT away_team) as total_teams 
-                   FROM matches""",
-                conn
-            )
-            stats['total_teams'] = int(equipos['total_teams'].values[0])
-            
-            # Context manager cierra automáticamente
-            
-            stats['available'] = True
-            stats['db_path'] = str(self.db_full_path)
-            
-            return stats
+                stats['by_season'] = temporadas.to_dict(orient='records')
+                
+                # Rango de fechas
+                fechas = pd.read_sql_query(
+                    "SELECT MIN(date) as min_date, MAX(date) as max_date FROM matches",
+                    conn
+                )
+                stats['date_range'] = {
+                    'min': fechas['min_date'].values[0],
+                    'max': fechas['max_date'].values[0]
+                }
+                
+                # Equipos únicos
+                equipos = pd.read_sql_query(
+                    """SELECT COUNT(DISTINCT home_team) + 
+                              COUNT(DISTINCT away_team) as total_teams 
+                       FROM matches""",
+                    conn
+                )
+                stats['total_teams'] = int(equipos['total_teams'].values[0])
+                stats['available'] = True
+                stats['db_path'] = str(self.db_full_path)
+                
+                return stats
             
         except Exception as e:
             return {

@@ -742,7 +742,8 @@ def _get_cached_historical_data(liga_codigo: str, temporadas: int, url_csv: str)
                 temporadas=temporadas,
                 enrich=True
             )
-            logger.info(f"✓ Datos cargados desde BD local: {len(df)} partidos")
+            source = df.attrs.get('source', 'BD Local')
+            logger.info(f"✓ Datos cargados ({source}): {len(df)} partidos")
             return df
         except Exception as e:
             logger.warning(f"Error con BD local: {e}, usando CSV")
