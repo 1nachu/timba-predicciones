@@ -30,8 +30,6 @@ import json
 import logging
 import time
 import argparse
-import sqlite3
-import pandas as pd
 from datetime import datetime, timedelta, timezone
 
 # ========== IMPORTS LOCALES (desde src/) ==========
@@ -42,16 +40,12 @@ from timba_core import (
     predecir_partido,
     predecir_partido_champions,
     obtener_proximos_partidos,
-    descargar_csv_safe,
     emparejar_equipo
 )
-from utils.shared import get_db_connection, DB_PATH, LIVE_SCORES_DB_PATH
+from utils.shared import get_db_connection, DB_PATH
 from utils.markets import (
     obtener_mejor_recomendacion,
     determinar_prediccion_1x2,
-    generar_recomendaciones,
-    PREDICCION_UMBRAL_GANA,
-    PREDICCION_UMBRAL_DOBLE,
 )
 from services.audit_service import sincronizar_resultados_audit
 
@@ -62,7 +56,6 @@ OUTPUT_FILE = os.path.join(PROJECT_ROOT, 'data', 'dashboard_cache.json')
 # Auditoría de predicciones
 AUDIT_RETENTION_DAYS = 30      # días que se conservan registros de auditoría
 AUDIT_FUTURE_DAYS = 7          # días hacia adelante para guardar predicciones
-DB_PATH = os.path.join(PROJECT_ROOT, 'data', 'databases', 'football_data.db')
 
 # Zona horaria Argentina (UTC-3)
 TZ_ARGENTINA = timezone(timedelta(hours=-3))
@@ -72,13 +65,6 @@ ORDEN_LIGAS = [10, 1, 2, 3, 4, 5, 6, 7, 8]
 
 # Cache de fuerzas usada por auditoría
 cache_fuerzas = {}
-
-# Columnas esenciales para ahorrar RAM al descargar CSVs
-COLUMNAS_ESENCIALES = [
-    'Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG',
-    'HS', 'AS', 'HC', 'AC', 'HY', 'AY', 'HR', 'AR',
-    'HST', 'AST', 'HTHG', 'HTAG'
-]
 
 
 # ========== CONFIGURACIÓN DE LOGGING ESTRUCTURADO ==========
@@ -602,93 +588,6 @@ def procesar_proximos_n_dias(cache_fuerzas: dict, dias: int, cache_fixtures: dic
 
         except Exception as e:
             log(f"Error procesando próximos días para liga {liga_nombre}: {e}", "ERROR")
-
-
-def registrar_resultados_desde_csv(cache_fuerzas: dict):
-    """Registra resultados reales en la tabla de auditoría cargando CSV de football-data."""
-    conn = get_db_connection(DB_PATH)
-    cursor = conn.cursor()
-
-    for liga_id, liga_info in LIGAS.items():
-        url = liga_info.get('url')
-        if not url:
-            continue
-
-        try:
-            df = descargar_csv_safe(url, usecols=['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG'])
-            if df is None or df.empty:
-                continue
-
-            df.columns = df.columns.str.strip()
-            df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
-            df = df.dropna(subset=['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG'])
-
-            for _, row in df.iterrows():
-                fecha_solo = row['Date'].strftime('%Y-%m-%d')
-
-                # Normalizar nombres según CSV de la liga para que el match_id coincida
-                equipos_validos = cache_fuerzas.get(liga_id, ({}, 0, 0, []))[3]
-                local_csv = emparejar_equipo(str(row['HomeTeam']), equipos_validos) if equipos_validos else str(row['HomeTeam'])
-                visitante_csv = emparejar_equipo(str(row['AwayTeam']), equipos_validos) if equipos_validos else str(row['AwayTeam'])
-
-                match_id = f"{liga_id}_{local_csv}_{visitante_csv}_{fecha_solo}"
-
-                cursor.execute(
-                    "SELECT prediccion_1x2 FROM predictions_audit "
-                    "WHERE match_id = ? AND resultado_real IS NULL",
-                    (match_id,)
-                )
-                found = cursor.fetchone()
-                if not found:
-                    continue
-
-                prediccion_1x2 = found[0]
-                goles_local = int(row['FTHG'])
-                goles_visitante = int(row['FTAG'])
-
-                if goles_local > goles_visitante:
-                    resultado_real = 'HOME_WIN'
-                elif goles_local < goles_visitante:
-                    resultado_real = 'AWAY_WIN'
-                else:
-                    resultado_real = 'DRAW'
-
-                # Calcular acierto según doble oportunidad
-                acierto = None
-                if prediccion_1x2 == 'HOME_WIN':
-                    acierto = 1 if resultado_real == 'HOME_WIN' else 0
-                elif prediccion_1x2 == 'AWAY_WIN':
-                    acierto = 1 if resultado_real == 'AWAY_WIN' else 0
-                elif prediccion_1x2 == 'DRAW':
-                    acierto = 1 if resultado_real == 'DRAW' else 0
-                elif prediccion_1x2 == '1X':
-                    acierto = 1 if resultado_real in ('HOME_WIN', 'DRAW') else 0
-                elif prediccion_1x2 == 'X2':
-                    acierto = 1 if resultado_real in ('AWAY_WIN', 'DRAW') else 0
-                elif prediccion_1x2 == '12':
-                    acierto = 1 if resultado_real in ('HOME_WIN', 'AWAY_WIN') else 0
-
-                cursor.execute(
-                    """UPDATE predictions_audit SET 
-                       resultado_real = ?, goles_local = ?, goles_visitante = ?,
-                       resultado_registrado_at = ?, acierto_1x2 = ?
-                       WHERE match_id = ?""",
-                    (
-                        resultado_real,
-                        goles_local,
-                        goles_visitante,
-                        datetime.utcnow().isoformat() + 'Z',
-                        acierto,
-                        match_id,
-                    )
-                )
-
-            conn.commit()
-
-        except Exception as e:
-            log(f"Error registrando resultados CSV para liga {liga_id}: {e}", "ERROR")
-
-    conn.close()
 
 
 def ejecutar_actualizacion():

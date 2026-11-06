@@ -84,6 +84,8 @@ class DatabaseDataProvider:
             logger.warning(f"⚠️  Base de datos no encontrada: {self.db_full_path}")
             logger.info("Se usarán CSVs online como fallback")
     
+    _missing_matches_warned: bool = False
+
     @staticmethod
     def _has_matches_table(conn: sqlite3.Connection) -> bool:
         """Verifica si la tabla 'matches' existe en la base de datos."""
@@ -111,9 +113,11 @@ class DatabaseDataProvider:
         try:
             with get_db_connection(self.db_full_path, readonly=True) as conn:
                 if not self._has_matches_table(conn):
-                    logger.debug(
-                        f"Tabla 'matches' no existe aún en BD local, omitiendo consulta para '{liga_codigo}'"
-                    )
+                    if not DatabaseDataProvider._missing_matches_warned:
+                        logger.info(
+                            "ℹ️  BD sin tabla 'matches': ejecutá 'python -m src.etl_football_data' para poblarla"
+                        )
+                        DatabaseDataProvider._missing_matches_warned = True
                     return None
 
                 # Consulta SQL para obtener datos filtrados por liga
@@ -281,6 +285,15 @@ class DatabaseDataProvider:
         # Intento 1: Base de datos local
         df = self.get_data_from_db(liga_codigo, temporadas)
         
+        if not url_csv and liga_codigo:
+            try:
+                from config.leagues import get_league_by_code
+                league_info = get_league_by_code(liga_codigo)
+                if league_info:
+                    url_csv = league_info.get('url')
+            except ImportError:
+                pass
+
         if df is not None and not df.empty:
             logger.info("✓ Usando datos de BD local")
             source = "BD Local"
