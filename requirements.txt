@@ -1,7 +1,7 @@
 # ================================================
-# Timba Predictor v2 - Dependencias
+# Timba Predictor v2.2 - Dependencias de Producción
 # ================================================
-# Última actualización: 3 de Febrero 2026
+# Para desarrollo y tests: pip install -r requirements-dev.txt
 # Python requerido: 3.10+
 # ================================================
 
@@ -31,14 +31,12 @@ SQLAlchemy>=2.0.0
 thefuzz>=0.22.0
 python-Levenshtein>=0.25.0
 
-# === Production Server (opcional) ===
+# === Production Server ===
 gunicorn>=21.0.0
 
-# === Cython Optimizations (opcional, para RPi/Celeron) ===
-# Descomenta para compilar el módulo timba_fast.pyx
+# === Cython Optimizations (para compilar src/timba_fast.pyx) ===
 Cython>=3.0.0
 setuptools>=65.0.0
 
 # === Telegram Bot ===
 python-telegram-bot>=20.0
-
