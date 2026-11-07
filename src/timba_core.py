@@ -39,8 +39,13 @@ try:
     USE_CYTHON = True
     logger.info("✓ Módulo Cython (timba_fast) cargado correctamente")
 except ImportError:
-    USE_CYTHON = False
-    logger.debug("Módulo Cython no disponible, usando Python puro")
+    try:
+        from timba_fast import predecir_partido_optimizado
+        USE_CYTHON = True
+        logger.info("✓ Módulo Cython (timba_fast) cargado correctamente")
+    except ImportError:
+        USE_CYTHON = False
+        logger.debug("Módulo Cython no disponible, usando Python puro")
 
 # ========== IMPORTAR PROVEEDOR DE DATOS ==========
 try:

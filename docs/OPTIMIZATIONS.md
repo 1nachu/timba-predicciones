@@ -11,8 +11,8 @@
 | Componente | Antes | Ahora (v2.2) | Técnica Clave |
 |------------|-------|--------------|---------------|
 | **Cálculo de Fuerzas por Liga** | 320 ms | **7.6 ms** | Vectorización con Pandas `groupby` y aggregations NumPy |
-| **Predicción Poisson (Python Fallback)** | 1,200 pred/s | **>25,000 pred/s** | Matriz $11 \times 11$ con `np.outer()`, `np.trace()`, `np.tril()` |
-| **Motor Cython (`timba_fast`)** | ~15,000 pred/s | **>50,000 pred/s** | Extensión C/Cython compilada en CPython |
+| **Predicción Poisson (Python Fallback)** | 1,200 pred/s | **>25,000 pred/s** | Matriz $11 \times 11$ con `math.exp`/`math.factorial`, `np.outer()`, `np.trace()`, `np.tril()` (sin sobrecarga de `scipy.stats`) |
+| **Motor Cython (`timba_fast`)** | ~15,000 pred/s | **>50,000 pred/s** | Extensión C/Cython compilada en CPython con ajuste Dixon-Coles integrado |
 | **Acceso a Base de Datos SQLite** | Bloqueos / 150ms | **< 1 ms (WAL Mode)** | `PRAGMA journal_mode=WAL;` y `busy_timeout=5000` |
 | **Caché Compartido Inter-Proceso** | RAM aislada | **Persistente en Disco** | `FileSystemCache` en `data/flask_cache/` |
 | **Navegación Web** | 2.5 s | **< 50 ms** | HTMX Boosting + memoización |

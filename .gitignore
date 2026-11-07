@@ -70,6 +70,7 @@ http timba.txt
 src/*.c
 src/*.html
 *.so
+setup.cfg
 
 # === Jupyter (si se usa) ===
 .ipynb_checkpoints/

@@ -7,19 +7,36 @@ mercados derivados y predicciones de Champions League.
 
 import gc
 import logging
+import math
 from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
-from scipy.stats import poisson
 
 logger = logging.getLogger(__name__)
+
+
+def _poisson_pmf_array(max_k: int, lam: float) -> np.ndarray:
+    """Calcula el vector [P(X=0), ..., P(X=max_k)] de Poisson sin depender de scipy.stats."""
+    if lam <= 0.0:
+        arr = np.zeros(max_k + 1, dtype=float)
+        arr[0] = 1.0
+        return arr
+    exp_neg = math.exp(-lam)
+    return np.array(
+        [(lam ** i) * exp_neg / math.factorial(i) for i in range(max_k + 1)],
+        dtype=float
+    )
 
 # Intentar importar módulo Cython optimizado
 try:
     from src.timba_fast import predecir_partido_optimizado
     USE_CYTHON = True
 except ImportError:
-    USE_CYTHON = False
+    try:
+        from timba_fast import predecir_partido_optimizado
+        USE_CYTHON = True
+    except ImportError:
+        USE_CYTHON = False
 
 from utils.shared import (
     emparejar_equipo,
@@ -294,10 +311,11 @@ def predecir_partido(
         return None
     
     # Motor Cython
-    if USE_CYTHON and not aplicar_dixon_coles:
+    if USE_CYTHON:
         try:
             resultado = predecir_partido_optimizado(
-                local, visitante, fuerzas, media_liga_local, media_liga_visitante
+                local, visitante, fuerzas, media_liga_local, media_liga_visitante,
+                aplicar_dixon_coles=aplicar_dixon_coles
             )
             if resultado is not None:
                 return resultado
@@ -316,9 +334,8 @@ def predecir_partido(
     lambda_visitante = fuerza_ataque_visitante * fuerza_defensa_local * media_liga_visitante
     
     max_goles = 10
-    k = np.arange(max_goles + 1)
-    prob_local_arr = poisson.pmf(k, lambda_local)
-    prob_vis_arr = poisson.pmf(k, lambda_visitante)
+    prob_local_arr = _poisson_pmf_array(max_goles, lambda_local)
+    prob_vis_arr = _poisson_pmf_array(max_goles, lambda_visitante)
     
     matriz_prob = np.outer(prob_local_arr, prob_vis_arr)
     
@@ -546,9 +563,8 @@ def predecir_partido_en_vivo(
 
     # 5. Matriz de probabilidades de goles restantes
     max_rem = 7
-    k = np.arange(max_rem + 1)
-    prob_h_rem = poisson.pmf(k, lambda_h_rem)
-    prob_a_rem = poisson.pmf(k, lambda_a_rem)
+    prob_h_rem = _poisson_pmf_array(max_rem, lambda_h_rem)
+    prob_a_rem = _poisson_pmf_array(max_rem, lambda_a_rem)
     matriz_rem = np.outer(prob_h_rem, prob_a_rem)
     
     total_mat = np.sum(matriz_rem)

@@ -1,12 +1,12 @@
 # cython: language_level=3, boundscheck=False, wraparound=False, cdivision=True
 import cython
-from libc.math cimport exp, pow, tgamma, ceil
+from libc.math cimport exp, pow, tgamma
 
 # --- FUNCIONES C PURAS (Ultra rápidas) ---
 
 cdef double c_poisson_pmf(int k, double lam):
     """Función de Masa de Probabilidad de Poisson en C"""
-    if lam == 0:
+    if lam <= 0.0:
         return 1.0 if k == 0 else 0.0
     return (pow(lam, k) * exp(-lam)) / tgamma(k + 1)
 
@@ -18,14 +18,26 @@ cdef double c_poisson_cdf(int k, double lam):
         sum_prob += c_poisson_pmf(i, lam)
     return sum_prob
 
+cdef inline double c_max(double a, double b):
+    return a if a > b else b
+
 # --- FUNCIÓN PÚBLICA PARA PYTHON ---
 
-def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double media_liga_local, double media_liga_visitante):
+def predecir_partido_optimizado(
+    str local,
+    str visitante,
+    dict fuerzas,
+    double media_liga_local,
+    double media_liga_visitante,
+    bint aplicar_dixon_coles=True,
+    double rho=-0.11
+):
     cdef double fuerza_ataque_local, fuerza_defensa_visitante, lambda_local
     cdef double fuerza_ataque_visitante, fuerza_defensa_local, lambda_visitante
     cdef int max_goles = 10
-    cdef int goles_l, goles_v
-    cdef double prob
+    cdef int goles_l, goles_v, i
+    cdef double prob, mat_sum = 0.0
+    cdef double tau_00, tau_01, tau_10, tau_11
     cdef double victoria_local = 0.0, empate = 0.0, victoria_visitante = 0.0
     cdef list marcadores_exactos = []
     
@@ -45,6 +57,7 @@ def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double m
 
     cdef double prob_local_arr[11]
     cdef double prob_visitante_arr[11]
+    cdef double matriz_prob[11][11]
     
     for i in range(max_goles + 1):
         prob_local_arr[i] = c_poisson_pmf(i, lambda_local)
@@ -52,7 +65,32 @@ def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double m
 
     for goles_l in range(max_goles + 1):
         for goles_v in range(max_goles + 1):
-            prob = prob_local_arr[goles_l] * prob_visitante_arr[goles_v]
+            matriz_prob[goles_l][goles_v] = prob_local_arr[goles_l] * prob_visitante_arr[goles_v]
+
+    # --- AJUSTE DIXON-COLES (1997) ---
+    if aplicar_dixon_coles and rho != 0.0:
+        tau_00 = c_max(0.0, 1.0 - (lambda_local * lambda_visitante * rho))
+        tau_01 = c_max(0.0, 1.0 + (lambda_local * rho))
+        tau_10 = c_max(0.0, 1.0 + (lambda_visitante * rho))
+        tau_11 = c_max(0.0, 1.0 - rho)
+
+        matriz_prob[0][0] *= tau_00
+        matriz_prob[0][1] *= tau_01
+        matriz_prob[1][0] *= tau_10
+        matriz_prob[1][1] *= tau_11
+
+        for goles_l in range(max_goles + 1):
+            for goles_v in range(max_goles + 1):
+                mat_sum += matriz_prob[goles_l][goles_v]
+
+        if mat_sum > 0.0:
+            for goles_l in range(max_goles + 1):
+                for goles_v in range(max_goles + 1):
+                    matriz_prob[goles_l][goles_v] /= mat_sum
+
+    for goles_l in range(max_goles + 1):
+        for goles_v in range(max_goles + 1):
+            prob = matriz_prob[goles_l][goles_v]
             if goles_l > goles_v:
                 victoria_local += prob
             elif goles_l == goles_v:
@@ -63,7 +101,7 @@ def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double m
                 marcadores_exactos.append({'marcador': f'{goles_l}-{goles_v}', 'prob': prob})
 
     cdef double total_prob = victoria_local + empate + victoria_visitante
-    if total_prob > 0:
+    if total_prob > 0.0:
         victoria_local /= total_prob
         empate /= total_prob
         victoria_visitante /= total_prob
@@ -77,20 +115,20 @@ def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double m
     cdef double under_35 = c_poisson_cdf(3, lambda_total)
 
     # --- MERCADOS DE CÓRNERS ---
-    cdef double corners_lambda_local = f_local['Corners_Casa']
-    cdef double corners_lambda_vis = f_visita['Corners_Fuera']
+    cdef double corners_lambda_local = float(f_local.get('Corners_Casa', 0.0) or 0.0)
+    cdef double corners_lambda_vis = float(f_visita.get('Corners_Fuera', 0.0) or 0.0)
     cdef double corners_lambda_total = corners_lambda_local + corners_lambda_vis
     
-    cdef double over_85 = 1.0 - c_poisson_cdf(8, corners_lambda_total)
-    cdef double over_95 = 1.0 - c_poisson_cdf(9, corners_lambda_total)
-    cdef double under_105 = c_poisson_cdf(10, corners_lambda_total)
+    cdef double over_85 = (1.0 - c_poisson_cdf(8, corners_lambda_total)) if corners_lambda_total > 0.0 else 0.5
+    cdef double over_95 = (1.0 - c_poisson_cdf(9, corners_lambda_total)) if corners_lambda_total > 0.0 else 0.5
+    cdef double under_105 = c_poisson_cdf(10, corners_lambda_total) if corners_lambda_total > 0.0 else 0.5
 
     # Ganador Córners
     cdef double prob_local_mas_corners = 0.33
     cdef double prob_empate_corners = 0.34
     cdef double prob_vis_mas_corners = 0.33
     cdef double ratio_corners
-    if corners_lambda_local > 0 and corners_lambda_vis > 0:
+    if corners_lambda_local > 0.0 and corners_lambda_vis > 0.0:
         ratio_corners = corners_lambda_local / corners_lambda_vis
         if ratio_corners > 1.2:
             prob_local_mas_corners = 0.65
@@ -106,31 +144,33 @@ def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double m
             prob_vis_mas_corners = 0.25
 
     # --- MERCADOS DE TARJETAS ---
-    cdef double tarjetas_am_local = f_local['Tarjetas_Am_Promedio']
-    cdef double tarjetas_am_vis = f_visita['Tarjetas_Am_Promedio']
+    cdef double tarjetas_am_local = float(f_local.get('Tarjetas_Am_Promedio', 0.0) or 0.0)
+    cdef double tarjetas_am_vis = float(f_visita.get('Tarjetas_Am_Promedio', 0.0) or 0.0)
     cdef double tarjetas_am_total = tarjetas_am_local + tarjetas_am_vis
-    cdef double tarjetas_ro_total = f_local['Tarjetas_Ro_Promedio'] + f_visita['Tarjetas_Ro_Promedio']
+    cdef double tarjetas_ro_local = float(f_local.get('Tarjetas_Ro_Promedio', 0.0) or 0.0)
+    cdef double tarjetas_ro_vis = float(f_visita.get('Tarjetas_Ro_Promedio', 0.0) or 0.0)
+    cdef double tarjetas_ro_total = tarjetas_ro_local + tarjetas_ro_vis
 
     cdef double over_25_cards = 0.5
     cdef double over_35_cards = 0.5
     cdef double over_45_cards = 0.5
     cdef double under_55_cards = 0.5
     
-    if tarjetas_am_total > 0:
+    if tarjetas_am_total > 0.0:
         over_25_cards = 1.0 - c_poisson_cdf(2, tarjetas_am_total)
         over_35_cards = 1.0 - c_poisson_cdf(3, tarjetas_am_total)
         over_45_cards = 1.0 - c_poisson_cdf(4, tarjetas_am_total)
         under_55_cards = c_poisson_cdf(5, tarjetas_am_total)
         
     cdef double prob_red_card = 0.05
-    if tarjetas_ro_total > 0:
-        prob_red_card = 1.0 - c_poisson_cdf(0, tarjetas_ro_total) # Prob >= 1
+    if tarjetas_ro_total > 0.0:
+        prob_red_card = 1.0 - c_poisson_pmf(0, tarjetas_ro_total)
 
     # Ganador Tarjetas
     cdef double prob_local_mas_cards = 0.45
     cdef double prob_vis_mas_cards = 0.45
     cdef double ratio_cards
-    if tarjetas_am_local > 0 and tarjetas_am_vis > 0:
+    if tarjetas_am_local > 0.0 and tarjetas_am_vis > 0.0:
         ratio_cards = tarjetas_am_local / tarjetas_am_vis
         if ratio_cards > 1.3:
             prob_local_mas_cards = 0.60
@@ -159,8 +199,8 @@ def predecir_partido_optimizado(str local, str visitante, dict fuerzas, double m
         'Corners_Vis': f_visita['Corners_Promedio'],
         'Tarjetas_Am_Local': tarjetas_am_local,
         'Tarjetas_Am_Vis': tarjetas_am_vis,
-        'Tarjetas_Ro_Local': f_local['Tarjetas_Ro_Promedio'],
-        'Tarjetas_Ro_Vis': f_visita['Tarjetas_Ro_Promedio'],
+        'Tarjetas_Ro_Local': tarjetas_ro_local,
+        'Tarjetas_Ro_Vis': tarjetas_ro_vis,
         'Eficiencia_Tiro_Local_pct': f_local.get('Eficiencia_Tiro_Promedio_pct', 0),
         'Eficiencia_Tiro_Vis_pct': f_visita.get('Eficiencia_Tiro_Promedio_pct', 0),
         'BTTS_Local_pct': f_local.get('BTTS_pct', 0),

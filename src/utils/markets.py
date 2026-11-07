@@ -7,8 +7,23 @@ recomendaciones y semáforos de confianza.
 Autor: Timba Team
 """
 
+import math
 from typing import Dict, List, Optional
-from scipy.stats import poisson
+
+
+def _poisson_pmf(k: int, lam: float) -> float:
+    """Función de masa de probabilidad de Poisson (sin dependencia pesada de SciPy)."""
+    if lam <= 0.0:
+        return 1.0 if k == 0 else 0.0
+    return (lam ** k) * math.exp(-lam) / math.factorial(k)
+
+
+def _poisson_cdf(k: int, lam: float) -> float:
+    """Función de distribución acumulada de Poisson para k entero pequeño."""
+    if lam <= 0.0:
+        return 1.0 if k >= 0 else 0.0
+    exp_neg = math.exp(-lam)
+    return sum((lam ** i) * exp_neg / math.factorial(i) for i in range(k + 1))
 
 # ========== UMBRALES GLOBALES DE CONFIANZA ==========
 PREDICCION_UMBRAL_GANA = 0.55
@@ -229,18 +244,18 @@ def calcular_mercados_adicionales(
     """
     lambda_total = lambda_local + lambda_vis
     
-    over_15 = float(1.0 - poisson.cdf(1, lambda_total))
-    over_25 = float(1.0 - poisson.cdf(2, lambda_total))
-    under_35 = float(poisson.cdf(3, lambda_total))
+    over_15 = float(1.0 - _poisson_cdf(1, lambda_total))
+    over_25 = float(1.0 - _poisson_cdf(2, lambda_total))
+    under_35 = float(_poisson_cdf(3, lambda_total))
     
     # Córners
     corners_lambda_local = float(f_local.get('Corners_Casa', 0.0) or 0.0)
     corners_lambda_vis = float(f_vis.get('Corners_Fuera', 0.0) or 0.0)
     corners_lambda_total = corners_lambda_local + corners_lambda_vis
     
-    over_85 = float(1.0 - poisson.cdf(8, corners_lambda_total)) if corners_lambda_total > 0 else 0.5
-    over_95 = float(1.0 - poisson.cdf(9, corners_lambda_total)) if corners_lambda_total > 0 else 0.5
-    under_105 = float(poisson.cdf(10, corners_lambda_total)) if corners_lambda_total > 0 else 0.5
+    over_85 = float(1.0 - _poisson_cdf(8, corners_lambda_total)) if corners_lambda_total > 0 else 0.5
+    over_95 = float(1.0 - _poisson_cdf(9, corners_lambda_total)) if corners_lambda_total > 0 else 0.5
+    under_105 = float(_poisson_cdf(10, corners_lambda_total)) if corners_lambda_total > 0 else 0.5
     
     if corners_lambda_local > 0 and corners_lambda_vis > 0:
         ratio_corners = corners_lambda_local / corners_lambda_vis
@@ -263,15 +278,15 @@ def calcular_mercados_adicionales(
     tarjetas_ro_total = tarjetas_ro_local + tarjetas_ro_vis
     
     if tarjetas_am_total > 0:
-        over_25_cards = float(1.0 - poisson.cdf(2, tarjetas_am_total))
-        over_35_cards = float(1.0 - poisson.cdf(3, tarjetas_am_total))
-        over_45_cards = float(1.0 - poisson.cdf(4, tarjetas_am_total))
-        under_55_cards = float(poisson.cdf(5, tarjetas_am_total))
+        over_25_cards = float(1.0 - _poisson_cdf(2, tarjetas_am_total))
+        over_35_cards = float(1.0 - _poisson_cdf(3, tarjetas_am_total))
+        over_45_cards = float(1.0 - _poisson_cdf(4, tarjetas_am_total))
+        under_55_cards = float(_poisson_cdf(5, tarjetas_am_total))
     else:
         over_25_cards = over_35_cards = over_45_cards = under_55_cards = 0.5
         
     if tarjetas_ro_total > 0:
-        prob_red_card = float(1.0 - poisson.pmf(0, tarjetas_ro_total))
+        prob_red_card = float(1.0 - _poisson_pmf(0, tarjetas_ro_total))
     else:
         prob_red_card = 0.05
         

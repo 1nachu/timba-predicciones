@@ -6,6 +6,10 @@ Todos los cambios relevantes de **Timba Predictor** se documentan en este archiv
 
 ## [2.2.1] - 2026-11-06
 
+### Changed
+- **Sincronización del motor Cython (`src/timba_fast.pyx`) con Dixon-Coles**: `predecir_partido_optimizado()` incorpora ahora el ajuste probabilístico de Dixon-Coles (`aplicar_dixon_coles=True`, `rho=-0.11`), el fallback de córners (`0.5` cuando `corners_lambda_total == 0`) y accesos seguros `.get()`, quedando 100% alineado con la versión de Python/NumPy y habilitado por defecto cuando el binario compilado está presente.
+- **Arranque instantáneo sin dependencia de `scipy.stats`**: reemplazado `from scipy.stats import poisson` en `src/utils/markets.py` y `src/core/prediction.py` por implementaciones nativas con `math.exp` y `math.factorial`, reduciendo el tiempo de importación en frío de la aplicación de ~17 s a <2 s.
+
 ### Fixed
 - **Normalización CSV de Liga Profesional Argentina (`ARG`)**: `DatabaseDataProvider.get_data_from_csv()` y `calcular_fuerzas()` ahora normalizan siempre las columnas con `normalizar_csv()`, resolviendo el error `KeyError: 'FTHG'` con el formato `Home`/`Away`/`HG`/`AG` de `ARG.csv`.
 - **Verificación de tabla `matches` en SQLite**: `DatabaseDataProvider` comprueba la existencia de la tabla `matches` antes de ejecutar consultas SQL y resuelve automáticamente la URL CSV por código de liga cuando hace fallback.
