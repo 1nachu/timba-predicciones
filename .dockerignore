@@ -16,3 +16,5 @@ data/flask_cache/*
 data/databases/*.db-wal
 data/databases/*.db-shm
 .DS_Store
+frontend/
+

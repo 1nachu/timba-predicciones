@@ -201,6 +201,8 @@ def obtener_proximos_partidos(fixture_url: str) -> List[Dict]:
 
             ahora = datetime.now()
             ahora_plus_7 = ahora + timedelta(days=7)
+            ahora_plus_30 = ahora + timedelta(days=30)
+            partidos_extendidos = []
 
             for item in items:
                 if not isinstance(item, dict):
@@ -227,6 +229,15 @@ def obtener_proximos_partidos(fixture_url: str) -> List[Dict]:
                                 'fecha': fecha,
                                 'fecha_utc': fecha_utc
                             })
+                        elif ahora < fecha_dt < ahora_plus_30:
+                            fecha = fecha_dt.strftime('%Y-%m-%d %H:%M')
+                            fecha_utc = fecha_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+                            partidos_extendidos.append({
+                                'local': str(local).strip(),
+                                'visitante': str(visita).strip(),
+                                'fecha': fecha,
+                                'fecha_utc': fecha_utc
+                            })
                         else:
                             continue
                     else:
@@ -234,6 +245,8 @@ def obtener_proximos_partidos(fixture_url: str) -> List[Dict]:
                 else:
                     partidos.append({'local': str(local).strip(), 'visitante': str(visita).strip(), 'fecha': fecha})
 
+            if not partidos and partidos_extendidos:
+                return partidos_extendidos[:15]
             return partidos[:20]
 
         # Fallback: Parsear como CSV

@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: timba-web
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     env_file:
       - path: .env
         required: false
@@ -21,6 +21,28 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    networks:
+      - timba-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: timba-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - API_INTERNAL_URL=http://web:5000
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://futbol-predicciones.xyz}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      web:
+        condition: service_healthy
     networks:
       - timba-network
 

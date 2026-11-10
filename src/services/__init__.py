@@ -22,4 +22,7 @@ from services.fixtures_service import (
 from services.prediction_service import (
     cargar_dashboard_cache,
     obtener_last_update,
+    obtener_equipos_liga,
+    predecir_manual,
+    warmup_caches_async,
 )

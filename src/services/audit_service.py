@@ -5,11 +5,39 @@ Servicio para evaluación de precisión, validación de aciertos y consulta hist
 """
 
 import logging
+import time
+import threading
 from typing import Dict, List, Tuple, Optional
 from utils.shared import get_db_connection, DB_PATH
 from utils.markets import determinar_prediccion_1x2, PREDICCION_UMBRAL_GANA, PREDICCION_UMBRAL_DOBLE
 
 logger = logging.getLogger(__name__)
+
+_last_audit_sync_ts: float = 0.0
+_audit_sync_lock = threading.Lock()
+AUDIT_SYNC_COOLDOWN_SECONDS = 900  # 15 minutos
+
+
+def _trigger_async_audit_sync(db_path=DB_PATH) -> None:
+    """Dispara sincronizar_resultados_audit en un hilo demonio con cooldown de 15 min sin bloquear GETs."""
+    global _last_audit_sync_ts
+    now = time.time()
+    if now - _last_audit_sync_ts < AUDIT_SYNC_COOLDOWN_SECONDS:
+        return
+    if not _audit_sync_lock.acquire(blocking=False):
+        return
+
+    def _worker():
+        global _last_audit_sync_ts
+        try:
+            sincronizar_resultados_audit(db_path)
+            _last_audit_sync_ts = time.time()
+        except Exception as e:
+            logger.debug(f"Auto-sync asíncrono de resultados audit falló: {e}")
+        finally:
+            _audit_sync_lock.release()
+
+    threading.Thread(target=_worker, daemon=True).start()
 
 
 def determinar_resultado_real(home_goals: int, away_goals: int) -> str:
@@ -136,6 +164,10 @@ def poblar_historial_desde_matches(db_path=DB_PATH, days_back: int = 30) -> int:
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(match_id)
         )
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_audit_liga_fecha_res
+        ON predictions_audit(liga_id, fecha_partido DESC)
     """)
 
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches'")
@@ -350,11 +382,16 @@ def sincronizar_resultados_audit(db_path=DB_PATH) -> int:
         except Exception as e:
             logger.debug(f"Error sincronizando fixtures de liga {liga_id}: {e}")
 
-    # Fuente 2: Tabla local matches
+    # Fuente 2: Tabla local matches (acotado a últimos 45 días para evitar full-scan histórico)
     try:
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='matches'")
         if cursor.fetchone():
-            cursor.execute("SELECT league_code, date, home_team, away_team, fthg, ftag FROM matches WHERE fthg IS NOT NULL AND ftag IS NOT NULL")
+            cursor.execute("""
+                SELECT league_code, date, home_team, away_team, fthg, ftag
+                FROM matches
+                WHERE date >= date('now', '-45 days')
+                  AND fthg IS NOT NULL AND ftag IS NOT NULL
+            """)
             matches_db = cursor.fetchall()
             for m_league, m_date, m_home, m_away, m_fthg, m_ftag in matches_db:
                 m_date_str = str(m_date)[:10]
@@ -388,12 +425,11 @@ def sincronizar_resultados_audit(db_path=DB_PATH) -> int:
 def obtener_historial_audit(liga_id: int, days_back: int, auto_sync: bool = True) -> Tuple[List[Dict], Dict]:
     """
     Obtiene historial de predicciones auditadas desde la DB de football_data.
+    Si auto_sync=True, dispara la sincronización en segundo plano con cooldown de 15 min
+    para no bloquear el hilo de respuesta HTTP.
     """
     if auto_sync:
-        try:
-            sincronizar_resultados_audit(DB_PATH)
-        except Exception as e:
-            logger.debug(f"Auto-sync de resultados audit falló: {e}")
+        _trigger_async_audit_sync(DB_PATH)
 
     if not DB_PATH.exists():
         return [], {

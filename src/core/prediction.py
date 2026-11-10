@@ -141,22 +141,31 @@ def calcular_fuerzas(df: pd.DataFrame) -> Tuple[Dict, float, float]:
     away_g2t_sum = (df['FTAG'] - df['HTAG']).groupby(df['AwayTeam']).sum() if has_htag else None
     away_g2t_cnt = (df['FTAG'] - df['HTAG']).dropna().groupby(df['AwayTeam']).size() if has_htag else None
     
+    def _sf(val, default=0.0) -> float:
+        if val is None:
+            return default
+        try:
+            f = float(val)
+            return default if (f != f or f == float('inf') or f == float('-inf')) else f
+        except (ValueError, TypeError):
+            return default
+
     equipos = sorted(set(df['HomeTeam'].dropna()).union(set(df['AwayTeam'].dropna())))
     fuerzas = {}
     
     for equipo in equipos:
-        gf_c_glob = float(home_gf.get(equipo, 0.0))
-        gc_c_glob = float(home_ga.get(equipo, 0.0))
-        gf_f_glob = float(away_gf.get(equipo, 0.0))
-        gc_f_glob = float(away_ga.get(equipo, 0.0))
+        gf_c_glob = _sf(home_gf.get(equipo, 0.0))
+        gc_c_glob = _sf(home_ga.get(equipo, 0.0))
+        gf_f_glob = _sf(away_gf.get(equipo, 0.0))
+        gc_f_glob = _sf(away_ga.get(equipo, 0.0))
         
         atq_c_glob = gf_c_glob / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0.0
         def_c_glob = gc_c_glob / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0.0
         atq_f_glob = gf_f_glob / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0.0
         def_f_glob = gc_f_glob / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0.0
         
-        gf_rec = float(rec_gf.get(equipo, 0.0))
-        gc_rec = float(rec_gc.get(equipo, 0.0))
+        gf_rec = _sf(rec_gf.get(equipo, 0.0))
+        gc_rec = _sf(rec_gc.get(equipo, 0.0))
         atq_rec = gf_rec / promedio_goles_local_liga if promedio_goles_local_liga > 0 else 0.0
         def_rec = gc_rec / promedio_goles_visitante_liga if promedio_goles_visitante_liga > 0 else 0.0
         
@@ -167,10 +176,10 @@ def calcular_fuerzas(df: pd.DataFrame) -> Tuple[Dict, float, float]:
         
         # Córners
         if tiene_datos_corners:
-            c_c_glob = float(home_hc.get(equipo, 0.0))
-            c_f_glob = float(away_ac.get(equipo, 0.0))
-            c_c_contra = float(home_ac.get(equipo, 0.0))
-            c_f_contra = float(away_hc.get(equipo, 0.0))
+            c_c_glob = _sf(home_hc.get(equipo, 0.0))
+            c_f_glob = _sf(away_ac.get(equipo, 0.0))
+            c_c_contra = _sf(home_ac.get(equipo, 0.0))
+            c_f_contra = _sf(away_hc.get(equipo, 0.0))
         else:
             c_c_glob = c_f_glob = c_c_contra = c_f_contra = 0.0
             
@@ -180,14 +189,14 @@ def calcular_fuerzas(df: pd.DataFrame) -> Tuple[Dict, float, float]:
         corners_fuera = (c_f_rec * 0.75) + (c_f_glob * 0.25)
         
         # Tarjetas
-        tarjetas_am_casa = float(home_hy.get(equipo, 0.0)) if home_hy is not None else 0.0
-        tarjetas_am_fuera = float(away_ay.get(equipo, 0.0)) if away_ay is not None else 0.0
-        tarjetas_ro_casa = float(home_hr.get(equipo, 0.0)) if home_hr is not None else 0.0
-        tarjetas_ro_fuera = float(away_ar.get(equipo, 0.0)) if away_ar is not None else 0.0
+        tarjetas_am_casa = _sf(home_hy.get(equipo, 0.0)) if home_hy is not None else 0.0
+        tarjetas_am_fuera = _sf(away_ay.get(equipo, 0.0)) if away_ay is not None else 0.0
+        tarjetas_ro_casa = _sf(home_hr.get(equipo, 0.0)) if home_hr is not None else 0.0
+        tarjetas_ro_fuera = _sf(away_ar.get(equipo, 0.0)) if away_ar is not None else 0.0
         
         # Eficiencia de tiro
-        hst_c = float(home_hst.get(equipo, 0.0)) if home_hst is not None else 0.0
-        ast_f = float(away_ast.get(equipo, 0.0)) if away_ast is not None else 0.0
+        hst_c = _sf(home_hst.get(equipo, 0.0)) if home_hst is not None else 0.0
+        ast_f = _sf(away_ast.get(equipo, 0.0)) if away_ast is not None else 0.0
         ef_c = (gf_c_glob / hst_c) * 100 if hst_c > 0 else 0.0
         ef_f = (gf_f_glob / ast_f) * 100 if ast_f > 0 else 0.0
         ef_prom = (ef_c + ef_f) / 2.0
@@ -207,10 +216,10 @@ def calcular_fuerzas(df: pd.DataFrame) -> Tuple[Dict, float, float]:
         g2t_tot = 0.0
         g2t_cnt = 0
         if home_g2t_sum is not None and equipo in home_g2t_sum:
-            g2t_tot += float(home_g2t_sum.get(equipo, 0.0))
+            g2t_tot += _sf(home_g2t_sum.get(equipo, 0.0))
             g2t_cnt += int(home_g2t_cnt.get(equipo, 0))
         if away_g2t_sum is not None and equipo in away_g2t_sum:
-            g2t_tot += float(away_g2t_sum.get(equipo, 0.0))
+            g2t_tot += _sf(away_g2t_sum.get(equipo, 0.0))
             g2t_cnt += int(away_g2t_cnt.get(equipo, 0))
         g2t_prom = (g2t_tot / g2t_cnt) if g2t_cnt > 0 else 0.0
         
