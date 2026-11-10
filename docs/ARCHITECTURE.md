@@ -1,6 +1,6 @@
-# 🏗️ Arquitectura del Sistema - Timba Predictor v2.2
+# 🏗️ Arquitectura del Sistema - Timba Predictor v3.0
 
-Este documento describe la arquitectura modular, el flujo de datos, el esquema de persistencia SQLite y las estrategias de resiliencia de **Timba Predictor**.
+Este documento describe la arquitectura modular (Frontend Next.js SSR + Backend Flask API-only), el flujo de datos, el esquema de persistencia SQLite y las estrategias de resiliencia de **Timba Predictor**.
 
 ---
 
@@ -34,7 +34,8 @@ flowchart TD
     subgraph Procesos["⚙️ Procesos de Ejecución"]
         UPD["background_updater.py"]
         LIVE["run_live.py"]
-        WEB["app.py (Flask Blueprints + API v1)"]
+        WEB["app.py (Flask API-only :5000 interno)"]
+        NEXT["frontend/ (Next.js SSR :3000 público)"]
         BOT["bot.py (Telegram Bot)"]
     end
 
@@ -48,14 +49,16 @@ flowchart TD
     AUD <--> DB
     FDO --> LIVE --> LS
     DC & LS & FC --> WEB & BOT
+    WEB <--> NEXT
 ```
 
 ---
 
-## 📦 Responsabilidad por Paquete (`src/`)
+## 📦 Responsabilidad por Paquete (`src/` y `frontend/`)
 
 | Paquete / Módulo | Responsabilidad Principal |
 |---|---|
+| `frontend/` | Aplicación web **Next.js (App Router, TypeScript, SSR)** con React-Bootstrap, `useSWR` para marcadores en vivo y proxy same-origin de `/api/*` hacia Flask. |
 | `src/config/leagues.py` | Fuente canónica de las 9 competiciones (`LIGAS`, `URLS_FIXTURE`, `CSV_A_LIGA_ID`). |
 | `src/core/models.py` | Dataclasses y Enums de dominio (`MatchPrediction`, `MatchFixture`, `MLFeatures`). |
 | `src/core/prediction.py` | Cálculo vectorizado de fuerzas (`calcular_fuerzas`), modelo Poisson + ajuste Dixon-Coles (`predecir_partido`), Champions inter-liga (`predecir_partido_champions`) y motor In-Play (`predecir_partido_en_vivo`). |
@@ -65,7 +68,7 @@ flowchart TD
 | `src/etl/` | Pipeline ETL modular (`extractor.py`, `transformer.py`, `loader.py`, `pipeline.py`) invocado desde `src/etl_football_data.py`. |
 | `src/scrapers/fixtures_scraper.py` | Obtención de próximos partidos desde feeds JSON de FixtureDownload y scraping de Promiedos (Next.js). |
 | `src/services/` | Capa de servicios desacoplada para predicciones (`prediction_service.py`), fixtures/enriquecimiento (`fixtures_service.py`) y auditoría histórica (`audit_service.py`). |
-| `src/web/` | Aplicación web dividida en Flask Blueprints (`dashboard`, `predict`, `fixtures`, `live`, `history`, `seo`, `api`) y caché compartido (`cache.py`). |
+| `src/web/` | Backend API REST JSON (`blueprints/api.py`) y caché compartido (`cache.py`). |
 | `src/bot/` | Bot interactivo de Telegram (`bot_app.py`, `handlers.py`, `formatters.py`). |
 | `src/analytics/backtester.py` | Motor de simulación histórica walk-forward (Brier Score, ROI/Yield, Max Drawdown). |
 | `src/timba_core.py` | Fachada de retrocompatibilidad y caché LRU en memoria (`_get_cached_historical_data`). |

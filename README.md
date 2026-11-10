@@ -198,6 +198,8 @@ Definidas en el archivo `.env` en la raíz del proyecto (ver plantilla en [`.env
 | `SECRET_KEY` | Sí (producción) | Clave de firma de sesiones Flask. Generar con `python -c "import secrets; print(secrets.token_hex(32))"`. |
 | `FOOTBALL_DATA_API_KEY` | Opcional | Clave de API de [football-data.org](https://www.football-data.org/) para el servicio de marcadores en vivo (`run_live.py`). |
 | `TELEGRAM_BOT_TOKEN` | Opcional | Token generado con [@BotFather](https://t.me/BotFather) para ejecutar el bot de Telegram (`bot.py`). |
+| `API_INTERNAL_URL` | Opcional | URL interna del servidor Flask para SSR y rewrites de Next.js (por defecto `http://127.0.0.1:5000` en local y `http://web:5000` en Docker). |
+| `NEXT_PUBLIC_SITE_URL` | Opcional | URL canónica pública para generación de metadatos SEO, `robots.txt` y `sitemap.xml` (por defecto `https://futbol-predicciones.xyz`). |
 
 ---
 
@@ -206,7 +208,7 @@ Definidas en el archivo `.env` en la raíz del proyecto (ver plantilla en [`.env
 ### Opción A: Docker Compose (Recomendado para Producción / Home Server)
 
 ```bash
-# Construir e iniciar servidor web, actualizador en segundo plano y servicio de marcadores en vivo
+# Construir e iniciar frontend Next.js (:3000), API Flask interna (:5000), actualizador y servicio live
 docker compose up -d --build
 
 # (Opcional) Incluir también el contenedor del Bot de Telegram
@@ -215,13 +217,14 @@ docker compose --profile bot up -d --build
 # Consultar logs de los servicios
 docker compose logs -f
 ```
-La aplicación web y la API estarán disponibles en `http://localhost:5000`.
+La aplicación web (SSR) y la API (`/api/v1/*` vía proxy de Next.js) estarán disponibles en **`http://localhost:3000`**. El puerto `:5000` de Flask permanece aislado dentro de la red interna `timba-network` (ver [`docs/DEPLOY.md`](docs/DEPLOY.md) para la configuración de Nginx en producción).
 
-### Opción B: Ejecución Local Manual
+### Opción B: Ejecución Local Manual (Requiere Python 3.10+ y Node.js 22 LTS)
 
 | Servicio | Comando | Función |
 |---|---|---|
-| **Servidor Web y API** | `python app.py` | Inicia el servidor Flask en `http://localhost:5000`. |
+| **API Backend (Flask)** | `python app.py` | Inicia el servidor API en `http://127.0.0.1:5000` (solo local). |
+| **Frontend SSR (Next.js)** | `cd frontend && npm install && npm run dev` | Inicia el frontend React/Next.js en `http://localhost:3000`. |
 | **Background Updater** | `python background_updater.py --loop 300` | Actualiza `data/dashboard_cache.json` y sincroniza la auditoría cada 5 minutos. |
 | **Live Scores** | `python run_live.py` | Actualiza los marcadores en tiempo real en `data/databases/live_scores.db`. |
 | **Bot de Telegram** | `python bot.py` | Inicia el bot interactivo (requiere `TELEGRAM_BOT_TOKEN`). |
@@ -235,12 +238,14 @@ Todos los endpoints bajo `/api/v1` devuelven respuestas en formato `application/
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/api/v1/health` | Estado operativo del servicio y versión actual. |
+| `GET` | `/api/v1/dashboard` | Partidos del día agrupados por liga y estado de actualización (`dashboard_cache.json`). |
 | `GET` | `/api/v1/leagues` | Listado de competiciones configuradas. |
+| `GET` | `/api/v1/leagues/<id>/teams` | Lista ordenada de equipos válidos para una liga (incluye UEFA Champions League). |
 | `GET` | `/api/v1/predict` | Predicción pre-partido o In-Play. Parámetros: `liga_id`, `local`, `visitante`, cuotas opcionales (`odds_home`, `odds_draw`, `odds_away`) y estado en vivo (`live=true`, `minute`, `home_score`, `away_score`, `red_cards_home`, `red_cards_away`). |
 | `GET` | `/api/v1/value-bets` | Detección de apuestas con valor esperado positivo en la jornada (`min_ev=0.05`). |
 | `GET` | `/api/v1/fixtures` | Calendario de próximos partidos con probabilidades proyectadas (`liga_id`). |
 | `GET` | `/api/v1/live` | Partidos en curso con probabilidades dinámicas In-Play. |
-| `GET` | `/api/v1/history` | Historial auditado de predicciones frente a resultados reales (`liga_id`, `days`). |
+| `GET` | `/api/v1/history` | Historial auditado de predicciones frente a resultados reales (`league_code` o `liga_id`, `days`). |
 
 ### Ejemplo de respuesta: `/api/v1/predict`
 

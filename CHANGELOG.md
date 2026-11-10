@@ -4,6 +4,29 @@ Todos los cambios relevantes de **Timba Predictor** se documentan en este archiv
 
 ---
 
+## [3.0.0] - 2026-11-10
+
+### Added
+- **Frontend React con Next.js (App Router, TypeScript y SSR)** en `frontend/`:
+  - Renderizado del lado del servidor (SSR) real en `/`, `/fixtures`, `/live`, `/predict` y `/history`, con generación dinámica de metadatos Open Graph / Twitter (`generateMetadata` en `/predict`) y rutas nativas `robots.ts` y `sitemap.ts`.
+  - Componentes en React-Bootstrap + TypeScript (`AppShell`, `TopNavbar`, `LeagueSidebar`, `MobileNav`, `BitcoinModal`, `ProbabilityBar`, `LocalTime`, `PredictForm`, `PredictionResult`, `LiveBoard` con polling `useSWR` cada 15s, `HistoryFilters`, `AccuracySummary`, `HistoryTable`).
+  - Proxy same-origin en `next.config.ts` que redirige `/api/*` hacia el contenedor Flask interno (`API_INTERNAL_URL`).
+  - Suite de pruebas unitarias con **Vitest + React Testing Library** (>90% de cobertura) y suite E2E con **Playwright** (desktop Chromium + móvil Pixel 7).
+- **Nuevos endpoints y mejoras en API REST v1 (`/api/v1`)**:
+  - `GET /api/v1/dashboard` y `GET /api/v1/leagues/<liga_id>/teams`.
+  - Bloques `corners`, `tarjetas` y `avisos` estructurados en `GET /api/v1/predict` (mediante `predecir_manual()`).
+  - Soporte para `league_code` y listado de ligas en `GET /api/v1/history`.
+- **Guía de despliegue con Nginx (`docs/DEPLOY.md`)** y nuevos jobs `frontend` y `e2e` en `.github/workflows/ci.yml`.
+
+### Changed (Breaking)
+- **Topología de red y puertos**: el sitio público y el proxy de `/api/v1/*` se sirven ahora desde **Next.js en el puerto `:3000`**. El puerto `:5000` de Flask deja de exponerse al exterior en `docker-compose.yml` (`expose: ["5000"]` solo en `timba-network`) y escucha únicamente en `127.0.0.1:5000` en modo desarrollo.
+- **Flask API-only**: `app.py` registra únicamente `api_bp` y responde errores 404/500 en JSON. El envío del formulario de predicciones utiliza ahora `GET /predict?liga_id=...&local=...&visitante=...` (URL compartible e indexable).
+
+### Removed
+- Eliminados los templates Jinja2 (`templates/`), blueprints HTML (`dashboard.py`, `fixtures.py`, `history.py`, `live.py`, `predict.py`, `seo.py`), assets estáticos heredados (`static/`) y `tests/test_frontend.py`.
+
+---
+
 ## [2.2.1] - 2026-11-06
 
 ### Changed
