@@ -1,5 +1,5 @@
 # ============================================================
-# Timba Predictor v2.2 - Dockerfile Multi-Stage Optimizado
+# Timba Predictor v3.0 - Dockerfile Multi-Stage Optimizado (API)
 # ============================================================
 FROM python:3.12-slim AS builder
 

@@ -24,6 +24,7 @@ Todos los cambios relevantes de **Timba Predictor** se documentan en este archiv
 
 ### Removed
 - Eliminados los templates Jinja2 (`templates/`), blueprints HTML (`dashboard.py`, `fixtures.py`, `history.py`, `live.py`, `predict.py`, `seo.py`), assets estáticos heredados (`static/`) y `tests/test_frontend.py`.
+- Eliminados archivos y modelos legacy sin uso: `scripts/migrate_legacy_aliases.py`, `src/core/models.py`, constantes `API_CACHE_DB_PATH` / `CACHE_DIR` en `src/utils/shared.py` y la dependencia redundante `scipy` en `requirements.txt`.
 
 ---
 

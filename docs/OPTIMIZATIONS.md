@@ -1,21 +1,21 @@
-# ⚡ Optimizaciones de Rendimiento y Raspberry Pi - Timba Predictor v2.2
+# ⚡ Optimizaciones de Rendimiento y Hardware Embebido - Timba Predictor v3.0
 
-**Versión:** 2.2  
-**Fecha:** Agosto 2026  
-**Objetivo:** Rendimiento submétrico (<10ms en predicción, <50ms en interfaz web) en servidores embebidos, Raspberry Pi 4/5 y entornos Linux ligeros.
+**Versión:** 3.0  
+**Fecha:** Noviembre 2026  
+**Objetivo:** Rendimiento submétrico (<10ms en predicción, respuestas instantáneas en API y SSR) en servidores embebidos, Raspberry Pi 4/5 y entornos Linux contenerizados.
 
 ---
 
 ## 📊 Resumen de Rendimiento
 
-| Componente | Antes | Ahora (v2.2) | Técnica Clave |
+| Componente | Antes | Ahora (v3.0) | Técnica Clave |
 |------------|-------|--------------|---------------|
-| **Cálculo de Fuerzas por Liga** | 320 ms | **7.6 ms** | Vectorización con Pandas `groupby` y aggregations NumPy |
-| **Predicción Poisson (Python Fallback)** | 1,200 pred/s | **>25,000 pred/s** | Matriz $11 \times 11$ con `math.exp`/`math.factorial`, `np.outer()`, `np.trace()`, `np.tril()` (sin sobrecarga de `scipy.stats`) |
+| **Cálculo de Fuerzas por Liga** | 320 ms | **7.6 ms** | Vectorización con Pandas `groupby` y agregaciones NumPy |
+| **Predicción Poisson (Python Nativo)** | 1,200 pred/s | **>25,000 pred/s** | Matriz $11 \times 11$ con `math.exp`/`math.factorial`, `np.outer()`, `np.trace()`, `np.tril()` (cero dependencia de `scipy`) |
 | **Motor Cython (`timba_fast`)** | ~15,000 pred/s | **>50,000 pred/s** | Extensión C/Cython compilada en CPython con ajuste Dixon-Coles integrado |
 | **Acceso a Base de Datos SQLite** | Bloqueos / 150ms | **< 1 ms (WAL Mode)** | `PRAGMA journal_mode=WAL;` y `busy_timeout=5000` |
-| **Caché Compartido Inter-Proceso** | RAM aislada | **Persistente en Disco** | `FileSystemCache` en `data/flask_cache/` |
-| **Navegación Web** | 2.5 s | **< 50 ms** | HTMX Boosting + memoización |
+| **Caché de Servicios y API** | Bloqueante en expiración | **< 2 ms (SWR + Warmup)** | Decorador `ttl_cache` con *Stale-While-Revalidate* en hilo de fondo, `warmup_caches_async()` y `FileSystemCache` |
+| **Frontend SSR (Next.js 15)** | 2.5 s | **< 30 ms (Revalidado)** | Next.js App Router standalone, caché HTTP `stale-while-revalidate` y polling ligero con `useSWR` en `/live` |
 
 ---
 
@@ -26,22 +26,28 @@
 - **Solución implementada:** Agrupación global con `df.groupby('HomeTeam')` y `df.groupby('AwayTeam')`.
 - **Resultado:** Reducción del tiempo de cálculo de **320 ms a 7.6 ms por liga** y eliminación de 95% de las asignaciones temporales en RAM.
 
-### 2. Matriz Poisson Vectorizada (`np.outer`)
-- **Problema previo:** Dos bucles anidados `for i in range(11): for j in range(11):` calculando probabilidades puntuales.
+### 2. Matriz Poisson Vectorizada sin SciPy (`np.outer`)
+- **Problema previo:** Dos bucles anidados `for i in range(11): for j in range(11):` e importación pesada de `scipy.stats.poisson` (~15 s de arranque en frío en ARM/Windows).
 - **Solución implementada:**
   ```python
-  k = np.arange(11)
-  prob_local_arr = poisson.pmf(k, lambda_local)
-  prob_vis_arr = poisson.pmf(k, lambda_visitante)
+  prob_local_arr = _poisson_pmf_array(11, lambda_local)
+  prob_vis_arr = _poisson_pmf_array(11, lambda_visitante)
   matriz_prob = np.outer(prob_local_arr, prob_vis_arr)
   
   empate = float(np.trace(matriz_prob))
   victoria_local = float(np.sum(np.tril(matriz_prob, -1)))
   victoria_visitante = float(np.sum(np.triu(matriz_prob, 1)))
   ```
-- **Resultado:** Rendimiento superior a **25,000 predicciones por segundo** en CPU estándar.
+- **Resultado:** Arranque en frío en **<2 segundos** y rendimiento superior a **25,000 predicciones por segundo** en CPU estándar (>50,000 pred/s con `timba_fast` en Cython).
 
-### 3. Concurrencia SQLite sin Bloqueos (Modo WAL)
+### 3. Caché en Memoria con Stale-While-Revalidate y Precalentamiento Asíncrono
+- **Problema previo:** Cuando expiraba el TTL de los datos de una liga o fixture, la siguiente petición HTTP sufría la latencia de lectura SQLite/red.
+- **Solución implementada:**
+  - Decorador [`ttl_cache`](../src/services/prediction_service.py) con `stale_while_revalidate=True`: cuando una entrada expira, devuelve de inmediato el último valor válido en memoria y dispara un hilo `daemon` en segundo plano para refrescar el caché sin bloquear al usuario.
+  - Precalentamiento automático ([`warmup_caches_async`](../src/services/prediction_service.py)) al iniciar `app.py`, precargando las ligas principales (`E0`, `SP1`, `I1`, `D1`, `ARG`) en segundo plano.
+  - Cabeceras HTTP `Cache-Control: public, max-age=..., stale-while-revalidate=...` inyectadas automáticamente en `/api/v1/*`.
+
+### 4. Concurrencia SQLite sin Bloqueos (Modo WAL)
 - **Problema previo:** Peticiones web GET disparaban escrituras automáticas generando `OperationalError: database is locked`.
 - **Solución implementada:**
   - Helper centralizado [`get_db_connection`](../src/utils/shared.py) que activa:
@@ -51,11 +57,7 @@
     PRAGMA busy_timeout = 5000;
     PRAGMA cache_size = -64000;
     ```
-  - Separación estricta de conexiones de solo lectura (`file:...mode=ro`) para la web y conexiones de escritura para el actualizador en segundo plano.
-
-### 4. FileSystemCache Inter-Procesos
-- **Problema previo:** `SimpleCache` almacenaba objetos en la memoria RAM del proceso Flask y no se compartía con `background_updater.py` ni entre workers Gunicorn.
-- **Solución implementada:** Migración a `FileSystemCache` en `data/flask_cache/`. Los resultados precalculados por el background updater son aprovechados de forma inmediata por cualquier worker web sin overhead de red.
+  - Separación estricta de conexiones de solo lectura (`file:...mode=ro`) para consultas de la API y conexiones de escritura para el actualizador en segundo plano (`background_updater.py`).
 
 ### 5. Carga Selectiva de Columnas y Dtypes Ligeros
 - **Implementación:** `usecols` en `descargar_csv_safe` y filtrado estricto en `FootballDataTransformer.seleccionar_columnas_criticas`.

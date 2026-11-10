@@ -1,11 +1,11 @@
 # ================================================
-# Timba Predictor v2.2 - Dependencias de Producción
+# Timba Predictor v3.0 - Dependencias de Producción
 # ================================================
 # Para desarrollo y tests: pip install -r requirements-dev.txt
 # Python requerido: 3.10+
 # ================================================
 
-# === Core Web ===
+# === Core API ===
 Flask>=3.0.0
 Flask-Caching>=2.1.0
 python-dotenv>=1.0.0
@@ -20,9 +20,6 @@ urllib3>=2.0.0
 
 # === Web Scraping (Promiedos Argentina) ===
 beautifulsoup4>=4.12.0
-
-# === Statistical Model ===
-scipy>=1.10.0
 
 # === Database (ETL) ===
 SQLAlchemy>=2.0.0

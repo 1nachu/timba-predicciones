@@ -70,7 +70,6 @@ try:
         ALIAS_TEAMS,
         CHAMPIONS_EQUIPO_LIGA,
         DB_PATH,
-        API_CACHE_DB_PATH as API_CACHE_PATH,
         LOGS_DIR,
     )
     from utils.markets import (
@@ -134,14 +133,6 @@ except ImportError:
 
 
 # ========== IMPORTAR MÓDULOS DE CORE Y SCRAPERS ==========
-from core.models import (
-    MatchStatus,
-    PredictionType,
-    APIQuotaStatus,
-    MatchPrediction,
-    MatchFixture,
-    MLFeatures,
-)
 from core.prediction import (
     calcular_fuerzas,
     predecir_partido,

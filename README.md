@@ -1,15 +1,16 @@
-# Timba Predictor v2.2
+# Timba Predictor v3.0
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat-square&logo=flask&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.0_API-000000?style=flat-square&logo=flask&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15_SSR-000000?style=flat-square&logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?style=flat-square&logo=sqlite&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-2.0+-150458?style=flat-square&logo=pandas&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Pytest](https://img.shields.io/badge/Tests-60%20Passing-success?style=flat-square&logo=pytest&logoColor=white)
 ![Season](https://img.shields.io/badge/Season-2026%2F2027-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
-Sistema de modelado estadístico para predicción de partidos de fútbol y detección de apuestas con valor esperado positivo (*Value Betting*). Implementa la distribución de Poisson bivariada con ajuste de correlación de **Dixon-Coles (1997)**, dimensionamiento de capital mediante el **Criterio de Kelly**, predicciones dinámicas en tiempo real (*In-Play*), motor de *backtesting* cuantitativo, API REST JSON v1 y despliegue contenerizado con Docker.
+Sistema de modelado estadístico para predicción de partidos de fútbol y detección de apuestas con valor esperado positivo (*Value Betting*). Implementa la distribución de Poisson bivariada con ajuste de correlación de **Dixon-Coles (1997)**, dimensionamiento de capital mediante el **Criterio de Kelly**, predicciones dinámicas en tiempo real (*In-Play*), motor de *backtesting* cuantitativo, **API REST JSON v1 (Flask)**, **Frontend React SSR con Next.js 15 (App Router + TypeScript)** y despliegue contenerizado con Docker.
 
 ---
 
@@ -40,8 +41,10 @@ Sistema de modelado estadístico para predicción de partidos de fútbol y detec
 | **Predicción Dinámica In-Play** | Recálculo en tiempo real de tasas de gol esperado ($\lambda$) en función del minuto de juego, marcador actual y sanciones disciplinarias (tarjetas rojas). |
 | **Normalización Inter-Liga (Champions League)** | Ponderación de fuerzas ofensivas y defensivas domésticas ajustadas por coeficientes competitivos de cada liga (`COEFICIENTES_LIGAS`). |
 | **Vectorización y Extensión Cython** | Cálculo de fuerzas por liga en `<10 ms` con operaciones vectoriales de Pandas/NumPy y módulo opcional compilado en C (`timba_fast`). |
+| **Frontend SSR (Next.js 15 + React 19)** | Interfaz desacoplada en TypeScript con Server-Side Rendering real, actualización en vivo cada 15s (`useSWR`), metadatos Open Graph dinámicos y proxy interno hacia Flask. |
+| **Caché SWR y Warmup Asíncrono** | Caché en memoria con *Stale-While-Revalidate* (`ttl_cache`), `FileSystemCache` compartido, cabeceras HTTP `Cache-Control` y precalentamiento en segundo plano al iniciar la API. |
 | **Persistencia SQLite en Modo WAL** | Conexiones concurrentes con `PRAGMA journal_mode=WAL;` y `busy_timeout=5000`, con *fallback* transparente a fuentes CSV online si la base local aún no fue inicializada. |
-| **Arquitectura Modular** | Separación entre capa de presentación (`src/web/blueprints/`), capa de servicios (`src/services/`), pipeline ETL (`src/etl/`) y núcleo matemático (`src/core/`). |
+| **Arquitectura Desacoplada** | Separación estricta entre frontend (`frontend/`), API REST (`src/web/blueprints/api.py`), capa de servicios (`src/services/`), pipeline ETL (`src/etl/`) y núcleo matemático (`src/core/`). |
 
 ---
 
@@ -67,26 +70,38 @@ Configuradas para el calendario oficial de la **Temporada 2026/2027** (`2627` / 
 
 ```text
 timba-predicciones/
-├── app.py                          # Servidor Flask y registro de Blueprints
+├── app.py                          # Servidor Flask API-Only (:5000 interno)
 ├── background_updater.py           # Proceso de actualización de caché, ETL automático y auditoría
 ├── run_live.py                     # Servicio de sincronización de marcadores en vivo
 ├── bot.py                          # Punto de entrada del Bot de Telegram
 ├── setup.py                        # Script de compilación para la extensión Cython (timba_fast)
-├── requirements.txt                # Dependencias de producción
+├── requirements.txt                # Dependencias de producción (Python)
 ├── requirements-dev.txt            # Dependencias de desarrollo y testing (pytest)
-├── Dockerfile                      # Imagen Docker multi-etapa
-├── docker-compose.yml              # Orquestación de servicios (web, updater, live, bot)
-├── .github/workflows/ci.yml        # Pipeline de Integración Continua (GitHub Actions)
+├── Dockerfile                      # Imagen Docker multi-etapa del backend Python
+├── docker-compose.yml              # Orquestación de servicios (frontend, web, updater, live, bot)
+├── .github/workflows/ci.yml        # Pipeline CI (Pytest + Vitest + Next.js Build + Playwright E2E)
 ├── .env.example                    # Plantilla de variables de entorno
 ├── CHANGELOG.md                    # Registro de cambios por versión
 │
+├── frontend/                       # Aplicación Web Next.js 15 (App Router + TypeScript + SSR)
+│   ├── Dockerfile                  # Imagen Docker multi-etapa standalone de Next.js (:3000)
+│   ├── next.config.ts              # Configuración Next.js y proxy same-origin (/api/* -> Flask)
+│   ├── vitest.config.ts            # Configuración de tests unitarios y cobertura (Vitest)
+│   ├── playwright.config.ts        # Configuración de tests End-to-End (Playwright)
+│   ├── e2e/                        # Suite E2E (dashboard, fixtures, live, predict, history, layout, seo)
+│   └── src/
+│       ├── app/                    # Rutas SSR (/, /fixtures, /live, /predict, /history, robots, sitemap)
+│       ├── components/             # Componentes React-Bootstrap (layout, predict, live, fixtures, history)
+│       ├── lib/                    # Cliente tipado de API (api.ts), ligas (leagues.ts) y tipos (types.ts)
+│       └── __tests__/              # Pruebas unitarias con Vitest + React Testing Library
+│
 ├── docs/
 │   ├── ARCHITECTURE.md             # Diseño de arquitectura, flujo de datos y esquemas SQLite
-│   └── OPTIMIZATIONS.md            # Documentación de rendimiento y ejecución en hardware embebido
+│   ├── DEPLOY.md                   # Guía de despliegue en producción con Docker + Nginx
+│   └── OPTIMIZATIONS.md            # Documentación de rendimiento, caché SWR y hardware embebido
 │
 ├── scripts/
-│   ├── run_backtest.py             # CLI de backtesting histórico cuantitativo
-│   └── migrate_legacy_aliases.py   # Script de migración de alias de equipos a SQLite
+│   └── run_backtest.py             # CLI de backtesting histórico cuantitativo
 │
 ├── src/
 │   ├── timba_core.py               # Fachada de compatibilidad y caché LRU de datos históricos
@@ -101,7 +116,6 @@ timba-predicciones/
 │   ├── config/
 │   │   └── leagues.py              # Definición canónica de ligas, códigos y URLs
 │   ├── core/
-│   │   ├── models.py               # Modelos de datos (MatchPrediction, MatchFixture, MLFeatures)
 │   │   └── prediction.py           # Algoritmos Poisson, Dixon-Coles, fuerzas, Champions e In-Play
 │   ├── analytics/
 │   │   └── backtester.py           # Motor Walk-Forward, Brier Score y Kelly
@@ -114,7 +128,7 @@ timba-predicciones/
 │   ├── services/
 │   │   ├── audit_service.py        # Evaluación y sincronización de predicciones vs resultados reales
 │   │   ├── fixtures_service.py     # Obtención y enriquecimiento de próximos partidos
-│   │   └── prediction_service.py   # Servicio de caché y cálculo de predicciones
+│   │   └── prediction_service.py   # Caché TTL (stale-while-revalidate), warmup y predicciones
 │   ├── scrapers/
 │   │   └── fixtures_scraper.py     # Extracción de calendarios desde Promiedos y FixtureDownload
 │   ├── bot/
@@ -126,11 +140,10 @@ timba-predicciones/
 │   │   └── shared.py               # Conexiones SQLite WAL, normalización CSV y constantes
 │   └── web/
 │       ├── cache.py                # Configuración de FileSystemCache
-│       └── blueprints/             # Rutas modulares (dashboard, predict, fixtures, live, history, seo, api)
+│       └── blueprints/
+│           └── api.py              # Endpoints REST JSON (/api/v1/*)
 │
-├── tests/                          # Suite de 60 pruebas automatizadas (12 módulos)
-├── templates/                      # Plantillas Jinja2 + HTMX
-└── static/                         # Hojas de estilo, fuentes e íconos locales
+└── tests/                          # Suite de pruebas unitarias e integración del backend (pytest)
 ```
 
 ---
@@ -324,10 +337,27 @@ Comandos soportados por `bot.py`:
 
 ## Pruebas Automatizadas
 
+### 1. Backend y Motor Estadístico (Pytest)
 Con las dependencias de desarrollo instaladas (`pip install -r requirements-dev.txt`):
 
 ```bash
 pytest -v
+```
+
+### 2. Frontend: Lint, Typecheck y Tests Unitarios (Vitest)
+```bash
+cd frontend
+npm run lint
+npm run typecheck
+npm run test:coverage
+```
+
+### 3. Suite End-to-End (Playwright)
+Levanta automáticamente el backend Flask con datos semilla (`E2E_SEED_DATA=1`) y el servidor de producción de Next.js:
+```bash
+cd frontend
+npm run build
+npm run e2e
 ```
 
 ---
@@ -335,6 +365,7 @@ pytest -v
 ## Documentación Adicional
 
 - [Arquitectura del Sistema y Esquema de Base de Datos](docs/ARCHITECTURE.md)
+- [Guía de Despliegue en Producción (Docker + Nginx)](docs/DEPLOY.md)
 - [Optimizaciones de Rendimiento y Hardware Embebido](docs/OPTIMIZATIONS.md)
 - [Historial de Cambios (Changelog)](CHANGELOG.md)
 

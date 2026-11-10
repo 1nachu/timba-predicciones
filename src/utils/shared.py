@@ -33,7 +33,6 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # Rutas de directorios
 DATA_DIR = PROJECT_ROOT / "data"
 DATABASES_DIR = DATA_DIR / "databases"
-CACHE_DIR = DATA_DIR / "live_scores_cache"
 LOGS_DIR = PROJECT_ROOT / "logs"
 
 # ========== ARCHIVOS DE BASE DE DATOS ==========
@@ -43,9 +42,6 @@ LOGS_DIR = PROJECT_ROOT / "logs"
 # Base de datos principal (datos históricos del ETL)
 DB_PATH = DATABASES_DIR / "football_data.db"
 
-# Caché de API-Football (predicciones externas)
-API_CACHE_DB_PATH = DATABASES_DIR / "api_football_cache.db"
-
 # Base de datos del normalizador de equipos
 TEAM_NORMALIZER_DB_PATH = DATABASES_DIR / "team_normalizer.db"
 
@@ -54,7 +50,6 @@ LIVE_SCORES_DB_PATH = DATABASES_DIR / "live_scores.db"
 
 # Crear directorios si no existen
 DATABASES_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ========== CONSTANTES DE CONEXIÓN ==========
@@ -554,8 +549,8 @@ def imprimir_barra(valor: float, maximo: float = 100, ancho: int = 25) -> str:
 # ========== EXPORTS ==========
 __all__ = [
     # Constantes de rutas
-    'PROJECT_ROOT', 'DATA_DIR', 'DATABASES_DIR', 'CACHE_DIR', 'LOGS_DIR',
-    'DB_PATH', 'API_CACHE_DB_PATH', 'TEAM_NORMALIZER_DB_PATH', 'LIVE_SCORES_DB_PATH',
+    'PROJECT_ROOT', 'DATA_DIR', 'DATABASES_DIR', 'LOGS_DIR',
+    'DB_PATH', 'TEAM_NORMALIZER_DB_PATH', 'LIVE_SCORES_DB_PATH',
     'DB_PATH_STR', 'TEAM_NORMALIZER_DB_PATH_STR', 'LIVE_SCORES_DB_PATH_STR',
     'SQLITE_CONNECTION_STRING',
     # Constantes de API

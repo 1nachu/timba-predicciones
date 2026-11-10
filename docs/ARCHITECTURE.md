@@ -60,14 +60,13 @@ flowchart TD
 |---|---|
 | `frontend/` | Aplicación web **Next.js (App Router, TypeScript, SSR)** con React-Bootstrap, `useSWR` para marcadores en vivo y proxy same-origin de `/api/*` hacia Flask. |
 | `src/config/leagues.py` | Fuente canónica de las 9 competiciones (`LIGAS`, `URLS_FIXTURE`, `CSV_A_LIGA_ID`). |
-| `src/core/models.py` | Dataclasses y Enums de dominio (`MatchPrediction`, `MatchFixture`, `MLFeatures`). |
 | `src/core/prediction.py` | Cálculo vectorizado de fuerzas (`calcular_fuerzas`), modelo Poisson + ajuste Dixon-Coles (`predecir_partido`), Champions inter-liga (`predecir_partido_champions`) y motor In-Play (`predecir_partido_en_vivo`). |
 | `src/utils/markets.py` | Cálculo de mercados derivados (Over/Under, BTTS, Córners, Tarjetas, Doble Oportunidad), Valor Esperado ($\text{EV}$) y Criterio de Kelly. |
-| `src/utils/shared.py` | Rutas centralizadas (`DB_PATH`, `LIVE_SCORES_DB_PATH`), conexiones SQLite en modo WAL (`get_db_connection`), normalización de columnas CSV (`normalizar_csv`), descarga resiliente (`descargar_csv_safe`) y `ALIAS_TEAMS`. |
+| `src/utils/shared.py` | Rutas centralizadas (`DB_PATH`, `LIVE_SCORES_DB_PATH`, `TEAM_NORMALIZER_DB_PATH`), conexiones SQLite en modo WAL (`get_db_connection`), normalización de columnas CSV (`normalizar_csv`), descarga resiliente (`descargar_csv_safe`) y `ALIAS_TEAMS`. |
 | `src/db_data_provider.py` | Proveedor inteligente con prioridad **BD Local (`matches`) → CSV Online normalizado**. |
 | `src/etl/` | Pipeline ETL modular (`extractor.py`, `transformer.py`, `loader.py`, `pipeline.py`) invocado desde `src/etl_football_data.py`. |
 | `src/scrapers/fixtures_scraper.py` | Obtención de próximos partidos desde feeds JSON de FixtureDownload y scraping de Promiedos (Next.js). |
-| `src/services/` | Capa de servicios desacoplada para predicciones (`prediction_service.py`), fixtures/enriquecimiento (`fixtures_service.py`) y auditoría histórica (`audit_service.py`). |
+| `src/services/` | Capa de servicios desacoplada para predicciones, caché SWR en memoria y precalentamiento asíncrono (`prediction_service.py`), fixtures/enriquecimiento (`fixtures_service.py`) y auditoría histórica (`audit_service.py`). |
 | `src/web/` | Backend API REST JSON (`blueprints/api.py`) y caché compartido (`cache.py`). |
 | `src/bot/` | Bot interactivo de Telegram (`bot_app.py`, `handlers.py`, `formatters.py`). |
 | `src/analytics/backtester.py` | Motor de simulación histórica walk-forward (Brier Score, ROI/Yield, Max Drawdown). |
