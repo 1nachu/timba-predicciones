@@ -248,9 +248,18 @@ def calcular_mercados_adicionales(
     over_25 = float(1.0 - _poisson_cdf(2, lambda_total))
     under_35 = float(_poisson_cdf(3, lambda_total))
     
+    def _sf(val, default=0.0) -> float:
+        if val is None:
+            return default
+        try:
+            f = float(val)
+            return default if (f != f or f == float('inf') or f == float('-inf')) else f
+        except (ValueError, TypeError):
+            return default
+
     # Córners
-    corners_lambda_local = float(f_local.get('Corners_Casa', 0.0) or 0.0)
-    corners_lambda_vis = float(f_vis.get('Corners_Fuera', 0.0) or 0.0)
+    corners_lambda_local = _sf(f_local.get('Corners_Casa', 0.0))
+    corners_lambda_vis = _sf(f_vis.get('Corners_Fuera', 0.0))
     corners_lambda_total = corners_lambda_local + corners_lambda_vis
     
     over_85 = float(1.0 - _poisson_cdf(8, corners_lambda_total)) if corners_lambda_total > 0 else 0.5
@@ -269,12 +278,12 @@ def calcular_mercados_adicionales(
         prob_local_mas_corners, prob_empate_corners, prob_vis_mas_corners = 0.33, 0.34, 0.33
         
     # Tarjetas
-    tarjetas_am_local = float(f_local.get('Tarjetas_Am_Promedio', 0.0) or 0.0)
-    tarjetas_am_vis = float(f_vis.get('Tarjetas_Am_Promedio', 0.0) or 0.0)
+    tarjetas_am_local = _sf(f_local.get('Tarjetas_Am_Promedio', 0.0))
+    tarjetas_am_vis = _sf(f_vis.get('Tarjetas_Am_Promedio', 0.0))
     tarjetas_am_total = tarjetas_am_local + tarjetas_am_vis
     
-    tarjetas_ro_local = float(f_local.get('Tarjetas_Ro_Promedio', 0.0) or 0.0)
-    tarjetas_ro_vis = float(f_vis.get('Tarjetas_Ro_Promedio', 0.0) or 0.0)
+    tarjetas_ro_local = _sf(f_local.get('Tarjetas_Ro_Promedio', 0.0))
+    tarjetas_ro_vis = _sf(f_vis.get('Tarjetas_Ro_Promedio', 0.0))
     tarjetas_ro_total = tarjetas_ro_local + tarjetas_ro_vis
     
     if tarjetas_am_total > 0:

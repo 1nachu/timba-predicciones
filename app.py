@@ -1,22 +1,21 @@
 """
-Timba Predictor Web - Flask Application (Refactorizada)
+Timba Predictor API - Flask Application (v3.0 API-Only)
 ========================================================
 
-Aplicación web modularizada para predicción de resultados de fútbol.
-Utiliza Flask Blueprints, FileSystemCache y servicios desacoplados.
+Backend API REST JSON para predicción de resultados de fútbol.
+El frontend se sirve de manera desacoplada mediante Next.js (SSR) en el puerto 3000.
 
 Autor: Timba Team
-Última actualización: Agosto 2026
+Última actualización: Noviembre 2026
 """
 
 import os
 import sys
-from datetime import datetime
 
 # Inyectar 'src/' al sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-from flask import Flask, render_template, request, send_from_directory, url_for
+from flask import Flask, jsonify
 from dotenv import load_dotenv
 
 from timba_core import (
@@ -50,6 +49,9 @@ from services import (
     normalizar_nombre_equipo,
     cargar_dashboard_cache,
     obtener_last_update,
+    obtener_equipos_liga,
+    predecir_manual,
+    warmup_caches_async,
 )
 from services.prediction_service import (
     cargar_datos_liga_cached,
@@ -60,10 +62,9 @@ from services.prediction_service import (
 
 load_dotenv()
 
-# Inicializar Flask
-app = Flask(__name__)
+# Inicializar Flask en modo API-only (sin static_folder ni templates Jinja)
+app = Flask(__name__, static_folder=None, template_folder=None)
 app.secret_key = os.getenv('SECRET_KEY', 'clave_super_secreta_timba_2026')
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 2592000  # 30 días para estáticos
 
 # Configurar FileSystemCache persistente
 FLASK_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'flask_cache')
@@ -77,78 +78,40 @@ cache.init_app(app, config={
     'CACHE_IGNORE_ERRORS': True
 })
 
-
-# Context Processor para templates
-@app.context_processor
-def inject_globals():
-    return dict(
-        todas_las_ligas=LIGAS,
-        current_year=datetime.now().year
-    )
-
-
 # ============================================================
-# RESOLUCIÓN AUTOMÁTICA DE ENDPOINTS (Compatibilidad Jinja2)
+# REGISTRO DEL BLUEPRINT API v1
 # ============================================================
-def _handle_url_build_error(error, endpoint, values):
-    """Permite resolver url_for('fixtures') -> url_for('fixtures.fixtures') transparentemente."""
-    candidates = [
-        f"{endpoint}.{endpoint}",
-        f"dashboard.{endpoint}",
-        f"fixtures.{endpoint}",
-        f"predict.{endpoint}",
-        f"live.{endpoint}",
-        f"history.{endpoint}",
-        f"seo.{endpoint}",
-    ]
-    for cand in candidates:
-        if cand in app.view_functions:
-            return url_for(cand, **values)
-    raise error
+from web.blueprints import api_bp
 
-app.url_build_error_handlers.append(_handle_url_build_error)
-
-
-# ============================================================
-# REGISTRO DE BLUEPRINTS MODULARES
-# ============================================================
-from web.blueprints import (
-    dashboard_bp,
-    predict_bp,
-    fixtures_bp,
-    live_bp,
-    history_bp,
-    seo_bp,
-    api_bp
-)
-
-app.register_blueprint(dashboard_bp)
-app.register_blueprint(predict_bp)
-app.register_blueprint(fixtures_bp)
-app.register_blueprint(live_bp)
-app.register_blueprint(history_bp)
-app.register_blueprint(seo_bp)
 app.register_blueprint(api_bp)
 
+# Activar datos determinísticos si se ejecuta la suite E2E (Playwright), o precalentar cachés en background
+if os.getenv('E2E_SEED_DATA') == '1':
+    from tests.e2e_seed import apply_e2e_seed
+    apply_e2e_seed()
+else:
+    warmup_caches_async()
+
 
 # ============================================================
-# MANEJADORES DE ERROR
+# MANEJADORES DE ERROR JSON
 # ============================================================
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template('base.html', error="Página no encontrada"), 404
+    return jsonify({'error': 'Recurso o ruta no encontrada'}), 404
 
 
 @app.errorhandler(500)
 def internal_error(e):
-    return render_template('base.html', error="Error interno del servidor"), 500
+    return jsonify({'error': 'Error interno del servidor'}), 500
 
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("🎯 TIMBA PREDICTOR WEB (Modular v2.2)")
+    print("🎯 TIMBA PREDICTOR API (v3.0 API-Only)")
     print("=" * 50)
     print(f"📊 Ligas disponibles: {len(LIGAS)}")
     print(f"📅 Fixtures configurados: {len(URLS_FIXTURE)}")
     print("=" * 50)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    debug_mode = os.getenv('FLASK_DEBUG', '0') == '1'
+    app.run(debug=debug_mode, host='127.0.0.1', port=5000)
