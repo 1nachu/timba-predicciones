@@ -6,6 +6,8 @@ import { getLeagueFlag } from '@/lib/leagues';
 import ProbabilityBar from '@/components/ProbabilityBar';
 import LocalTime from '@/components/LocalTime';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Partidos de Hoy — Timba Predictor',
   alternates: { canonical: '/' },

@@ -73,5 +73,25 @@ describe('API client & leagues helper', () => {
     });
     expect(notFoundPred.data).toBeNull();
     expect(notFoundPred.avisos[0].mensaje).toBe('No encontrado');
+
+    fetchSpy.mockRejectedValue(new Error('connect ECONNREFUSED 127.0.0.1:5000'));
+    const fallbackDash = await getDashboard();
+    expect(fallbackDash.total_partidos_hoy).toBe(0);
+    expect(fallbackDash.cache_missing).toBe(true);
+
+    const fallbackLeagues = await getLeagues();
+    expect(fallbackLeagues.total).toBe(SIDEBAR_LEAGUES.length);
+
+    const fallbackTeams = await getLeagueTeams(1);
+    expect(fallbackTeams.equipos).toEqual([]);
+
+    const fallbackFixtures = await getFixtures(1);
+    expect(fallbackFixtures.partidos).toEqual([]);
+
+    const fallbackLive = await getLiveMatches();
+    expect(fallbackLive.partidos).toEqual([]);
+
+    const fallbackHistory = await getHistory('E0', 7);
+    expect(fallbackHistory.resultados).toEqual([]);
   });
 });

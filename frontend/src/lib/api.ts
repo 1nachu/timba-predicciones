@@ -8,6 +8,7 @@ import type {
   LiveResponse,
   PredictResponse,
 } from './types';
+import { SIDEBAR_LEAGUES } from './leagues';
 
 function getBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -66,17 +67,49 @@ export async function apiFetch<T>(
 }
 
 export async function getDashboard(): Promise<DashboardResponse> {
-  return apiFetch<DashboardResponse>(
-    '/api/v1/dashboard',
-    getCacheStrategy(60)
-  );
+  try {
+    return await apiFetch<DashboardResponse>(
+      '/api/v1/dashboard',
+      getCacheStrategy(60)
+    );
+  } catch {
+    const ligas: DashboardResponse['ligas'] = {};
+    for (const l of SIDEBAR_LEAGUES) {
+      ligas[String(l.id)] = {
+        nombre: l.nombreCompleto,
+        codigo: l.codigo,
+        bandera: l.bandera,
+      };
+    }
+    return {
+      total_ligas: SIDEBAR_LEAGUES.length,
+      ligas,
+      partidos_hoy: {},
+      total_partidos_hoy: 0,
+      last_update: '',
+      updated_at: '',
+      cache_missing: true,
+    };
+  }
 }
 
 export async function getLeagues(): Promise<LeaguesResponse> {
-  return apiFetch<LeaguesResponse>(
-    '/api/v1/leagues',
-    getCacheStrategy(3600)
-  );
+  try {
+    return await apiFetch<LeaguesResponse>(
+      '/api/v1/leagues',
+      getCacheStrategy(3600)
+    );
+  } catch {
+    return {
+      total: SIDEBAR_LEAGUES.length,
+      leagues: SIDEBAR_LEAGUES.map((l) => ({
+        id: l.id,
+        nombre: l.nombreCompleto,
+        codigo: l.codigo,
+        bandera: l.bandera,
+      })),
+    };
+  }
 }
 
 export async function getLeagueTeams(ligaId: number): Promise<LeagueTeamsResponse> {
