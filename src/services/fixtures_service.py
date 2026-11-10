@@ -243,37 +243,35 @@ def enriquecer_partidos_con_prediccion(partidos: list, cache_service=None) -> li
             red_a = int(partido.get('red_cards_away', 0))
 
             if api_code == 'CL':
-                if cache_service:
-                    cache_todas = {lid: cache_service.cargar_datos_liga_cached(lid) for lid in LIGAS if LIGAS[lid].get('url')}
-                    pred = predecir_partido_champions(partido['homeTeam']['name'], partido['awayTeam']['name'], cache_todas)
-                    if pred:
-                        pred_pre = {
-                            'prob_local': round(pred.get('Prob_Local', 0) * 100, 1),
-                            'prob_empate': round(pred.get('Prob_Empate', 0) * 100, 1),
-                            'prob_visitante': round(pred.get('Prob_Vis', 0) * 100, 1),
-                            'xg_local': round(pred.get('xG_Local', 0), 2),
-                            'xg_vis': round(pred.get('xG_Vis', 0), 2),
-                        }
-                        partido['prediccion_prematch'] = pred_pre
-                        if is_live:
-                            partido['prediccion_live'] = predecir_partido_en_vivo(
-                                partido['homeTeam']['name'], partido['awayTeam']['name'],
-                                {}, 0.0, 0.0,
-                                home_score=h_score, away_score=a_score,
-                                minute=minute, red_cards_home=red_h, red_cards_away=red_a,
-                                pred_prematch=pred
-                            )
-                        partido['prediccion_timba'] = partido['prediccion_live'] if is_live else pred_pre
+                from services.prediction_service import cargar_datos_liga_cached
+                loader = cache_service.cargar_datos_liga_cached if cache_service else cargar_datos_liga_cached
+                cache_todas = {lid: loader(lid) for lid in LIGAS if LIGAS[lid].get('url')}
+                pred = predecir_partido_champions(partido['homeTeam']['name'], partido['awayTeam']['name'], cache_todas)
+                if pred:
+                    pred_pre = {
+                        'prob_local': round(pred.get('Prob_Local', 0) * 100, 1),
+                        'prob_empate': round(pred.get('Prob_Empate', 0) * 100, 1),
+                        'prob_visitante': round(pred.get('Prob_Vis', 0) * 100, 1),
+                        'xg_local': round(pred.get('xG_Local', 0), 2),
+                        'xg_vis': round(pred.get('xG_Vis', 0), 2),
+                    }
+                    partido['prediccion_prematch'] = pred_pre
+                    if is_live:
+                        partido['prediccion_live'] = predecir_partido_en_vivo(
+                            partido['homeTeam']['name'], partido['awayTeam']['name'],
+                            {}, 0.0, 0.0,
+                            home_score=h_score, away_score=a_score,
+                            minute=minute, red_cards_home=red_h, red_cards_away=red_a,
+                            pred_prematch=pred
+                        )
+                    partido['prediccion_timba'] = partido['prediccion_live'] if is_live else pred_pre
                 continue
 
             if liga_id not in _cache_fuerzas:
-                liga_info = LIGAS.get(liga_id)
-                if liga_info and liga_info.get('url'):
-                    cols = ['Date', 'HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'HS', 'AS', 'HC', 'AC', 'HY', 'AY', 'HR', 'AR', 'HST', 'AST', 'HTHG', 'HTAG']
-                    df = descargar_csv_safe(liga_info.get('url'), usecols=cols)
-                    if df is not None and not df.empty:
-                        fuerzas, ml, mv = calcular_fuerzas(df)
-                        _cache_fuerzas[liga_id] = {'fuerzas': fuerzas, 'ml': ml, 'mv': mv, 'equipos': sorted(list(fuerzas.keys()))}
+                from services.prediction_service import cargar_datos_liga_cached
+                fuerzas, ml, mv, equipos = cargar_datos_liga_cached(liga_id)
+                if fuerzas:
+                    _cache_fuerzas[liga_id] = {'fuerzas': fuerzas, 'ml': ml, 'mv': mv, 'equipos': equipos}
 
             cache = _cache_fuerzas.get(liga_id)
             if not cache:
